@@ -1,0 +1,13 @@
+{
+	"users": [
+		{
+			"name": "Jerp",
+			"shoutMessage": "Developer of JerpBot! - https://jerp.tv"
+		},
+		{
+			"name": "someTwitchUsername",
+			"shoutMessage": "Some simple message for people who don't really stream so you don't need to link to their channel.",
+			"type": 1
+		}
+	]
+}

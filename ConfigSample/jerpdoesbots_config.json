@@ -1,0 +1,29 @@
+{
+	"twitch_api": {
+		"client_id": "",
+		"channel_id": 0,
+		"oauth": "aaaaaaaaaaaaa"
+	},
+	"connections": [
+		{
+			"username": "JerpBot - A bot by Jerp!",
+			"nickname": "botTwitchUsername",
+			"oauth": "oauth:aaaaaaaaaaaaa",
+			"server": "irc.twitch.tv",
+			"port": 6667,
+			"channels": [
+				"channel_name"
+			]
+		},
+		{
+			"username": "JerpBot connection for checking host notifications",
+			"nickname": "botTwitchUsername",
+			"oauth": "oauth:aaaaaaaaaaaaa",
+			"server": "irc.twitch.tv",
+			"port": 6667,
+			"channels": [
+				"channel_name"
+			]
+		}
+	]
+}

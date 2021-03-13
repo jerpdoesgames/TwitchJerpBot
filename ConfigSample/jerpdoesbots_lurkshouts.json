@@ -1,0 +1,8 @@
+{
+	"users": [
+		{
+			"name": "someTwitchUsername",
+			"shoutMessage": "meme message for people you want to call out who haven't sent a message"
+        }
+	]
+}

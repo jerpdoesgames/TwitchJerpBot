@@ -1,0 +1,13 @@
+{
+    "messageList": [
+        {
+            "text": "This bot's made by Jerp - https://jerp.tv"
+        },
+        {
+            "text": "You know that Jerp guy who made this bot played Dark Souls back in the day.",
+            "games": [
+                "Dark Souls"
+            ]
+        }
+    ]
+}

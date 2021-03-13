@@ -1,0 +1,28 @@
+﻿{
+  "soundList": [
+    {
+      "name": "soundname",
+      "source": "Game or movie name or whatever",
+      "character": "The character this sound is from.",
+      "description": "A description of this sound.",
+      "paths": [
+        "subdir/soundFileName.wav"
+      ]
+    },
+    {
+      "name": "othersoundname",
+      "source": "Game or movie name or whatever",
+      "character": "The character this sound is from.",
+      "description": "A description of this sound.",
+      "paths": [
+        "randomizedSoundVariant00.wav",
+        "randomizedSoundVariant01.wav",
+        "randomizedSoundVariant02.wav",
+        "randomizedSoundVariant03.wav",
+        "randomizedSoundVariant04.wav",
+        "randomizedSoundVariant05.wav"
+      ],
+      "volume": 0.6
+    }
+  ]
+}
