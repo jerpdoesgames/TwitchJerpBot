@@ -1,0 +1,1 @@
+These json files will need to be filled in as desired and placed in `%UserProfile%\Documents\JerpBot\config`
