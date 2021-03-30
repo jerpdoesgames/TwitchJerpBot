@@ -102,9 +102,9 @@ namespace JerpDoesBots
             switch(m_QueueMode)
             {
                 case QUEUE_MODE_FOLLOWERS:
-                    return (queueUser.IsBroadcaster || queueUser.IsModerator || queueUser.IsSubscriber || queueUser.IsFollower);
+                    return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber || queueUser.isFollower);
                 case QUEUE_MODE_SUBS:
-                    return (queueUser.IsBroadcaster || queueUser.IsModerator || queueUser.IsSubscriber);
+                    return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber);
                 default:
                     return true;
             }
@@ -472,7 +472,7 @@ namespace JerpDoesBots
 
             foreach (queueData mainListEntry in m_EntryList)
             {
-                if (mainListEntry.user.IsSubscriber)
+                if (mainListEntry.user.isSubscriber)
                     subList.Add(mainListEntry);
             }
 

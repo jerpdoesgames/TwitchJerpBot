@@ -89,13 +89,13 @@ namespace JerpDoesBots
 
 		public bool canUse(userEntry commandUser, long timeNow)
 		{
-			if (commandUser.IsBroadcaster)
+			if (commandUser.isBroadcaster)
 				return true;
 
 			if (isOnCooldown(timeNow, commandUser))
 				return false;
 
-			if (allowModerator && commandUser.IsModerator)
+			if (allowModerator && commandUser.isModerator)
 				return true;
 			else if (allowNormal)
 				return true;

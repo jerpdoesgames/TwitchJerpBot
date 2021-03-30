@@ -26,6 +26,7 @@ namespace JerpDoesBots
 	{
 		public twitchAPIConfig twitch_api { get; set; }
 		public List<botConnection> connections { get; set; }
+		public string helpText { get; set; }
 	}
 
 	class botConfig

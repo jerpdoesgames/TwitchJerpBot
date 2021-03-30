@@ -9,6 +9,7 @@ using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
+using System.Threading.Tasks;
 
 namespace JerpDoesBots
 {
@@ -22,6 +23,7 @@ namespace JerpDoesBots
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
 
+        private DateTime m_LiveStartTime;
         private static int pointsPerIdle = 15;
         private SQLiteConnection botData;
         public SQLiteConnection BotData { get { return botData; } }
@@ -60,8 +62,8 @@ namespace JerpDoesBots
 
         private List<botModule> m_Modules;
 
-        private long pointsUpdateLast = 0;
-        private long pointsUpdateThrottle = 10000;
+        private long m_PointsUpdateLast = 0;
+        private long m_PointsUpdateThrottle = 10000;
 
         public Stopwatch ActionTimer { get { return actionTimer; } }
 
@@ -74,17 +76,15 @@ namespace JerpDoesBots
         private long sendTimeLast = 0;
         private static long sendThrottleMin = 1000;
 
-        private bool isLive = false;
-        public bool IsLive { get; }
-        private string title = "";
-        public string Title { get { return title; } set { title = value; } }
-        private uint viewersLast = 0;
-        private long statusUpdateLast = 0;
+        private bool m_IsLive = false;
+        public bool IsLive { get { return m_IsLive; } set { m_IsLive = value; } }
+        private string m_Title = "";
+        public string Title { get { return m_Title; } set { m_Title = value; } }
+        private int m_ViewersLast = 0;
+        private long m_Last = 0;
 
         private string m_Game = "";
-        public string Game { get { return m_Game; } set { m_Game = value; } }
-
-        private static long statusUpdateThrottle = 60000;   // 300000 // Every 5 minutes
+        public string Game { get { return m_Game; } }
 
         private long m_LineCount = 0;   // Total lines
         public long LineCount { get { return m_LineCount; } }
@@ -93,19 +93,7 @@ namespace JerpDoesBots
 
         public void setLive(bool newLive)
         {
-            isLive = newLive;
-        }
-
-        public void setViewerCount(uint newViewerCount)
-        {
-            viewersLast = newViewerCount;
-        }
-
-        private twitchAPI APIRequester;
-
-        public void setAPIRequester(twitchAPI newAPIRequester)
-        {
-            APIRequester = newAPIRequester;
+            m_IsLive = newLive;
         }
 
         public void addModule(botModule aModule)
@@ -175,7 +163,6 @@ namespace JerpDoesBots
                     break;
 
                 case connectionCommand.types.partAllChannels:
-                    // TODO: more than just the one
                     for (int i = 0; i < m_TwitchClient.JoinedChannels.Count; i++)
                     {
                         m_TwitchClient.LeaveChannel(m_TwitchClient.JoinedChannels[i]);
@@ -205,7 +192,6 @@ namespace JerpDoesBots
 
                 default:
                     Console.WriteLine("Unknown command type sent to ircConnection sendAndLog");
-
                     break;
             }
         }
@@ -267,7 +253,7 @@ namespace JerpDoesBots
                 {
                     foreach (userEntry user in userList.Values)
                     {
-                        if (user.NeedsUpdate)
+                        if (user.needsUpdate)
                         {
                             user.doUpdate(actionTimer.ElapsedMilliseconds);
                             userWasUpdated = true;
@@ -280,30 +266,6 @@ namespace JerpDoesBots
                 }
             }
 
-        }
-
-        public void sendUserMessage(string targetUser, string messageToSend)
-        {
-            connectionCommand newCommand = new connectionCommand(connectionCommand.types.privateMessage);
-            newCommand.setTarget(targetUser);
-            newCommand.setMessage(messageToSend);
-
-            queueAction(newCommand);
-        }
-
-        public void joinChannel(string channelToJoin)
-        {
-            connectionCommand newCommand = new connectionCommand(connectionCommand.types.joinChannel);
-            newCommand.setTarget(channelToJoin);
-
-            queueAction(newCommand);
-        }
-
-        public void leaveAllChannels()
-        {
-            connectionCommand newCommand = new connectionCommand(connectionCommand.types.partAllChannels);
-
-            queueAction(newCommand);
         }
 
         public void quit()
@@ -375,29 +337,23 @@ namespace JerpDoesBots
 
         public void getStreamTitle(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, "Stream title is \"" + title + "\"");
+            sendChannelMessage(m_DefaultChannel, "Stream title is \"" + m_Title + "\"");
         }
 
         public void getViewCount(userEntry commandUser, string argumentString)
         {
-            if (isLive)
-                sendChannelMessage(m_DefaultChannel, "Current view count: " + viewersLast);
+            if (m_IsLive)
+                sendChannelMessage(m_DefaultChannel, "Current view count: " + m_ViewersLast);
             else
                 sendChannelMessage(m_DefaultChannel, "Jerp isn't live - check back later.");
-
-            foreach (userEntry curUser in userList.Values)
-            {
-                if (curUser.InChannel)
-                {
-                    Console.WriteLine("User in channel: " + curUser.Nickname);
-                }
-                
-            }
         }
 
-        public void getBotManual(userEntry commandUser, string argumentString)
-        {   // TODO: Move help link to the bot's config or something
-            sendChannelMessage(m_DefaultChannel, "JerpBot manual here: https://docs.google.com/document/d/1sPkbBbCsWPpCJRseWStzaFwwvOe1oyMz8RFQSVhCSss/edit?usp=sharing");
+        public void getHelpString(userEntry commandUser, string argumentString)
+        {
+            if (!string.IsNullOrEmpty(m_CoreConfig.configData.helpText))
+            {
+                sendChannelMessage(m_DefaultChannel, m_CoreConfig.configData.helpText);
+            }
         }
 
         public void quitCommand(userEntry commandUser, string argumentString)
@@ -507,7 +463,7 @@ namespace JerpDoesBots
         public void processJoinPart(string nickname, bool hasJoined)
         {
             userEntry messageUser = checkCreateUser(nickname);
-            messageUser.InChannel = hasJoined;
+            messageUser.inChannel = hasJoined;
         }
 
         public void processUserMessage(string nickname, string message)
@@ -541,17 +497,17 @@ namespace JerpDoesBots
 
         public void processIdlePoints()
         {
-            if (actionTimer.ElapsedMilliseconds > pointsUpdateLast + pointsUpdateThrottle)
+            if (actionTimer.ElapsedMilliseconds > m_PointsUpdateLast + m_PointsUpdateThrottle)
             {
                 foreach (userEntry user in userList.Values)
                 {
-                    if (user.InChannel)
+                    if (user.inChannel)
                     {
                         user.addLoyalty(pointsPerIdle);
                         user.addPoints(pointsPerIdle);
                     }
                 }
-                pointsUpdateLast = actionTimer.ElapsedMilliseconds;
+                m_PointsUpdateLast = actionTimer.ElapsedMilliseconds;
             }
         }
 
@@ -568,24 +524,6 @@ namespace JerpDoesBots
             return false;
         }
 
-        private void requestChannelStatus()
-        {
-
-            if (APIRequester != null)
-            {
-                twitchAPIRequest infoUpdateRequest = new twitchAPIRequest(twitchAPIRequest.types.channelInfo);
-                infoUpdateRequest.setTarget(m_DefaultChannel);
-                APIRequester.queueRequest(infoUpdateRequest);
-
-                twitchAPIRequest statusUpdateRequest = new twitchAPIRequest(twitchAPIRequest.types.channelStatus);
-                statusUpdateRequest.setTarget(m_DefaultChannel);
-                APIRequester.queueRequest(statusUpdateRequest);
-
-                statusUpdateLast = actionTimer.ElapsedMilliseconds;
-            }
-        }
-
-
         public void frame()
         {
             if (m_TwitchClient.IsConnected)
@@ -601,16 +539,6 @@ namespace JerpDoesBots
                 }
 
                 processActionQueue();
-
-                if (APIRequester != null)
-                {
-                    if (actionTimer.ElapsedMilliseconds > statusUpdateLast + statusUpdateThrottle)
-                    {
-                        requestChannelStatus();
-                    }
-                }
-
-                APIRequester.frame();
             }
         }
 
@@ -641,7 +569,7 @@ namespace JerpDoesBots
 
                 if (checkUser != null)
                 {
-                    if (checkUser.IsSubscriber)
+                    if (checkUser.isSubscriber)
                         sendDefaultChannelMessage(checkUser.Nickname + " is a sub.");
                     else
                         sendDefaultChannelMessage(checkUser.Nickname + " is NOT a sub.");
@@ -657,7 +585,7 @@ namespace JerpDoesBots
 
                 if (checkUser != null)
                 {
-                    if (checkUser.IsFollower)
+                    if (checkUser.isFollower)
                         sendDefaultChannelMessage(checkUser.Nickname + " is a follower.");
                     else
                         sendDefaultChannelMessage(checkUser.Nickname + " is NOT a follower.");
@@ -673,7 +601,7 @@ namespace JerpDoesBots
 
                 if (checkUser != null)
                 {
-                    if (checkUser.IsBroadcaster)
+                    if (checkUser.isBroadcaster)
                         sendDefaultChannelMessage(checkUser.Nickname + " is the broadcaster.");
                     else
                         sendDefaultChannelMessage(checkUser.Nickname + " is NOT the broadcaster.");
@@ -689,7 +617,7 @@ namespace JerpDoesBots
 
                 if (checkUser != null)
                 {
-                    if (checkUser.IsModerator)
+                    if (checkUser.isModerator)
                         sendDefaultChannelMessage(checkUser.Nickname + " is a moderator.");
                     else
                         sendDefaultChannelMessage(checkUser.Nickname + " is NOT a moderator.");
@@ -781,13 +709,13 @@ namespace JerpDoesBots
                     switch (badgeEntry.Key)
                     {
                         case "broadcaster":
-                            messageUser.IsBroadcaster = true;
+                            messageUser.isBroadcaster = true;
                             break;
                         case "moderator":
-                            messageUser.IsModerator = true;
+                            messageUser.isModerator = true;
                             break;
                         case "subscriber":
-                            messageUser.IsSubscriber = true;
+                            messageUser.isSubscriber = true;
                             break;
                     }
                 }
@@ -809,7 +737,7 @@ namespace JerpDoesBots
         private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
         {
             userEntry joinedUser = checkCreateUser(e.Username);
-            joinedUser.InChannel = true;
+            joinedUser.inChannel = true;
 
 
             botModule tempModule;
@@ -825,7 +753,7 @@ namespace JerpDoesBots
         private void Client_OnUserLeft(object sender, OnUserLeftArgs e)
         {
             userEntry leftUser = checkCreateUser(e.Username);
-            leftUser.InChannel = false;
+            leftUser.inChannel = false;
         }
 
         // TODO: move raid thresholds to a json config
@@ -853,30 +781,34 @@ namespace JerpDoesBots
 
         // ==========================================================
 
+
+        private void ParseStreamData(TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream aStream)
+        {
+            if (aStream != null)
+            {
+                m_IsLive = true;
+                m_Game = aStream.GameName;
+                m_ViewersLast = aStream.ViewerCount;
+                m_LiveStartTime = aStream.StartedAt;
+            }
+        }
+
         private void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
-            // string gameID = e.Stream.GameId;
-            // m_TwitchAPI.Helix.Games.
-            isLive = true;
-
-            throw new NotImplementedException();
+            if (e.Stream != null)
+            {
+                ParseStreamData(e.Stream);
+            }
         }
 
         private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e)
         {
-            isLive = false;
-
-            throw new NotImplementedException();
+            m_IsLive = false;
         }
 
         private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
         {
-            if (e.Stream != null)
-            {
-                isLive = true;
-            }
-
-            throw new NotImplementedException();
+            ParseStreamData(e.Stream);
         }
 
         // ==========================================================
@@ -899,7 +831,6 @@ namespace JerpDoesBots
             m_TwitchClient.Initialize(m_TwitchCredentials);
             m_TwitchClientJerp.Initialize(m_TwitchCredentialsJerp);
 
-            /*
 
             m_TwitchAPI = new TwitchAPI();
             m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
@@ -915,7 +846,6 @@ namespace JerpDoesBots
             m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
 
             m_StreamMonitor.Start();
-            */
 
             m_TwitchClientJerp.OnJoinedChannel += Client_OnJoinedChannelJerp;
             m_TwitchClientJerp.OnConnected += Client_OnConnectedJerp;
@@ -941,7 +871,7 @@ namespace JerpDoesBots
 			chatCommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
 			chatCommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
 			chatCommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
-			chatCommandList.Add(new chatCommandDef("help", getBotManual, true, true));
+			chatCommandList.Add(new chatCommandDef("help", getHelpString, true, true));
             chatCommandList.Add(new chatCommandDef("random", randomNumber, true, true));
             chatCommandList.Add(new chatCommandDef("follower", checkFollower, true, true));
             chatCommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
@@ -960,7 +890,7 @@ namespace JerpDoesBots
 
 			userList = new Dictionary<string, userEntry>();
 
-			pointsUpdateLast = actionTimer.ElapsedMilliseconds;
+			m_PointsUpdateLast = actionTimer.ElapsedMilliseconds;
 		}
 	}
 }

@@ -7,10 +7,7 @@
 			jerpBot.checkCreateBotStorage();
 			jerpBot.checkCreateBotDatabase();
 
-			logger logConnectionRaw = new logger("log_connection_raw.txt");
-			logger logConnection	= new logger("log_connection.txt");
 			logger logGeneral		= new logger("log_general.txt");
-			logger apiLog			= new logger("log_api.txt");
 
 			botConfig tempConfig = new botConfig();
 			botConnection connConfig;
@@ -46,9 +43,6 @@
 			botGeneral.GameCommandModule = gameCommandModule;
             botGeneral.SoundCommandModule = soundManager;
             botGeneral.AliasModule = aliasManager;
-
-			twitchAPI apiRequester = new twitchAPI(botGeneral, apiLog, tempConfig.configData.twitch_api.client_id, tempConfig.configData.twitch_api.channel_id);
-			botGeneral.setAPIRequester(apiRequester);
 
             while (!botGeneral.isReadyToClose)
             {

@@ -40,7 +40,7 @@ namespace JerpDoesBots
             if (m_OutputDevice.PlaybackState == PlaybackState.Playing)
                 return true;
 
-            if (commandUser.IsBroadcaster)
+            if (commandUser.isBroadcaster)
                 return false;
 
             if (
