@@ -361,8 +361,6 @@ namespace JerpDoesBots
         public trivia(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
             m_Throttler = new throttler(aJerpBot);
-            m_Throttler.requiresUserMessages = false;
-            m_Throttler.messagesReduceTimer = false;
             m_Throttler.waitTimeMax = 120000;
             m_Throttler.lineCountReductionMax = 15;
             m_Throttler.lineCountReduction = 4000;

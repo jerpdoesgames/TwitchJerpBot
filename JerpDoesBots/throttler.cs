@@ -2,7 +2,7 @@
 
 namespace JerpDoesBots
 {
-    // TODO: Eventually replace all the existing throttle behavior
+    // TODO: Eventually replace all the existing throttle behavior with this
     class throttler
     {
         private long m_WaitTimeMax = 900000;    // Maximum amount of time to wait before the throttler is ready, assuming the minimum lines has been met.
