@@ -118,8 +118,8 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TwitchLib.Api, Version=3.2.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\TwitchLib.Api.3.2.2\lib\netstandard2.0\TwitchLib.Api.dll</HintPath>
+    <Reference Include="TwitchLib.Api, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TwitchLib.Api.3.2.0\lib\netstandard2.0\TwitchLib.Api.dll</HintPath>
     </Reference>
     <Reference Include="TwitchLib.Api.Core, Version=3.2.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\TwitchLib.Api.Core.3.2.2\lib\netstandard2.0\TwitchLib.Api.Core.dll</HintPath>

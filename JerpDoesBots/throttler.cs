@@ -5,8 +5,8 @@ namespace JerpDoesBots
     // TODO: Eventually replace all the existing throttle behavior
     class throttler
     {
-        private long m_WaitTimeMax = 900000;    // Maximum amount of time to wait before sending out next message, assuming the minimum lines has been met.
-        private long m_LastLineCount = 0;   // How many lines had passed when the last message went out.
+        private long m_WaitTimeMax = 900000;    // Maximum amount of time to wait before the throttler is ready, assuming the minimum lines has been met.
+        private long m_LastLineCount = 0;   // How many lines had passed when the last time this throttler was triggered.
         private bool m_Initialized = false;    // Will initialize when first checked - that way we can have it wait from roughly the first frame post connection rather than 0.
         private int m_LineCountMinimum = 6; // How many lines need to pass before the next message can go out (even if the throttle is up).
         private int m_LineCountReductionMax = 30;   // How many lines can reduce the time between messages
@@ -17,36 +17,42 @@ namespace JerpDoesBots
 
         private jerpBot m_BotBrain;
 
+        /// <summary>Max amount of lines that can reduce the wait time (requires messagesReduceTimer).</summary>
         public int lineCountReductionMax
         {
             get { return m_LineCountReductionMax; }
             set { m_LineCountReductionMax = value; }
         }
 
+        /// <summary>Whether you need to meet lineCountMinimum before the throttler becomes ready. </summary>
         public bool requiresUserMessages
         {
             get { return m_RequiresUserMessages; }
             set { m_RequiresUserMessages = value; }
         }
 
+        /// <summary>Whether lines sent reduce the timer</summary>
         public bool messagesReduceTimer
         {
             get { return m_MessagesReduceTimer; }
             set { m_MessagesReduceTimer = value; }
         }
 
+        /// <summary>Maximum wait time before the throttler is ready (before lines sent possibly reduce this timer)</summary>
         public long waitTimeMax
         {
             get { return m_WaitTimeMax; }
             set { m_WaitTimeMax = value; }
         }
 
+        /// <summary>How much time is subtracted from waitTimeMax per line (requires messagesReduceTimer).</summary>
         public long lineCountReduction
         {
             get { return m_LineCountReduction; }
             set { m_LineCountReduction = value; }
         }
 
+        /// <summary>Minimum amount of lines before the throttler becomes ready (requires requiresUserMessages)</summary>
         public int lineCountMinimum
         {
             get { return m_LineCountMinimum; }
@@ -111,6 +117,7 @@ namespace JerpDoesBots
             m_LastLineCount = m_BotBrain.LineCount;
         }
 
+        /// <summary>All times are in Milliseconds</summary>
         public throttler(jerpBot aBotBrain)
         {
             m_BotBrain = aBotBrain;
