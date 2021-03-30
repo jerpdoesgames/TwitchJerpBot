@@ -1,29 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Web.Script.Serialization;
-using System.Diagnostics;
 using System.IO;
-using System.Xml;
+using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
-	class messageRoll : botModule
+    class messageRoll : botModule
 	{
         private messageRollConfig m_Config;
         private bool m_Loaded = false;
         private int m_MessageIndex = -1;
-		private long m_MessageTimeLast = 0;
-        private bool m_RequiresUserMessages = true;     // Requires a minimum amount of chat messages to pass before sending its next message.
 
-        private long messageThrottle		= 900000;	// Maximum amount of time to wait before sending out next message, assuming the minimum lines has been met.
-        private long lastLineCount			= 0;		// How many lines had passed when the last message went out.
-        private int lineCountMinimum		= 6;		// How many lines need to pass before the next message can go out (even if the throttle is up).
-        private int lineCountReductionMax	= 30;		// How many lines can reduce the time between messages
-        private long lineTimeReduction		= 23333;    // How much time to reduce the message delay per line
-
-        private bool m_FirstFrame = false;
-
-        public long messageTimeLast { set { m_MessageTimeLast = value; } get { return m_MessageTimeLast; } }
+        private throttler m_Throttler;
 
         private bool isValidMessage(int aIndex)
         {
@@ -74,24 +61,9 @@ namespace JerpDoesBots
 
 		public override void frame()
 		{
-            if (m_Loaded)
+            if (m_Loaded && m_Throttler.isReady)
             {
-                if (!m_FirstFrame)
-                {
-                    messageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                    m_FirstFrame = true;
-                }
-
-                long linesSince = Math.Min(m_BotBrain.LineCount - lastLineCount, lineCountReductionMax);
-                if (!m_RequiresUserMessages || (m_Config.messageList.Count > 0 && linesSince >= lineCountMinimum))
-                {
-                    long messageThrottleReduction = m_RequiresUserMessages ? Math.Max(linesSince * lineTimeReduction, 0) : 0;
-
-                    if (m_BotBrain.ActionTimer.ElapsedMilliseconds > (messageTimeLast + messageThrottle - messageThrottleReduction))
-                    {
-                        sendNextMessage();
-                    }
-                }
+                sendNextMessage();
             }
 		}
 
@@ -108,21 +80,6 @@ namespace JerpDoesBots
                 }
             }
             return false;
-        }
-
-        public void nowait(userEntry commandUser, string argumentString)
-        {
-            m_RequiresUserMessages = false;
-
-            m_BotBrain.sendDefaultChannelMessage("Auto messages will no-longer wait for people to chat.");
-        }
-
-        public void wait(userEntry commandUser, string argumentString)
-        {
-
-            m_RequiresUserMessages = true;
-
-            m_BotBrain.sendDefaultChannelMessage("Auto messages will wait for people to chat first.");
         }
 
         private void sendNextMessage()
@@ -143,9 +100,8 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage(messageToSend);
                 }
 
-                
-                m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                lastLineCount = m_BotBrain.LineCount;
+
+                m_Throttler.trigger();
             }
         }
 
@@ -154,29 +110,18 @@ namespace JerpDoesBots
             sendNextMessage();
         }
 
-        public void throttle(userEntry commandUser, string argumentString)
-        {
-            int secondsToWait;
-            if (int.TryParse(argumentString, out secondsToWait))
-            {
-                if (secondsToWait >= 60)
-                {
-                    messageThrottle = secondsToWait * 1000;
-                    m_BotBrain.sendDefaultChannelMessage("Auto message throttle set to " + secondsToWait + " seconds.");
-                }
-            }
-        }
-
         public messageRoll(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
             if (loadConfig())
             {
                 m_Loaded = true;
 
+                m_Throttler = new throttler(aJerpBot);
+                m_Throttler.waitTimeMax = 900000;
+                m_Throttler.lineCountReduction = 23333;
+                m_Throttler.lineCountReductionMax = 30;
+
                 chatCommandDef tempDef = new chatCommandDef("message", null, false, false);
-                tempDef.addSubCommand(new chatCommandDef("wait", wait, false, false));
-                tempDef.addSubCommand(new chatCommandDef("nowait", nowait, false, false));
-                tempDef.addSubCommand(new chatCommandDef("throttle", throttle, false, false));
                 tempDef.addSubCommand(new chatCommandDef("next", forceNext, false, false));
 
                 m_BotBrain.addChatCommand(tempDef);

@@ -24,7 +24,6 @@ namespace JerpDoesBots
         LiveStreamMonitorService m_StreamMonitor;
 
         private DateTime m_LiveStartTime;
-        private static int pointsPerIdle = 15;
         private SQLiteConnection botData;
         public SQLiteConnection BotData { get { return botData; } }
         private Stopwatch actionTimer;
@@ -61,9 +60,6 @@ namespace JerpDoesBots
         }
 
         private List<botModule> m_Modules;
-
-        private long m_PointsUpdateLast = 0;
-        private long m_PointsUpdateThrottle = 10000;
 
         public Stopwatch ActionTimer { get { return actionTimer; } }
 
@@ -495,22 +491,6 @@ namespace JerpDoesBots
             }
         }
 
-        public void processIdlePoints()
-        {
-            if (actionTimer.ElapsedMilliseconds > m_PointsUpdateLast + m_PointsUpdateThrottle)
-            {
-                foreach (userEntry user in userList.Values)
-                {
-                    if (user.inChannel)
-                    {
-                        user.addLoyalty(pointsPerIdle);
-                        user.addPoints(pointsPerIdle);
-                    }
-                }
-                m_PointsUpdateLast = actionTimer.ElapsedMilliseconds;
-            }
-        }
-
         private bool moduleValidForAction(botModule aModule)
         {
             if (
@@ -889,8 +869,6 @@ namespace JerpDoesBots
 			createViewerTableCommand.ExecuteNonQuery();
 
 			userList = new Dictionary<string, userEntry>();
-
-			m_PointsUpdateLast = actionTimer.ElapsedMilliseconds;
 		}
 	}
 }

@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace JerpDoesBots
 {
-
 	class queueSystem : botModule
 	{
 		public const string QUEUE_MODE_NORMAL		= "all";
@@ -32,21 +31,15 @@ namespace JerpDoesBots
 			}
 		}
 
-		private long messageThrottle = 120000;
-		private long messageLast = 0;
+        private throttler m_Throttler;
         private readonly object messageLastLock = new object();
         private bool isActive = false;
 		private List<queueData> m_EntryList;
 		private int m_ListMax = 10;
         private bool m_UpdateImmediately = true;
-
 		private uint m_MaxPerUser = 1;
-
 		private List<queueData> usersAddedRecently;
 		private bool userAddedRecently = false;
-		private long lastLineCount = -2;
-		private long lineCountMinimum = 8;
-
 		private string description;
 		private string m_QueueType = QUEUE_TYPE_PLAIN;
 		private string m_QueueMode = QUEUE_MODE_NORMAL;
@@ -333,7 +326,7 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage("Queue has been opened.  " + newJoinString);
                 }
 
-                messageLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+                m_Throttler.trigger();
 
                 isActive = true;
             }
@@ -601,37 +594,33 @@ namespace JerpDoesBots
 			{
                 lock (messageLastLock)
                 {
-                    if (m_BotBrain.LineCount > lastLineCount + lineCountMinimum)
+                    string newJoinString = joinString();
+                    if (!m_UpdateImmediately && userAddedRecently)
                     {
-                        if (m_BotBrain.ActionTimer.ElapsedMilliseconds > messageLast + messageThrottle)
-                        {
-                            string newJoinString = joinString();
-                            if (!m_UpdateImmediately && userAddedRecently)
-                            {
-                                m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " entries have been added to the queue since last update.  " + newJoinString);
-                                usersAddedRecently.Clear();
-                                userAddedRecently = false;
-                            }
-                            else
-                            {
-                                if (string.IsNullOrEmpty(description))
-                                    m_BotBrain.sendDefaultChannelMessage("A queue is currently open.  " + newJoinString);
-                                else
-                                    m_BotBrain.sendDefaultChannelMessage("A queue is currently open. (" + description + ")  " + newJoinString);
-
-                            }
-
-                            messageLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                            lastLineCount = m_BotBrain.LineCount;
-                        }
+                        m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " entries have been added to the queue since last update.  " + newJoinString);
+                        usersAddedRecently.Clear();
+                        userAddedRecently = false;
                     }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(description))
+                            m_BotBrain.sendDefaultChannelMessage("A queue is currently open.  " + newJoinString);
+                        else
+                            m_BotBrain.sendDefaultChannelMessage("A queue is currently open. (" + description + ")  " + newJoinString);
+
+                    }
+
+                    m_Throttler.trigger();
                 }
 			}
 		}
 
 		public queueSystem(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
-			m_EntryList = new List<queueData>();
+            m_Throttler = new throttler(aJerpBot);
+            m_Throttler.waitTimeMax = 120000;
+
+            m_EntryList = new List<queueData>();
 			usersAddedRecently = new List<queueData>();
 
 			chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);

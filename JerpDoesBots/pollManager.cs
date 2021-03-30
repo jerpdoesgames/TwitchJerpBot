@@ -15,12 +15,8 @@ namespace JerpDoesBots
 		private uint choicesNew = 0;
 		private uint choicesUpdated = 0;
 
-		// Message timer stuff
-		private long messageThrottle = 30000;
-		private long messageLast = 0;
-        private readonly object messageLastLock = new object();
-		private long lastLineCount = -2;
-		private long lineCountMinimum = 8;
+		private throttler m_Throttler;
+		private readonly object messageLastLock = new object();
 
 		private void reset()
 		{
@@ -31,35 +27,31 @@ namespace JerpDoesBots
 		{
 			if (isActive)
 			{
-				if (m_BotBrain.LineCount > lastLineCount + lineCountMinimum)
+				lock (messageLastLock)
 				{
-                    lock(messageLastLock)
-                    {
-                        if (m_BotBrain.ActionTimer.ElapsedMilliseconds > messageLast + messageThrottle)
-                        {
-                            string choiceNewString = "";
-                            string choiceUpdatedString = "";
-                            if (choicesNew > 0)
-                                choiceNewString = "  " + choicesNew + " new votes.";
 
-                            if (choicesUpdated > 0)
-                                choiceUpdatedString = "  " + choicesUpdated + " updated votes.";
+					if (m_Throttler.isReady)
+					{
+						string choiceNewString = "";
+						string choiceUpdatedString = "";
+						if (choicesNew > 0)
+							choiceNewString = "  " + choicesNew + " new votes.";
 
-                            string choiceString = getChoiceString();
+						if (choicesUpdated > 0)
+							choiceUpdatedString = "  " + choicesUpdated + " updated votes.";
 
-                            if (!string.IsNullOrEmpty(description))
-                                m_BotBrain.sendDefaultChannelMessage("A poll is running (\"" + description + "\") - choices are " + choiceString + "  Type !vote # to cast your vote.  " + userChoices.Count + " vote(s) so far." + choiceNewString + choiceUpdatedString);
-                            else
-                                m_BotBrain.sendDefaultChannelMessage("A poll is currently open - choices are " + choiceString + "  Type !vote # to cast your vote.  " + userChoices.Count + " vote(s) so far." + choiceNewString + choiceUpdatedString);
+						string choiceString = getChoiceString();
 
-                            choicesNew = 0;
-                            choicesUpdated = 0;
+						if (!string.IsNullOrEmpty(description))
+							m_BotBrain.sendDefaultChannelMessage("A poll is running (\"" + description + "\") - choices are " + choiceString + "  Type !vote # to cast your vote.  " + userChoices.Count + " vote(s) so far." + choiceNewString + choiceUpdatedString);
+						else
+							m_BotBrain.sendDefaultChannelMessage("A poll is currently open - choices are " + choiceString + "  Type !vote # to cast your vote.  " + userChoices.Count + " vote(s) so far." + choiceNewString + choiceUpdatedString);
 
-                            messageLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                            lastLineCount = m_BotBrain.LineCount;
-                        }
-                    }
+						choicesNew = 0;
+						choicesUpdated = 0;
 
+						m_Throttler.trigger();
+					}
 				}
 			}
 		}
@@ -82,11 +74,6 @@ namespace JerpDoesBots
 		{
 			return (choiceID > 0 && choiceID <= choiceList.Count);
 		}
-
-        private bool validChoiceString(string choiceName)
-        {
-            return choiceList.IndexOf(choiceName) >= 0;
-        }
 
         private void registerChoice(userEntry commandUser, int choiceIndex)
         {
@@ -159,8 +146,7 @@ namespace JerpDoesBots
                         }
 
                         m_BotBrain.sendDefaultChannelMessage("A new poll has been opened!" + descString + " Choices are " + choiceString + ".  Type !vote # to cast your vote.");
-                        messageLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                        lastLineCount = m_BotBrain.LineCount;
+						m_Throttler.trigger();
                     }
                     else
                     {
@@ -298,8 +284,6 @@ namespace JerpDoesBots
 						counted = true;
 					}
 
-                    
-
                     string tieString = "";
                     if (tieList.Count > 1)
                     {
@@ -322,6 +306,10 @@ namespace JerpDoesBots
 
 		public pollManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
+			m_Throttler = new throttler(aJerpBot);
+			m_Throttler.waitTimeMax = 30000;
+			m_Throttler.lineCountMinimum = 8;
+
 			userChoices = new Dictionary<userEntry, int>();
 
 			chatCommandDef tempDef = new chatCommandDef("poll", null, false, false);

@@ -2,15 +2,14 @@
 
 namespace JerpDoesBots
 {
-    // TODO: Eventually replace all the existing throttle behavior with this
     class throttler
     {
-        private long m_WaitTimeMax = 900000;    // Maximum amount of time to wait before the throttler is ready, assuming the minimum lines has been met.
+        private long m_WaitTimeMax = 60000;    // Maximum amount of time to wait before the throttler is ready, assuming the minimum lines has been met.
         private long m_LastLineCount = 0;   // How many lines had passed when the last time this throttler was triggered.
         private bool m_Initialized = false;    // Will initialize when first checked - that way we can have it wait from roughly the first frame post connection rather than 0.
         private int m_LineCountMinimum = 6; // How many lines need to pass before the next message can go out (even if the throttle is up).
-        private int m_LineCountReductionMax = 30;   // How many lines can reduce the time between messages
-        private long m_LineCountReduction = 23333;  // How much time to reduce the message delay per line
+        private int m_LineCountReductionMax = 15;   // How many lines can reduce the time between messages
+        private long m_LineCountReduction = 2500;  // How much time to reduce the message delay per line
         private long m_MessageTimeLast = 0;
         private bool m_RequiresUserMessages = true; // Require a minimum amount of chat messages to pass before sending its next message.
         private bool m_MessagesReduceTimer = true;
@@ -97,6 +96,7 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>Whether all requirements have been met.</summary>
         public bool isReady
         {
             get
@@ -111,6 +111,7 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>Logs that the desired throttled action occurred and to begin waiting for more lines/time before becoming ready.</summary>
         public void trigger()
         {
             m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
