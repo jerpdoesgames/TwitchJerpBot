@@ -83,7 +83,19 @@ namespace JerpDoesBots
             if (!string.IsNullOrEmpty(argumentString))
             {
                 List<string> tagList = new List<string>();
-                tagList = argumentString.Split(' ').ToList();
+
+                if (argumentString == "all")
+                {
+                    foreach (triviaCategory curCategory in m_Categories)
+                    {
+                        tagList.Add(curCategory.code);
+                    }
+                }
+                else
+                {
+                    tagList = argumentString.Split(' ').ToList();
+                }
+                
 
                 List<triviaQuestion> newQuestions = getQuestionsForTags(tagList);
                 string tagListString = string.Join(", ", tagList.ToArray());
@@ -113,7 +125,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("No tags specified, Trivia not started.");
+                m_BotBrain.sendDefaultChannelMessage("No tags specified, Trivia not started. (try using 'all' or 'topics')");
             }
 		}
 

@@ -423,7 +423,7 @@ namespace JerpDoesBots
                 }
             }
 
-            if (commandDef != null && commandDef.canUse(commandUser, actionTimer.ElapsedMilliseconds))
+            if (commandDef != null && commandDef.Run != null && commandDef.canUse(commandUser, actionTimer.ElapsedMilliseconds))
             {
                 argumentString = message.Substring(Math.Min(message.Length, commandLength + 1));
                 commandDef.TimeLast = actionTimer.ElapsedMilliseconds;
