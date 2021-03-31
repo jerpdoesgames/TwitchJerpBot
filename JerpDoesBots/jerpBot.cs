@@ -340,7 +340,7 @@ namespace JerpDoesBots
             if (m_IsLive)
                 sendChannelMessage(m_DefaultChannel, "Current view count: " + m_ViewersLast);
             else
-                sendChannelMessage(m_DefaultChannel, "Jerp isn't live - check back later.");
+                sendChannelMessage(m_DefaultChannel, "Stream isn't live - check back later.");
         }
 
         public void getHelpString(userEntry commandUser, string argumentString)
@@ -542,6 +542,20 @@ namespace JerpDoesBots
             }
 
             return null;
+        }
+
+        public void getUptime(userEntry commandUser, string argumentString)
+        {
+            if (m_IsLive)
+            {
+                DateTime curTime = DateTime.Now;
+                TimeSpan timeSinceLive = curTime.Subtract(m_LiveStartTime);
+                sendDefaultChannelMessage(string.Format("Stream has been live for {0} hours, {1 minutes}.", timeSinceLive.Hours, timeSinceLive.Minutes));
+            }
+            else
+            {
+                sendDefaultChannelMessage("Stream isn't live - check back later.");
+            }
         }
 
         public void shoutout(userEntry commandUser, string argumentString)
@@ -870,6 +884,7 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
             chatCommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
             chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
+            chatCommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			botData = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
