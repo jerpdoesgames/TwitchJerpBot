@@ -56,6 +56,13 @@ namespace JerpDoesBots
 					{
 						shoutEntry.shoutedSinceLoad = true;
 						shoutEntry.lastShouted = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+
+						string lastGame = "";
+						TwitchLib.Api.V5.Models.Channels.Channel channelInfo = m_BotBrain.getSingleChannelInfoByName(shoutUserEntry.Nickname);
+
+						if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.Game))
+							lastGame = "  They were last playing " + channelInfo.Game;
+
 						if (!string.IsNullOrEmpty(shoutEntry.shoutMessage))
 						{
                             switch(shoutEntry.type)
@@ -66,13 +73,14 @@ namespace JerpDoesBots
 
 
                                 case autoShoutUserType.streamer:
-                                    m_BotBrain.sendDefaultChannelMessage("Check out " + shoutUserEntry.Nickname + " : " + shoutEntry.shoutMessage + "  ( twitch.tv/" + shoutUserEntry.Nickname.ToLower() + " )");
+                                    m_BotBrain.sendDefaultChannelMessage("Check out " + shoutUserEntry.Nickname + " : " + shoutEntry.shoutMessage + "  ( twitch.tv/" + shoutUserEntry.Nickname.ToLower() + " )" + lastGame);
                                 break;
                             }
 							
-						} else
+						}
+						else
 						{
-							m_BotBrain.sendDefaultChannelMessage("Check out " + shoutUserEntry.Nickname + " and give 'em a follow!  ( twitch.tv/" + shoutUserEntry.Nickname.ToLower() + " )");
+							m_BotBrain.sendDefaultChannelMessage("Check out " + shoutUserEntry.Nickname + " and give 'em a follow!  ( twitch.tv/" + shoutUserEntry.Nickname.ToLower() + " )" + lastGame);
 						}
 						
 					}

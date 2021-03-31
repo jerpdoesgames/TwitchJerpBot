@@ -77,7 +77,6 @@ namespace JerpDoesBots
         private string m_Title = "";
         public string Title { get { return m_Title; } set { m_Title = value; } }
         private int m_ViewersLast = 0;
-        private long m_Last = 0;
 
         private string m_Game = "";
         public string Game { get { return m_Game; } }
@@ -522,18 +521,43 @@ namespace JerpDoesBots
             }
         }
 
+        public TwitchLib.Api.V5.Models.Channels.Channel getSingleChannelInfoByName(string aChannelName)
+        {
+
+            Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> userInfoTask = Task.Run(() => m_TwitchAPI.Helix.Users.GetUsersAsync(null, new List<string>() { aChannelName }));
+            userInfoTask.Wait();
+
+            if (userInfoTask.Result != null && userInfoTask.Result.Users.Length >= 1)
+            {
+                string userID = userInfoTask.Result.Users[0].Id;
+
+                // TODO: Switch to Helix
+                Task<TwitchLib.Api.V5.Models.Channels.Channel> channelInfoTask = Task.Run(() => m_TwitchAPI.V5.Channels.GetChannelByIDAsync(userID));
+                channelInfoTask.Wait();
+
+                if (channelInfoTask.Result != null)
+                {
+                    return channelInfoTask.Result;
+                }
+            }
+
+            return null;
+        }
+
         public void shoutout(userEntry commandUser, string argumentString)
         {
             string nickname = getFirstTokenString(argumentString);
             if (!string.IsNullOrEmpty(nickname))
             {
-                sendDefaultChannelMessage("Check out " + nickname + " and give'em a follow!");
-            }
-        }
+                string lastGame = "";
 
-        public string getConnectionUser()   // TODO: Shouldn't need to access the connection username through the bot itself
-        {
-            return m_DefaultChannel;
+                TwitchLib.Api.V5.Models.Channels.Channel channelInfo = getSingleChannelInfoByName(nickname);
+
+                if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.Game))
+                    lastGame = "  They were last playing " + channelInfo.Game;
+
+                sendDefaultChannelMessage("Check out " + channelInfo.DisplayName + " and give 'em a follow!  ( twitch.tv/" + channelInfo.DisplayName.ToLower() + " )" + lastGame);
+            }
         }
 
         public void addChatCommand(chatCommandDef aNewCommand)
@@ -845,8 +869,7 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
             chatCommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
             chatCommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
-
-            // chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
+            chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			botData = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
