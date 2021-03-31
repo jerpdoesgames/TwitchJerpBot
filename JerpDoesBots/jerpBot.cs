@@ -736,31 +736,19 @@ namespace JerpDoesBots
             leftUser.inChannel = false;
         }
 
-        // TODO: move raid thresholds to a json config
         private void Client_OnBeingHosted(object sender, OnBeingHostedArgs e)
         {
-            if (e.BeingHostedNotification.Viewers >= 100)
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
             {
-                sendDefaultChannelMessage("Thanks for the raid " + e.BeingHostedNotification.HostedByChannel + "!  Welcome, everyone!  For anybody new to the channel, I'm Jerp, a variety streamer who plays a ton of indie and retro games.  Want to know more about me?  Check out the channel panels below (or check out my website: https://jerp.tv ).");
-                sendDefaultChannelMessage("With so many people arriving, please be sure to have a quick glance at the channel rules (TLDR: we're pretty chill and civil around here).");
-                sendDefaultChannelMessage("Also, if you like what you see, please follow the channel - we're happy to have you around for future streams.");
-            }
-            else if (e.BeingHostedNotification.Viewers >= 15)
-            {
-                sendDefaultChannelMessage("Thanks for the raid " + e.BeingHostedNotification.HostedByChannel + "!  Welcome, everyone!  For anybody new to the channel, I'm Jerp, a variety streamer who plays a ton of indie and retro games.  Want to know more about me?  Check out the channel panels below (or check out my website: https://jerp.tv ).");
-            }
-            else if (e.BeingHostedNotification.Viewers >= 5)
-            {
-                sendDefaultChannelMessage("Thanks for the raid " + e.BeingHostedNotification.HostedByChannel + "!");
-            }
-            else if (e.BeingHostedNotification.Viewers >= 3)
-            {
-                sendDefaultChannelMessage("Thanks for the host " + e.BeingHostedNotification.HostedByChannel + "!");
+                tempModule = m_Modules[i];
+
+                if (moduleValidForAction(tempModule))
+                    tempModule.onHost(e.BeingHostedNotification.HostedByChannel, e.BeingHostedNotification.Viewers);
             }
         }
 
         // ==========================================================
-
 
         private void ParseStreamData(TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream aStream)
         {

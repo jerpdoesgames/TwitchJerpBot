@@ -34,8 +34,9 @@
             trivia triviaManager                = new trivia(botGeneral);
             hydrateReminder hydrateManager      = new hydrateReminder(botGeneral);
             delaySender delaySendManager        = new delaySender(botGeneral);
+			hostMessages hostMessageModule		= new hostMessages(botGeneral);
 
-            customCommandModule.initTable();
+			customCommandModule.initTable();
 			gameCommandModule.initTable();
             aliasManager.initTable();
 

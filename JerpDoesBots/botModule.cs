@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace JerpDoesBots
+﻿namespace JerpDoesBots
 {
-	class botModule
+    class botModule
 	{
 		public virtual void frame() {}
 		public virtual void onUserMessage(userEntry aUser, string aMessage) {}
         public virtual void onUserJoin(userEntry aUser) {}
         public virtual void onPrivateMessage(userEntry aUser, string aMessage) {}
+		public virtual void onHost(string aHostName, int aViewerCount) { }
 
 		private bool m_RequiresConnection	= true;
 		private bool m_RequiresChannel		= true;
