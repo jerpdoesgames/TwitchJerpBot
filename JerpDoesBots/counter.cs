@@ -26,7 +26,7 @@ namespace JerpDoesBots
 		{
 			string createViewerRowQuery = "INSERT INTO counters (name, count, game) values (@param1, @param2, @param3)";
 
-			SQLiteCommand createViewerRowCommand = new SQLiteCommand(createViewerRowQuery, botBrain.BotData);
+			SQLiteCommand createViewerRowCommand = new SQLiteCommand(createViewerRowQuery, botBrain.storageDB);
 
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param1", newName));
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param2", (object)0));
@@ -49,7 +49,7 @@ namespace JerpDoesBots
 		public bool load(string counterName)
 		{
 			string getViewerRowQuery = "SELECT * FROM counters WHERE name = @param1 AND game=@param2 LIMIT 1";
-			SQLiteCommand getRowCommand = new SQLiteCommand(getViewerRowQuery, botBrain.BotData);
+			SQLiteCommand getRowCommand = new SQLiteCommand(getViewerRowQuery, botBrain.storageDB);
 			getRowCommand.Parameters.Add(new SQLiteParameter("@param1", counterName));
 			getRowCommand.Parameters.Add(new SQLiteParameter("@param2", m_Game));
 			SQLiteDataReader rowReader = getRowCommand.ExecuteReader();
@@ -71,7 +71,7 @@ namespace JerpDoesBots
 				count = count + amount;
 				string updateQuery = "UPDATE counters SET count=@param1 where name=@param2 AND game=@param3";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.BotData);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", amount));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Name));
@@ -97,7 +97,7 @@ namespace JerpDoesBots
 				description = newDescription;
 				string updateQuery = "UPDATE counters SET description=@param1 WHERE name=@param2 AND game=@param3";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.BotData);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", description));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Name));
@@ -118,7 +118,7 @@ namespace JerpDoesBots
 				count = amount;
 				string updateQuery = "UPDATE counters SET count=@param1 WHERE name=@param2 AND game=@param3";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.BotData);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", amount));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Name));
@@ -139,7 +139,7 @@ namespace JerpDoesBots
 			{
 				string updateQuery = "DELETE FROM counters WHERE name=@param1 AND game=@param2";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.BotData);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", m_Name));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Game));
@@ -179,8 +179,8 @@ namespace JerpDoesBots
             if (!string.IsNullOrEmpty(m_Game))
                 return m_Game;
 
-            if (!string.IsNullOrEmpty(m_BotBrain.Game))
-                return m_BotBrain.Game;
+            if (!string.IsNullOrEmpty(m_BotBrain.game))
+                return m_BotBrain.game;
 
             return GAME_NOGAME;
         }
@@ -550,7 +550,7 @@ namespace JerpDoesBots
 		public counter(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			string createQuoteTableQuery = "CREATE TABLE IF NOT EXISTS counters (counterID INTEGER PRIMARY KEY ASC, name TEXT, game TEXT, description TEXT, count INTEGER, UNIQUE(name, game))";
-			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, m_BotBrain.BotData);
+			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, m_BotBrain.storageDB);
 			createQuoteTableCommand.ExecuteNonQuery();
 
 			m_Entries = new Dictionary<string, Dictionary<string, counterEntry>>();

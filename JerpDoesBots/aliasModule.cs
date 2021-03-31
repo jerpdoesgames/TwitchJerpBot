@@ -76,7 +76,7 @@ namespace JerpDoesBots
                     {
                         string addCommandQuery = insertQuery;
 
-                        SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.BotData);
+                        SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.storageDB);
 
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param1", commandUser.Nickname));     // Submitter
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param2", commandUser.Nickname));     // Modifier (same)

@@ -76,7 +76,7 @@ namespace JerpDoesBots
         {
             get
             {
-                return (m_BotBrain.ActionTimer.ElapsedMilliseconds > (m_MessageTimeLast + adjustedThrottleTime));
+                return (m_BotBrain.actionTimer.ElapsedMilliseconds > (m_MessageTimeLast + adjustedThrottleTime));
             }
         }
 
@@ -84,7 +84,7 @@ namespace JerpDoesBots
         {
             get
             {
-                return Math.Min(m_BotBrain.LineCount - m_LastLineCount, m_LineCountReductionMax);
+                return Math.Min(m_BotBrain.lineCount - m_LastLineCount, m_LineCountReductionMax);
             }
         }
 
@@ -103,7 +103,7 @@ namespace JerpDoesBots
             {
                 if (!m_Initialized)
                 {
-                    m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+                    m_MessageTimeLast = m_BotBrain.actionTimer.ElapsedMilliseconds;
                     m_Initialized = true;
                 }
 
@@ -114,8 +114,8 @@ namespace JerpDoesBots
         /// <summary>Logs that the desired throttled action occurred and to begin waiting for more lines/time before becoming ready.</summary>
         public void trigger()
         {
-            m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-            m_LastLineCount = m_BotBrain.LineCount;
+            m_MessageTimeLast = m_BotBrain.actionTimer.ElapsedMilliseconds;
+            m_LastLineCount = m_BotBrain.lineCount;
         }
 
         /// <summary>All times are in Milliseconds</summary>

@@ -24,7 +24,7 @@ namespace JerpDoesBots
         private int getHoursPassed()
         {
             const long msPerHour = 1000 * 60 * 60;
-            float hoursPassed = m_BotBrain.ActionTimer.ElapsedMilliseconds / msPerHour;
+            float hoursPassed = m_BotBrain.actionTimer.ElapsedMilliseconds / msPerHour;
 
             return (int)(Math.Floor(hoursPassed) + m_HoursPassedOffset);
         }
@@ -52,14 +52,14 @@ namespace JerpDoesBots
                 if (curHoursPassed > m_LastHoursPassed)
                 {
                     m_LastHoursPassed = curHoursPassed;
-                    m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.ActionTimer.ElapsedMilliseconds));
+                    m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
                 }
             }
         }
 
         public void current(userEntry commandUser, string argumentString)
         {
-            m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.ActionTimer.ElapsedMilliseconds));
+            m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
         }
 
         public void setOffset(userEntry commandUser, string argumentString)

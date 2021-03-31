@@ -17,7 +17,7 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(useGame))
 				return useGame;
 			else
-				return m_BotBrain.Game;
+				return m_BotBrain.game;
 		}
 
 		public void setGame(userEntry commandUser, string argumentString)
@@ -32,14 +32,14 @@ namespace JerpDoesBots
 		public void clearGame(userEntry commandUser, string argumentString)
 		{
 			useGame = null;
-			m_BotBrain.sendDefaultChannelMessage("Auto-select mode resumed for game-specific commands. ("+m_BotBrain.Game+")");
+			m_BotBrain.sendDefaultChannelMessage("Auto-select mode resumed for game-specific commands. ("+m_BotBrain.game+")");
 		}
 
 		public SQLiteDataReader loadCommand(string commandName)
 		{
 			string getCommandQuery = selectQuery;
 
-			SQLiteCommand getCommandCommand = new SQLiteCommand(getCommandQuery, m_BotBrain.BotData);
+			SQLiteCommand getCommandCommand = new SQLiteCommand(getCommandQuery, m_BotBrain.storageDB);
 
 			getCommandCommand.Parameters.Add(new SQLiteParameter("@param1", commandName));
 			getCommandCommand.Parameters.Add(new SQLiteParameter("@param2", getGameString()));            // Current Game (unused in base)
@@ -96,7 +96,7 @@ namespace JerpDoesBots
 
 					string addCommandQuery = insertQuery;
 
-					SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.BotData);
+					SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.storageDB);
 
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param1", commandUser.Nickname));     // Submitter
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param2", commandUser.Nickname));     // Modifier (same)
@@ -127,7 +127,7 @@ namespace JerpDoesBots
 			{
 				string removeCommandQuery = removeQuery;
 
-				SQLiteCommand removeCommandCommand = new SQLiteCommand(removeCommandQuery, m_BotBrain.BotData);
+				SQLiteCommand removeCommandCommand = new SQLiteCommand(removeCommandQuery, m_BotBrain.storageDB);
 
 				removeCommandCommand.Parameters.Add(new SQLiteParameter("@param1", argumentString));
 				removeCommandCommand.Parameters.Add(new SQLiteParameter("@param2", getGameString()));            // Current Game (unused in base)
@@ -146,7 +146,7 @@ namespace JerpDoesBots
 		public virtual void initTable()
 		{
 			string createCommandTableQuery = createQuery;
-			SQLiteCommand createCommandTableCommand = new SQLiteCommand(createCommandTableQuery, m_BotBrain.BotData);
+			SQLiteCommand createCommandTableCommand = new SQLiteCommand(createCommandTableQuery, m_BotBrain.storageDB);
 			createCommandTableCommand.ExecuteNonQuery();
 		}
 

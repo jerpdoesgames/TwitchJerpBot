@@ -43,7 +43,7 @@ namespace JerpDoesBots
                         delayMS *= 1000;
                         if (delayMS <= MAX_DELAY_TIME && delayMS >= MIN_DELAY_TIME)
                         {
-                            m_Entries.Add(new delaySendEntry(m_BotBrain.ActionTimer.ElapsedMilliseconds + delayMS, commandUser, argumentList[1]));
+                            m_Entries.Add(new delaySendEntry(m_BotBrain.actionTimer.ElapsedMilliseconds + delayMS, commandUser, argumentList[1]));
                         }
                         else if (delayMS < MIN_DELAY_TIME)
                         {
@@ -90,7 +90,7 @@ namespace JerpDoesBots
 
             for (int i = 0; i < m_Entries.Count; i++)
             {
-                if (m_BotBrain.ActionTimer.ElapsedMilliseconds >= m_Entries[i].sendTime)
+                if (m_BotBrain.actionTimer.ElapsedMilliseconds >= m_Entries[i].sendTime)
                 {
                     string messageToSend = m_Entries[i].message;
                     if (!String.IsNullOrEmpty(messageToSend))

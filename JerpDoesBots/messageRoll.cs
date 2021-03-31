@@ -16,7 +16,7 @@ namespace JerpDoesBots
         {
             if (m_MessageIndex < m_Config.messageList.Count)
             {
-                if (m_Config.messageList[m_MessageIndex].games == null || m_Config.messageList[m_MessageIndex].games.Contains(m_BotBrain.Game))
+                if (m_Config.messageList[m_MessageIndex].games == null || m_Config.messageList[m_MessageIndex].games.Contains(m_BotBrain.game))
                 {
                     return true;
                 }

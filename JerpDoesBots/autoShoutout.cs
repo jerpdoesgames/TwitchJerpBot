@@ -52,10 +52,10 @@ namespace JerpDoesBots
 				shoutEntry = configData.users[i];
 				if (shoutEntry.name.ToLower() == shoutUserEntry.Nickname.ToLower())
 				{
-					if (!shoutEntry.shoutedSinceLoad || m_BotBrain.ActionTimer.ElapsedMilliseconds > (shoutEntry.lastShouted + shoutThrottle))
+					if (!shoutEntry.shoutedSinceLoad || m_BotBrain.actionTimer.ElapsedMilliseconds > (shoutEntry.lastShouted + shoutThrottle))
 					{
 						shoutEntry.shoutedSinceLoad = true;
-						shoutEntry.lastShouted = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+						shoutEntry.lastShouted = m_BotBrain.actionTimer.ElapsedMilliseconds;
 
 						string lastGame = "";
 						TwitchLib.Api.V5.Models.Channels.Channel channelInfo = m_BotBrain.getSingleChannelInfoByName(shoutUserEntry.Nickname);

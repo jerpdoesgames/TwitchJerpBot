@@ -24,9 +24,9 @@ namespace JerpDoesBots
         LiveStreamMonitorService m_StreamMonitor;
 
         private DateTime m_LiveStartTime;
-        private SQLiteConnection botData;
-        public SQLiteConnection BotData { get { return botData; } }
-        private Stopwatch actionTimer;
+        private SQLiteConnection m_StorageDB;
+        public SQLiteConnection storageDB { get { return m_StorageDB; } }
+        private Stopwatch m_ActionTimer;
         private readonly Queue<connectionCommand> actionQueue;
         private bool m_IsDone = false;
         private static uint MESSAGE_VOTE_MAX_LENGTH = 20;
@@ -61,16 +61,16 @@ namespace JerpDoesBots
 
         private List<botModule> m_Modules;
 
-        public Stopwatch ActionTimer { get { return actionTimer; } }
+        public Stopwatch actionTimer { get { return m_ActionTimer; } }
 
         public static string storagePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JerpBot");
 
         private logger botLog;
-        private long userUpdateLast = 0;
-        private long userUpdateThrottle = 5000;
+        private long m_UserUpdateLast = 0;
+        private long m_UserUpdateThrottle = 5000;
 
-        private long sendTimeLast = 0;
-        private static long sendThrottleMin = 1000;
+        private long m_SendTimeLast = 0;
+        private static long m_SendThrottleMin = 1000;
 
         private bool m_IsLive = false;
         public bool IsLive { get { return m_IsLive; } set { m_IsLive = value; } }
@@ -79,10 +79,10 @@ namespace JerpDoesBots
         private int m_ViewersLast = 0;
 
         private string m_Game = "";
-        public string Game { get { return m_Game; } }
+        public string game { get { return m_Game; } }
 
         private long m_LineCount = 0;   // Total lines
-        public long LineCount { get { return m_LineCount; } }
+        public long lineCount { get { return m_LineCount; } }
 
         private List<chatCommandDef> chatCommandList;
 
@@ -109,8 +109,8 @@ namespace JerpDoesBots
 
         public commandAlias AliasModule { set { m_AliasModule = value; } }
 
-        private Dictionary<string, userEntry> userList;
-        public Dictionary<string, userEntry> UserList { get { return userList; } }
+        private Dictionary<string, userEntry> m_UserList;
+        public Dictionary<string, userEntry> userList { get { return m_UserList; } }
 
         public static void checkCreateBotStorage()
         {
@@ -131,7 +131,7 @@ namespace JerpDoesBots
 
         private long getCurrentThrottle()
         {
-            return sendThrottleMin;
+            return m_SendThrottleMin;
         }
 
         private bool isValidPrivMsg(connectionCommand commandToExecute)
@@ -195,11 +195,11 @@ namespace JerpDoesBots
         {
             if (actionQueue.Count > 0)
             {
-                if (actionTimer.ElapsedMilliseconds > sendTimeLast + getCurrentThrottle())
+                if (m_ActionTimer.ElapsedMilliseconds > m_SendTimeLast + getCurrentThrottle())
                 {
                     connectionCommand commandToExecute = actionQueue.Dequeue();
                     executeAndLog(commandToExecute);
-                    sendTimeLast = actionTimer.ElapsedMilliseconds;
+                    m_SendTimeLast = m_ActionTimer.ElapsedMilliseconds;
                 }
             }
         }
@@ -242,21 +242,21 @@ namespace JerpDoesBots
         public void processUserUpdates(bool forceUpdate = false)    // For any users who needs anything written to DB
         {
             bool userWasUpdated = false;
-            if (forceUpdate || actionTimer.ElapsedMilliseconds > userUpdateLast + userUpdateThrottle)
+            if (forceUpdate || m_ActionTimer.ElapsedMilliseconds > m_UserUpdateLast + m_UserUpdateThrottle)
             {
-                if (userList.Count > 0)
+                if (m_UserList.Count > 0)
                 {
-                    foreach (userEntry user in userList.Values)
+                    foreach (userEntry user in m_UserList.Values)
                     {
                         if (user.needsUpdate)
                         {
-                            user.doUpdate(actionTimer.ElapsedMilliseconds);
+                            user.doUpdate(m_ActionTimer.ElapsedMilliseconds);
                             userWasUpdated = true;
                         }
                     }
                     if (userWasUpdated)
                     {
-                        userUpdateLast = actionTimer.ElapsedMilliseconds;
+                        m_UserUpdateLast = m_ActionTimer.ElapsedMilliseconds;
                     }
                 }
             }
@@ -422,10 +422,10 @@ namespace JerpDoesBots
                 }
             }
 
-            if (commandDef != null && commandDef.Run != null && commandDef.canUse(commandUser, actionTimer.ElapsedMilliseconds))
+            if (commandDef != null && commandDef.Run != null && commandDef.canUse(commandUser, m_ActionTimer.ElapsedMilliseconds))
             {
                 argumentString = message.Substring(Math.Min(message.Length, commandLength + 1));
-                commandDef.TimeLast = actionTimer.ElapsedMilliseconds;
+                commandDef.TimeLast = m_ActionTimer.ElapsedMilliseconds;
                 commandDef.Run(commandUser, argumentString);
                 return;
             }
@@ -438,14 +438,14 @@ namespace JerpDoesBots
         public userEntry checkCreateUser(string username, bool canCreate = true)
         {
             userEntry userEntry;
-            if (userList.ContainsKey(username) && userList[username] != null)
+            if (m_UserList.ContainsKey(username) && m_UserList[username] != null)
             {
-                userEntry = userList[username];
+                userEntry = m_UserList[username];
             }
             else if (canCreate)
             {
-                userEntry = new userEntry(username, botData);
-                userList[username] = userEntry;
+                userEntry = new userEntry(username, m_StorageDB);
+                m_UserList[username] = userEntry;
             }
             else
             {
@@ -821,7 +821,8 @@ namespace JerpDoesBots
 
         public jerpBot(logger useLog, botConfig aConfig)
 		{
-			m_Modules = new List<botModule>();
+            m_UserList = new Dictionary<string, userEntry>();
+            m_Modules = new List<botModule>();
 			botLog		= useLog;
 			actionQueue = new Queue<connectionCommand>();
             m_CoreConfig = aConfig;
@@ -836,7 +837,6 @@ namespace JerpDoesBots
 
             m_TwitchClient.Initialize(m_TwitchCredentials);
             m_TwitchClientJerp.Initialize(m_TwitchCredentialsJerp);
-
 
             m_TwitchAPI = new TwitchAPI();
             m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
@@ -869,8 +869,7 @@ namespace JerpDoesBots
             m_TwitchClient.Connect();
             m_TwitchClientJerp.Connect();
 
-			actionTimer = Stopwatch.StartNew();
-            
+			m_ActionTimer = Stopwatch.StartNew();
 
 			chatCommandList = new List<chatCommandDef>();
 			chatCommandList.Add(new chatCommandDef("botquit", this.quitCommand, false, false));
@@ -887,14 +886,12 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
-			botData = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
-			botData.Open();
+			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
+			m_StorageDB.Open();
 
 			string createViewerTableQuery = "CREATE TABLE IF NOT EXISTS viewers (viewerID INTEGER PRIMARY KEY ASC, name varchar(25) UNIQUE, loyalty INTEGER, points INTEGER)";
-			SQLiteCommand createViewerTableCommand = new SQLiteCommand(createViewerTableQuery, botData);
+			SQLiteCommand createViewerTableCommand = new SQLiteCommand(createViewerTableQuery, m_StorageDB);
 			createViewerTableCommand.ExecuteNonQuery();
-
-			userList = new Dictionary<string, userEntry>();
 		}
 	}
 }

@@ -115,7 +115,7 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage("First question is : " + getCurrentQuestion().getFormattedTitle());
 
                     m_Throttler.trigger();
-                    m_TimeSinceLastAnswer = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+                    m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
                     m_IsActive = true;
                 }
                 else
@@ -293,7 +293,7 @@ namespace JerpDoesBots
 		{
 			if (m_IsActive)
 			{
-                if (m_BotBrain.ActionTimer.ElapsedMilliseconds  > m_TimeSinceLastAnswer + m_TimeToAnswer)
+                if (m_BotBrain.actionTimer.ElapsedMilliseconds  > m_TimeSinceLastAnswer + m_TimeToAnswer)
                 {
                     m_BotBrain.sendDefaultChannelMessage("Time's up!  No-one successfully answered!");
                     advanceToNextQuestion(true);
@@ -330,7 +330,7 @@ namespace JerpDoesBots
                 m_Throttler.trigger();
                 m_BotBrain.sendDefaultChannelMessage("Next Question: " + getCurrentQuestion().getFormattedTitle());
             }
-            m_TimeSinceLastAnswer = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+            m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
         }
 
         private bool load()
