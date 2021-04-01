@@ -722,21 +722,12 @@ namespace JerpDoesBots
             if (e.ChatMessage.Channel == m_DefaultChannel)
             {
                 userEntry messageUser = checkCreateUser(e.ChatMessage.Username);
-                foreach (KeyValuePair<string, string> badgeEntry in e.ChatMessage.Badges)
-                {
-                    switch (badgeEntry.Key)
-                    {
-                        case "broadcaster":
-                            messageUser.isBroadcaster = true;
-                            break;
-                        case "moderator":
-                            messageUser.isModerator = true;
-                            break;
-                        case "subscriber":
-                            messageUser.isSubscriber = true;
-                            break;
-                    }
-                }
+
+                messageUser.isBroadcaster = e.ChatMessage.IsBroadcaster;
+                messageUser.isModerator = e.ChatMessage.IsModerator;
+                messageUser.isSubscriber = e.ChatMessage.IsSubscriber;
+                messageUser.isVIP = e.ChatMessage.IsVip;
+                messageUser.isPartner = e.ChatMessage.IsPartner;
 
                 processUserMessage(e.ChatMessage.Username, e.ChatMessage.Message);
             }
