@@ -34,6 +34,9 @@ namespace JerpDoesBots
         private bool m_HasChatConnection = false;
         private string m_DefaultChannel;
         private bool m_IsReadyToClose = false; // Ready to completely end the program
+        private int m_SubsThisSession = 0;
+
+        public int subsThisSession { get { return m_SubsThisSession; } }
 
         Random m_Randomizer = new Random();
 
@@ -341,6 +344,11 @@ namespace JerpDoesBots
                 sendChannelMessage(m_DefaultChannel, "Current view count: " + m_ViewersLast);
             else
                 sendChannelMessage(m_DefaultChannel, "Stream isn't live - check back later.");
+        }
+
+        public void getNewSubCount(userEntry commandUser, string argumentString)
+        {
+            sendChannelMessage(m_DefaultChannel, string.Format("{0} new subscriber(s) this session.", m_SubsThisSession.ToString()));
         }
 
         public void getHelpString(userEntry commandUser, string argumentString)
@@ -733,6 +741,26 @@ namespace JerpDoesBots
             }
         }
 
+        private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
+        {
+            m_SubsThisSession++;
+        }
+
+        private void Client_OnCommunitySubscription(object sender, OnCommunitySubscriptionArgs e)
+        {
+            m_SubsThisSession++;
+        }
+
+        private void Client_OnReSubscribe(object sender, OnReSubscriberArgs e)
+        {
+            m_SubsThisSession++;
+        }
+
+        private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
+        {
+            m_SubsThisSession++;
+        }
+
         private void Client_OnLog(object sender, OnLogArgs e)
         {
             Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
@@ -856,6 +884,10 @@ namespace JerpDoesBots
             m_TwitchClient.OnMessageReceived += Client_OnMessageReceived;
             m_TwitchClient.OnUserJoined += Client_OnUserJoined;
             m_TwitchClient.OnUserLeft += Client_OnUserLeft;
+            m_TwitchClient.OnNewSubscriber += Client_OnNewSubscriber;
+            m_TwitchClient.OnCommunitySubscription += Client_OnCommunitySubscription;
+            m_TwitchClient.OnReSubscriber += Client_OnReSubscribe;
+            m_TwitchClient.OnGiftedSubscription += Client_OnGiftedSubscription;
 
             m_TwitchClient.Connect();
             m_TwitchClientJerp.Connect();
@@ -875,6 +907,8 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
             chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
             chatCommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
+            chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, true));
+
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
