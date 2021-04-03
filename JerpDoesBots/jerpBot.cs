@@ -38,6 +38,15 @@ namespace JerpDoesBots
 
         public int subsThisSession { get { return m_SubsThisSession; } }
 
+
+        public TimeSpan timeSinceLive {
+            get {
+                // TODO: Handle this properly if not live / not nullable
+                DateTime curTime = DateTime.Now;
+                return curTime.Subtract(m_LiveStartTime);
+            }
+        }
+
         Random m_Randomizer = new Random();
 
         public Random randomizer { get { return m_Randomizer; } }
@@ -556,9 +565,8 @@ namespace JerpDoesBots
         {
             if (m_IsLive)
             {
-                DateTime curTime = DateTime.Now;
-                TimeSpan timeSinceLive = curTime.Subtract(m_LiveStartTime);
-                sendDefaultChannelMessage(string.Format("Stream has been live for {0} hours, {1} minutes.", timeSinceLive.Hours, timeSinceLive.Minutes));
+                TimeSpan tempTimeSinceLive = timeSinceLive;
+                sendDefaultChannelMessage(string.Format("Stream has been live for {0} hours, {1} minutes.", tempTimeSinceLive.Hours, tempTimeSinceLive.Minutes));
             }
             else
             {

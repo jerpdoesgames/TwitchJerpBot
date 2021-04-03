@@ -23,10 +23,16 @@ namespace JerpDoesBots
 
         private int getHoursPassed()
         {
-            const long msPerHour = 1000 * 60 * 60;
-            float hoursPassed = m_BotBrain.actionTimer.ElapsedMilliseconds / msPerHour;
 
-            return (int)(Math.Floor(hoursPassed) + m_HoursPassedOffset);
+            if (m_BotBrain.IsLive)
+            {
+                TimeSpan tempTimeSinceLive = m_BotBrain.timeSinceLive;
+                return (int)tempTimeSinceLive.TotalHours + m_HoursPassedOffset;
+            }
+            else
+            {
+                return 0;
+            }
         }
 
         private string getDrinkMessage(long aTimePassed)
