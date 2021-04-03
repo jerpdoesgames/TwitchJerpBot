@@ -558,7 +558,7 @@ namespace JerpDoesBots
             {
                 DateTime curTime = DateTime.Now;
                 TimeSpan timeSinceLive = curTime.Subtract(m_LiveStartTime);
-                sendDefaultChannelMessage(string.Format("Stream has been live for {0} hours, {1 minutes}.", timeSinceLive.Hours, timeSinceLive.Minutes));
+                sendDefaultChannelMessage(string.Format("Stream has been live for {0} hours, {1} minutes.", timeSinceLive.Hours, timeSinceLive.Minutes));
             }
             else
             {
