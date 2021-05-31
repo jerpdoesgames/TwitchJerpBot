@@ -15,8 +15,8 @@ namespace JerpDoesBots
 {
     class jerpBot
     {
-        ConnectionCredentials m_TwitchCredentials;
-        ConnectionCredentials m_TwitchCredentialsJerp;
+        ConnectionCredentials m_TwitchCredentialsBot;
+        ConnectionCredentials m_TwitchCredentialsOwner;
         botConfig m_CoreConfig;
         TwitchClient m_TwitchClient;
         TwitchClient m_TwitchClientJerp;
@@ -93,6 +93,9 @@ namespace JerpDoesBots
         private string m_Game = "";
         public string game { get { return m_Game; } }
 
+        private TwitchLib.Api.Helix.Models.Common.Tag[] m_Tags;
+        public TwitchLib.Api.Helix.Models.Common.Tag[] tags { get { return m_Tags; } }
+
         private long m_LineCount = 0;   // Total lines
         public long lineCount { get { return m_LineCount; } }
 
@@ -149,6 +152,25 @@ namespace JerpDoesBots
         private bool isValidPrivMsg(connectionCommand commandToExecute)
         {
             return (!string.IsNullOrEmpty(commandToExecute.getMessage()) && !string.IsNullOrEmpty(commandToExecute.getTarget()));
+        }
+        public bool tagInList(string aTag, TwitchLib.Api.Helix.Models.Common.Tag[] aTagList)
+        {
+            if (aTagList != null)
+            {
+                for (int i = 0; i < aTagList.Length; i++)
+                {
+                    TwitchLib.Api.Helix.Models.Common.Tag curTag = aTagList[i];
+
+                    // Rather than require a language to be specified, just check every language for a match.  Probably not a performance concern since this is running locally and Twitch is giving you every language by default.
+                    foreach (KeyValuePair<string, string> curLocale in aTagList[i].LocalizationNames)
+                    {
+                        if (aTag.ToLower() == curLocale.Value.ToLower())
+                            return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public void executeAndLog(connectionCommand commandToExecute)
@@ -724,7 +746,9 @@ namespace JerpDoesBots
         {
             m_HasChatConnection = true;
             Console.WriteLine($"Connected to {e.AutoJoinChannel}");
+            requestChannelInfo();
             m_TwitchClient.JoinChannel(m_DefaultChannel);
+            
         }
 
         private void Client_OnConnectedJerp(object sender, OnConnectedArgs e)
@@ -815,12 +839,24 @@ namespace JerpDoesBots
 
         // ==========================================================
 
+        private void requestChannelInfo()
+        {
+            TwitchLib.Api.V5.Models.Channels.Channel channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
+            m_Game = channelInfo.Game;
+
+            Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.Id));
+            getStreamTagsTask.Wait();
+
+            m_Tags = getStreamTagsTask.Result.Data;
+        }
+
         private void ParseStreamData(TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream aStream)
         {
+            requestChannelInfo();
             if (aStream != null)
             {
                 m_IsLive = true;
-                m_Game = aStream.GameName;
+                // m_Game = aStream.GameName;
                 m_ViewersLast = aStream.ViewerCount;
                 m_LiveStartTime = aStream.StartedAt;
             }
@@ -856,14 +892,14 @@ namespace JerpDoesBots
 
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
 
-            m_TwitchCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
-            m_TwitchCredentialsJerp = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
+            m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
+            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
 
             m_TwitchClient = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
             m_TwitchClientJerp = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
 
-            m_TwitchClient.Initialize(m_TwitchCredentials);
-            m_TwitchClientJerp.Initialize(m_TwitchCredentialsJerp);
+            m_TwitchClient.Initialize(m_TwitchCredentialsBot);
+            m_TwitchClientJerp.Initialize(m_TwitchCredentialsOwner);
 
             m_TwitchAPI = new TwitchAPI();
             m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;

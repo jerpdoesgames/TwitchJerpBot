@@ -12,11 +12,32 @@ namespace JerpDoesBots
 
         private throttler m_Throttler;
 
+        private bool isValidTags(int aIndex)
+        {
+            if (m_Config.messageList[m_MessageIndex].tags == null) // No tags to worry about
+            {
+                return true;
+            }
+            else
+            {
+                for (int i = 0; i < m_Config.messageList[aIndex].tags.Count; i++)
+                {
+                    if (!m_BotBrain.tagInList(m_Config.messageList[aIndex].tags[i], m_BotBrain.tags))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         private bool isValidMessage(int aIndex)
         {
             if (m_MessageIndex < m_Config.messageList.Count)
             {
-                if (m_Config.messageList[m_MessageIndex].games == null || m_Config.messageList[m_MessageIndex].games.Contains(m_BotBrain.game))
+                if (
+                    (m_Config.messageList[m_MessageIndex].games == null || m_Config.messageList[m_MessageIndex].games.Contains(m_BotBrain.game)) &&
+                    isValidTags(m_MessageIndex)
+                   )
                 {
                     return true;
                 }
