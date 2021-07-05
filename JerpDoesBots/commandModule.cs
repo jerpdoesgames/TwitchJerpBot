@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Data.SQLite;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Net;
 
 namespace JerpDoesBots
 {
@@ -48,6 +51,65 @@ namespace JerpDoesBots
 			return getCommandReader;
 		}
 
+		const int CUSTOM_ARG_COUNT_MAX = 9;
+
+		private struct customCommandArg
+		{
+			public bool isUrlEncoded { get; set; }
+			public string matchString { get; set; }
+			public int index { get; set; }
+
+			public customCommandArg(string aMatchString, int aIndex, bool aUrlEncoded)
+			{
+				isUrlEncoded = aUrlEncoded;
+				index = aIndex;
+				matchString = aMatchString;
+			}
+		}
+
+		public string processCustomCommandArgs(string aCommandMessage, string aArgumentString)	// Process {0}, {1e}, etc. in custom commands.  'e' denotes url encoding.
+        {
+			List<customCommandArg> customArgList = new List<customCommandArg>();
+			
+			string argPattern = @"\{[0-9]e{0,1}\}";
+			string numPattern = @"\d+";
+			int highestArgNum = -1;
+			foreach (Match match in Regex.Matches(aCommandMessage, argPattern))
+            {
+				Match numMatch = Regex.Match(match.Value, numPattern);
+				int numValue;
+					
+				if (numMatch.Success && Int32.TryParse(numMatch.Value, out numValue))
+                {
+					highestArgNum = Math.Min(numValue, CUSTOM_ARG_COUNT_MAX);
+
+					bool isUrlEncoded = match.Value.IndexOf("e") >= 0;
+					customArgList.Add(new customCommandArg(match.Value, numValue, isUrlEncoded));
+				}
+
+
+            }
+
+			if (highestArgNum >= 0)
+            {
+				string[] messageArgs = aArgumentString.Split(new char[] { ' ' }, highestArgNum + 2, StringSplitOptions.RemoveEmptyEntries);
+				List<string> messageArgList = new List<string>(messageArgs);
+				messageArgList.RemoveAt(0);	// Remove command name
+
+
+				foreach(customCommandArg customArg in customArgList)
+                {
+					if (customArg.index < messageArgList.Count)
+                    {
+						string messageArg = customArg.isUrlEncoded ? WebUtility.UrlEncode(messageArgList[customArg.index]) : messageArgList[customArg.index];
+						aCommandMessage = aCommandMessage.Replace(customArg.matchString, messageArg);
+					}
+				}
+			}
+
+			return aCommandMessage;
+        }
+
 		public chatCommandDef get(string commandName) // TODO: Add a loader so this can be mostly reused but not return a chatCommandDef
 		{
 			if (!string.IsNullOrEmpty(commandName))
@@ -62,7 +124,10 @@ namespace JerpDoesBots
 					// TODO: Something that allows tokens within the string (?)
 					// TODO: Something to allow other commands to be executed via template-like behavior?
 
-					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString) { m_BotBrain.sendDefaultChannelMessage(message); };
+					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString) {
+						string processedMessage = processCustomCommandArgs(message, argumentString);
+						m_BotBrain.sendDefaultChannelMessage(processedMessage);
+					};
 
 					return new chatCommandDef(commandName, customCommandDelegate, true, allowNormal);
 				}

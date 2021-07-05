@@ -303,19 +303,7 @@ namespace JerpDoesBots
             queueAction(commandQuit);
         }
 
-        public string[] processCommandArguments(string argumentString)  // TODO: this will be replaced by something to grab x number of arguments
-        {
-            string[] argumentList = new string[0];
-
-            if (!string.IsNullOrEmpty(argumentString))
-            {
-                argumentList = argumentString.Split(' ');
-            }
-
-            return argumentList;
-        }
-
-        public string getFirstTokenString(string inputString)   // Should be static
+        public static string getFirstTokenString(string inputString)
         {
             int subEnd = inputString.IndexOf(' ');
             if (subEnd > 0)
