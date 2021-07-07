@@ -3,6 +3,7 @@ using System.Data.SQLite;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Net;
+using System.Globalization;
 
 namespace JerpDoesBots
 {
@@ -56,14 +57,20 @@ namespace JerpDoesBots
 		private struct customCommandArg
 		{
 			public bool isUrlEncoded { get; set; }
+			public bool isUpperCase { get; set; }
+			public bool isLowerCase { get; set; }
+			public bool isTitleCase { get; set; }
 			public string matchString { get; set; }
 			public int index { get; set; }
 
-			public customCommandArg(string aMatchString, int aIndex, bool aUrlEncoded)
+			public customCommandArg(string aMatchString, int aIndex, bool aUrlEncoded, bool aIsTitleCase, bool aIsUpperCase, bool aIsLowerCase)
 			{
 				isUrlEncoded = aUrlEncoded;
 				index = aIndex;
 				matchString = aMatchString;
+				isTitleCase = aIsTitleCase;
+				isUpperCase = aIsUpperCase;
+				isLowerCase = aIsLowerCase;
 			}
 		}
 
@@ -71,9 +78,12 @@ namespace JerpDoesBots
         {
 			List<customCommandArg> customArgList = new List<customCommandArg>();
 			
-			string argPattern = @"\{[0-9]e{0,1}\}";
+			string argPattern = @"\{[0-9][eut]*\}";
 			string numPattern = @"\d+";
 			int highestArgNum = -1;
+
+			TextInfo tempTextInfo = new CultureInfo("en-US", false).TextInfo;	// TODO: Move somewhere a bit more global
+
 			foreach (Match match in Regex.Matches(aCommandMessage, argPattern))
             {
 				Match numMatch = Regex.Match(match.Value, numPattern);
@@ -84,10 +94,12 @@ namespace JerpDoesBots
 					highestArgNum = Math.Min(numValue, CUSTOM_ARG_COUNT_MAX);
 
 					bool isUrlEncoded = match.Value.IndexOf("e") >= 0;
-					customArgList.Add(new customCommandArg(match.Value, numValue, isUrlEncoded));
+					bool isTitleCase = match.Value.IndexOf("t") >= 0;
+					bool isUpperCase = match.Value.IndexOf("u") >= 0;
+					bool isLowerCase = match.Value.IndexOf("l") >= 0;
+
+					customArgList.Add(new customCommandArg(match.Value, numValue, isUrlEncoded, isTitleCase, isUpperCase, isLowerCase));
 				}
-
-
             }
 
 			if (highestArgNum >= 0)
@@ -96,12 +108,16 @@ namespace JerpDoesBots
 				List<string> messageArgList = new List<string>(messageArgs);
 				messageArgList.RemoveAt(0);	// Remove command name
 
-
 				foreach(customCommandArg customArg in customArgList)
                 {
 					if (customArg.index < messageArgList.Count)
                     {
-						string messageArg = customArg.isUrlEncoded ? WebUtility.UrlEncode(messageArgList[customArg.index]) : messageArgList[customArg.index];
+						string messageArg = messageArgList[customArg.index];
+						messageArg = customArg.isTitleCase? tempTextInfo.ToTitleCase(messageArg) : messageArg;
+						messageArg = customArg.isUpperCase ? messageArg.ToUpper() : messageArg;
+						messageArg = customArg.isLowerCase ? messageArg.ToLower() : messageArg;
+						messageArg = customArg.isUrlEncoded ? WebUtility.UrlEncode(messageArg) : messageArg;
+
 						aCommandMessage = aCommandMessage.Replace(customArg.matchString, messageArg);
 					}
 				}
@@ -120,9 +136,6 @@ namespace JerpDoesBots
 				{
 					string message = Convert.ToString(getCommandReader["message"]);
 					bool allowNormal = Convert.ToBoolean(int.Parse(Convert.ToString(getCommandReader["allow_normal"])));    // Don't look at me, I'm HIDEOUS!
-
-					// TODO: Something that allows tokens within the string (?)
-					// TODO: Something to allow other commands to be executed via template-like behavior?
 
 					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString) {
 						string processedMessage = processCustomCommandArgs(message, argumentString);
