@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
@@ -19,16 +21,33 @@ namespace JerpDoesBots
         public Regex marioMakerCodeReg = new Regex(@"^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}$");
         public Regex marioMaker2CodeReg = new Regex(@"^[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}$");
 
+        class queueConfigWeightedRandom
+        {
+            public float subModifier { get; set; }
+            public float followModifier { get; set; }
+            public float valueBase { get; set; }
+            public float valuePerMinute { get; set; }
+            public int maxMinutesPassed { get; set; }
+        }
+
+        class queueConfig
+        {
+            public queueConfigWeightedRandom weightedRandom { get; set; }
+        }
+
         public struct queueData
 		{
 			public userEntry user;
 			public string data;
-
+            public DateTime addTime;
+            public int randomWeight;
 			public queueData(userEntry aUser, string aData = null)
 			{
 				user = aUser;
 				data = aData;
-			}
+                addTime = DateTime.Now.ToUniversalTime();
+                randomWeight = 0;
+            }
 		}
 
         private throttler m_Throttler;
@@ -43,8 +62,10 @@ namespace JerpDoesBots
 		private string description;
 		private string m_QueueType = QUEUE_TYPE_PLAIN;
 		private string m_QueueMode = QUEUE_MODE_NORMAL;
+        private bool m_LoadSuccessful = false;
+        private queueConfig m_config;
 
-		private string joinString()
+        private string joinString()
 		{
             if (isActive)
             {
@@ -304,6 +325,36 @@ namespace JerpDoesBots
             else
             {
                 m_BotBrain.sendDefaultChannelMessage("Could not find " + commandUser.Nickname + " in the queue.");
+            }
+        }
+
+        public void replace(userEntry commandUser, string argumentString)
+        {
+            if (m_QueueType != QUEUE_TYPE_PLAIN)
+            {
+                int totalEntries;
+                int position = getPosition(commandUser, out totalEntries);
+
+                if (validateUser(commandUser) && totalEntries > 0)
+                {
+                    if (validateInput(argumentString))
+                    {
+                        queueData curEntry = m_EntryList[position - 1];
+                        curEntry.data = argumentString;
+
+                        if (totalEntries > 1)
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s next entry (in position " + position + ") has been updated.  They have " + totalEntries + " entries total.");
+                        }
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s entry in position " + position + " has been updated.");
+                        }
+                    } // TODO: Consider message for invalid entries.
+                }
+                else
+                {
+                    m_BotBrain.sendDefaultChannelMessage("Could not find " + commandUser.Nickname + " in the queue.");
+                }
             }
         }
 
@@ -588,6 +639,88 @@ namespace JerpDoesBots
             }
         }
 
+        public float calculateUserWeight(queueData aData)
+        {
+            float outputWeight  = m_LoadSuccessful ? m_config.weightedRandom.valueBase : 100.0f;
+
+            float valuePerMinute = m_LoadSuccessful ? m_config.weightedRandom.valuePerMinute : 2.0f;
+            int maxMinutesPassed = m_LoadSuccessful ? m_config.weightedRandom.maxMinutesPassed : 120;
+
+            DateTime curTime = DateTime.Now.ToUniversalTime();
+            TimeSpan timeSinceAdd = curTime.Subtract(aData.addTime);
+            int minutesSinceAdd = (int)timeSinceAdd.TotalMinutes;
+
+            outputWeight += (Math.Min(minutesSinceAdd, maxMinutesPassed) * valuePerMinute);
+
+            if (aData.user.isFollower)
+                outputWeight *= (m_LoadSuccessful ? m_config.weightedRandom.followModifier : 1.25f);
+
+            if (aData.user.isSubscriber)
+                outputWeight *= (m_LoadSuccessful ? m_config.weightedRandom.subModifier : 1.15f);
+
+            return outputWeight;
+        }
+
+        public int calculateTotalUserWeight()
+        {
+            int totalWeight = 0;
+            queueData curEntry;
+
+            for (int i = 0; i < m_EntryList.Count; i++)
+            {
+                curEntry = m_EntryList[i];
+                curEntry.randomWeight = (int)Math.Round(calculateUserWeight(m_EntryList[i]));
+                totalWeight += curEntry.randomWeight;
+            }
+
+            return totalWeight;
+        }
+
+        public void weightedRandom(userEntry commandUser, string argumentString)
+        {
+            int userCount = m_EntryList.Count();
+
+            if (userCount > 0)
+            {
+                int totalWeight = calculateTotalUserWeight();
+                int targValue = m_BotBrain.randomizer.Next(0, totalWeight);
+                int curWeight = 0;
+                queueData curEntry = m_EntryList[0];
+
+                for (int i = 0; i < m_EntryList.Count; i++)
+                {
+                    curEntry = m_EntryList[i];
+                    if (i == m_EntryList.Count - 1 || (targValue >= curWeight && targValue < (curWeight + curEntry.randomWeight)))
+                    {
+                        break;  // Found user
+                    }
+                    curWeight += curEntry.randomWeight;
+                }
+
+                m_EntryList.Remove(curEntry);
+                switch (m_QueueType)
+                {
+                    case QUEUE_TYPE_PLAIN:
+                        m_BotBrain.sendDefaultChannelMessage(curEntry.user.Nickname + " has been (weighted) randomly chosen and removed from the queue.");
+                        break;
+                    case QUEUE_TYPE_MARIOMAKER:
+                    case QUEUE_TYPE_MARIOMAKER2:
+                        m_BotBrain.sendDefaultChannelMessage(curEntry.user.Nickname + " has been (weighted) randomly chosen with level code: " + curEntry.data);
+                        break;
+                    case QUEUE_TYPE_GENERIC:
+                        m_BotBrain.sendDefaultChannelMessage(curEntry.user.Nickname + " has been (weighted) randomly chosen: " + curEntry.data);
+                        break;
+                }
+            }
+            else
+            {
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage("No entries in this queue.  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage("No entries in the queue. How about opening it back up again so people can enter?");
+            }
+        }
+
         public override void frame()
 		{
 			if (isActive)
@@ -615,6 +748,21 @@ namespace JerpDoesBots
 			}
 		}
 
+        private bool load()
+        {
+            string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_queuesystem.json");
+            if (File.Exists(configPath))
+            {
+                string queueConfigString = File.ReadAllText(configPath);
+                if (!string.IsNullOrEmpty(queueConfigString))
+                {
+                    m_config = new JavaScriptSerializer().Deserialize<queueConfig>(queueConfigString);
+                    return true;
+                }
+            }
+            return false;
+        }
+
 		public queueSystem(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
             m_Throttler = new throttler(aJerpBot);
@@ -623,7 +771,9 @@ namespace JerpDoesBots
             m_EntryList = new List<queueData>();
 			usersAddedRecently = new List<queueData>();
 
-			chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);
+            m_LoadSuccessful = load();
+
+            chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);
 			tempDef.addSubCommand(new chatCommandDef("open", open, true, false));
 			tempDef.addSubCommand(new chatCommandDef("close", close, true, false));
 			tempDef.addSubCommand(new chatCommandDef("reset", resetEntries, true, false));
@@ -637,9 +787,11 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("setmax", setMaxCount, true, false));
             tempDef.addSubCommand(new chatCommandDef("list", list, true, true));
             tempDef.addSubCommand(new chatCommandDef("leave", leave, true, true));
-            tempDef.addSubCommand(new chatCommandDef("random", random, true, true));
-            tempDef.addSubCommand(new chatCommandDef("subrandom", subRandom, true, true));
-            tempDef.addSubCommand(new chatCommandDef("subNext", subNext, true, true));
+            tempDef.addSubCommand(new chatCommandDef("random", random, true, false));
+            tempDef.addSubCommand(new chatCommandDef("weightedrandom", weightedRandom, true, false));
+            tempDef.addSubCommand(new chatCommandDef("subrandom", subRandom, true, false));
+            tempDef.addSubCommand(new chatCommandDef("replace", replace, true, true));
+            tempDef.addSubCommand(new chatCommandDef("subNext", subNext, true, false));
             tempDef.UseGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 
