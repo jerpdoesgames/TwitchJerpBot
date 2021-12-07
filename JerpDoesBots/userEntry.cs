@@ -18,6 +18,9 @@ namespace JerpDoesBots
 		private int		m_Loyalty					= 0;
 		private int		m_Points					= 0;
 		private bool	m_IsFollower				= false;
+		private bool	m_isVIP						= false;
+		private bool	m_isPartner					= false;
+
 		private bool	m_IsSubscriber			= false;
 		private bool	m_IsTurbo					= false;
 		private bool	m_IsModerator				= false;
@@ -44,6 +47,9 @@ namespace JerpDoesBots
 		public bool needsUpdate		{ get { return m_NeedsUpdate; } }
 		public bool isSubscriber	{ get { return m_IsSubscriber; } set { m_IsSubscriber = value; } }
 		public bool isFollower		{ get { return m_IsFollower; } }
+		public bool isVIP			{ get { return m_isVIP; } set { m_isVIP = value; } }
+		public bool isPartner { get { return m_isPartner; } set { m_isPartner = value; } }
+
 		public bool isTurbo			{ get { return m_IsTurbo; } }
 		public bool isModerator		{ get { return m_IsModerator; } set { m_IsModerator = value; } }
 		public bool isHosting		{

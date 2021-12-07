@@ -7,15 +7,12 @@ namespace JerpDoesBots
 {
 	class raffle : botModule
 	{
-		private long messageThrottle = 15000;
-		private long messageLast = 0;
+		private throttler m_Throttler;
         private readonly object messageLastLock = new object();
         private bool isActive = false;
 		private Dictionary<string, userEntry> userList;
 		private List<userEntry> usersAddedRecently;
 		private bool userAddedRecently = false;
-		private long lastLineCount = -2;
-		private long lineCountMinimum = 8;
 		string description;
 
 		public void about(userEntry commandUser, string argumentString)
@@ -71,7 +68,7 @@ namespace JerpDoesBots
                 resetEntries();
                 m_BotBrain.sendDefaultChannelMessage("Raffle has been reset and opened.  Type !raffle to enter.");
 
-                messageLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+				m_Throttler.trigger();
 
                 isActive = true;
             }
@@ -127,30 +124,30 @@ namespace JerpDoesBots
 			{
                 lock (messageLastLock)
                 {
-                    if (m_BotBrain.LineCount > lastLineCount + lineCountMinimum)
-                    {
-                        if (m_BotBrain.ActionTimer.ElapsedMilliseconds > messageLast + messageThrottle)
-                        {
-                            if (userAddedRecently)
-                            {
-                                m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " user(s) have been added to the raffle since last update.  Type !raffle to be added.");
-                                usersAddedRecently.Clear();
-                                userAddedRecently = false;
-                            }
-                            else
-                                m_BotBrain.sendDefaultChannelMessage("A raffle is currently open.  Type !raffle to be added.");
+					if (m_Throttler.isReady)
+					{
+						if (userAddedRecently)
+						{
+							m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " user(s) have been added to the raffle since last update.  Type !raffle to be added.");
+							usersAddedRecently.Clear();
+							userAddedRecently = false;
+						}
+						else
+							m_BotBrain.sendDefaultChannelMessage("A raffle is currently open.  Type !raffle to be added.");
 
-                            messageLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                            lastLineCount = m_BotBrain.LineCount;
-                        }
-
-                    }
-                }
+						m_Throttler.trigger();
+					}
+				}
 			}
 		}
 
 		public raffle(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
+			m_Throttler = new throttler(aJerpBot);
+			m_Throttler.waitTimeMax = 15000;
+			m_Throttler.lineCountMinimum = 8;
+			m_Throttler.messagesReduceTimer = false;
+
 			userList = new Dictionary<string, userEntry>();
 			usersAddedRecently = new List<userEntry>();
 

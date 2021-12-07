@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>JerpDoesBots</RootNamespace>
     <AssemblyName>JerpDoesBots</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -163,6 +163,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="delaySender.cs" />
+    <Compile Include="hostMessages.cs" />
+    <Compile Include="hostMessagesConfig.cs" />
     <Compile Include="lurkShout.cs" />
     <Compile Include="autoShoutout.cs" />
     <Compile Include="botCommand.cs" />

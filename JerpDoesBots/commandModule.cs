@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Data.SQLite;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Net;
+using System.Globalization;
 
 namespace JerpDoesBots
 {
@@ -17,7 +21,7 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(useGame))
 				return useGame;
 			else
-				return m_BotBrain.Game;
+				return m_BotBrain.game;
 		}
 
 		public void setGame(userEntry commandUser, string argumentString)
@@ -32,14 +36,14 @@ namespace JerpDoesBots
 		public void clearGame(userEntry commandUser, string argumentString)
 		{
 			useGame = null;
-			m_BotBrain.sendDefaultChannelMessage("Auto-select mode resumed for game-specific commands. ("+m_BotBrain.Game+")");
+			m_BotBrain.sendDefaultChannelMessage("Auto-select mode resumed for game-specific commands. ("+m_BotBrain.game+")");
 		}
 
 		public SQLiteDataReader loadCommand(string commandName)
 		{
 			string getCommandQuery = selectQuery;
 
-			SQLiteCommand getCommandCommand = new SQLiteCommand(getCommandQuery, m_BotBrain.BotData);
+			SQLiteCommand getCommandCommand = new SQLiteCommand(getCommandQuery, m_BotBrain.storageDB);
 
 			getCommandCommand.Parameters.Add(new SQLiteParameter("@param1", commandName));
 			getCommandCommand.Parameters.Add(new SQLiteParameter("@param2", getGameString()));            // Current Game (unused in base)
@@ -47,6 +51,80 @@ namespace JerpDoesBots
 
 			return getCommandReader;
 		}
+
+		const int CUSTOM_ARG_COUNT_MAX = 9;
+
+		private struct customCommandArg
+		{
+			public bool isUrlEncoded { get; set; }
+			public bool isUpperCase { get; set; }
+			public bool isLowerCase { get; set; }
+			public bool isTitleCase { get; set; }
+			public string matchString { get; set; }
+			public int index { get; set; }
+
+			public customCommandArg(string aMatchString, int aIndex, bool aUrlEncoded, bool aIsTitleCase, bool aIsUpperCase, bool aIsLowerCase)
+			{
+				isUrlEncoded = aUrlEncoded;
+				index = aIndex;
+				matchString = aMatchString;
+				isTitleCase = aIsTitleCase;
+				isUpperCase = aIsUpperCase;
+				isLowerCase = aIsLowerCase;
+			}
+		}
+
+		public string processCustomCommandArgs(string aCommandMessage, string aArgumentString)	// Process {0}, {1e}, etc. in custom commands.  'e' denotes url encoding.
+        {
+			List<customCommandArg> customArgList = new List<customCommandArg>();
+			
+			string argPattern = @"\{[0-9][eut]*\}";
+			string numPattern = @"\d+";
+			int highestArgNum = -1;
+
+			TextInfo tempTextInfo = new CultureInfo("en-US", false).TextInfo;	// TODO: Move somewhere a bit more global
+
+			foreach (Match match in Regex.Matches(aCommandMessage, argPattern))
+            {
+				Match numMatch = Regex.Match(match.Value, numPattern);
+				int numValue;
+					
+				if (numMatch.Success && Int32.TryParse(numMatch.Value, out numValue))
+                {
+					highestArgNum = Math.Min(numValue, CUSTOM_ARG_COUNT_MAX);
+
+					bool isUrlEncoded = match.Value.IndexOf("e") >= 0;
+					bool isTitleCase = match.Value.IndexOf("t") >= 0;
+					bool isUpperCase = match.Value.IndexOf("u") >= 0;
+					bool isLowerCase = match.Value.IndexOf("l") >= 0;
+
+					customArgList.Add(new customCommandArg(match.Value, numValue, isUrlEncoded, isTitleCase, isUpperCase, isLowerCase));
+				}
+            }
+
+			if (highestArgNum >= 0)
+            {
+				string[] messageArgs = aArgumentString.Split(new char[] { ' ' }, highestArgNum + 2, StringSplitOptions.RemoveEmptyEntries);
+				List<string> messageArgList = new List<string>(messageArgs);
+				messageArgList.RemoveAt(0);	// Remove command name
+
+				foreach(customCommandArg customArg in customArgList)
+                {
+					if (customArg.index < messageArgList.Count)
+                    {
+						string messageArg = messageArgList[customArg.index];
+						messageArg = customArg.isTitleCase? tempTextInfo.ToTitleCase(messageArg) : messageArg;
+						messageArg = customArg.isUpperCase ? messageArg.ToUpper() : messageArg;
+						messageArg = customArg.isLowerCase ? messageArg.ToLower() : messageArg;
+						messageArg = customArg.isUrlEncoded ? WebUtility.UrlEncode(messageArg) : messageArg;
+
+						aCommandMessage = aCommandMessage.Replace(customArg.matchString, messageArg);
+					}
+				}
+			}
+
+			return aCommandMessage;
+        }
 
 		public chatCommandDef get(string commandName) // TODO: Add a loader so this can be mostly reused but not return a chatCommandDef
 		{
@@ -59,10 +137,10 @@ namespace JerpDoesBots
 					string message = Convert.ToString(getCommandReader["message"]);
 					bool allowNormal = Convert.ToBoolean(int.Parse(Convert.ToString(getCommandReader["allow_normal"])));    // Don't look at me, I'm HIDEOUS!
 
-					// TODO: Something that allows tokens within the string (?)
-					// TODO: Something to allow other commands to be executed via template-like behavior?
-
-					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString) { m_BotBrain.sendDefaultChannelMessage(message); };
+					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString) {
+						string processedMessage = processCustomCommandArgs(message, argumentString);
+						m_BotBrain.sendDefaultChannelMessage(processedMessage);
+					};
 
 					return new chatCommandDef(commandName, customCommandDelegate, true, allowNormal);
 				}
@@ -96,7 +174,7 @@ namespace JerpDoesBots
 
 					string addCommandQuery = insertQuery;
 
-					SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.BotData);
+					SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.storageDB);
 
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param1", commandUser.Nickname));     // Submitter
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param2", commandUser.Nickname));     // Modifier (same)
@@ -127,7 +205,7 @@ namespace JerpDoesBots
 			{
 				string removeCommandQuery = removeQuery;
 
-				SQLiteCommand removeCommandCommand = new SQLiteCommand(removeCommandQuery, m_BotBrain.BotData);
+				SQLiteCommand removeCommandCommand = new SQLiteCommand(removeCommandQuery, m_BotBrain.storageDB);
 
 				removeCommandCommand.Parameters.Add(new SQLiteParameter("@param1", argumentString));
 				removeCommandCommand.Parameters.Add(new SQLiteParameter("@param2", getGameString()));            // Current Game (unused in base)
@@ -146,7 +224,7 @@ namespace JerpDoesBots
 		public virtual void initTable()
 		{
 			string createCommandTableQuery = createQuery;
-			SQLiteCommand createCommandTableCommand = new SQLiteCommand(createCommandTableQuery, m_BotBrain.BotData);
+			SQLiteCommand createCommandTableCommand = new SQLiteCommand(createCommandTableQuery, m_BotBrain.storageDB);
 			createCommandTableCommand.ExecuteNonQuery();
 		}
 

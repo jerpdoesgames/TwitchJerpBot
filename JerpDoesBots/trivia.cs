@@ -30,19 +30,15 @@ namespace JerpDoesBots
 
     class trivia : botModule
 	{
+        private throttler m_Throttler;
         private List<triviaCategory> m_Categories { get; set; }
         private Dictionary<userEntry, int> m_Scores;
         private long m_TimeToAnswer = 450000;
         private long m_TimeSinceLastAnswer = 0;
         private bool m_LoadSuccessful = false;
 
-		private long m_MessageThrottle = 60000;
-        private long m_MessageThrottleMax = 120000;
-		private long m_MessageTimeLast = 0;
 		private bool m_IsActive = false;
         private int m_TotalQuestions = 15;
-		private long m_LastLineCount = -2;
-		private long m_LineCountMinimum = 6;
         private List<triviaQuestion> m_Questions;
         private int m_CurrentQuestionIndex = 0;
 
@@ -87,7 +83,19 @@ namespace JerpDoesBots
             if (!string.IsNullOrEmpty(argumentString))
             {
                 List<string> tagList = new List<string>();
-                tagList = argumentString.Split(' ').ToList();
+
+                if (argumentString == "all")
+                {
+                    foreach (triviaCategory curCategory in m_Categories)
+                    {
+                        tagList.Add(curCategory.code);
+                    }
+                }
+                else
+                {
+                    tagList = argumentString.Split(' ').ToList();
+                }
+                
 
                 List<triviaQuestion> newQuestions = getQuestionsForTags(tagList);
                 string tagListString = string.Join(", ", tagList.ToArray());
@@ -106,9 +114,8 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage("A new Trivia game has started!  Topics include " + tagListString + " (" + m_Questions.Count + " questions total.)");
                     m_BotBrain.sendDefaultChannelMessage("First question is : " + getCurrentQuestion().getFormattedTitle());
 
-                    m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                    m_LastLineCount = m_BotBrain.LineCount;
-                    m_TimeSinceLastAnswer = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+                    m_Throttler.trigger();
+                    m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
                     m_IsActive = true;
                 }
                 else
@@ -118,7 +125,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("No tags specified, Trivia not started.");
+                m_BotBrain.sendDefaultChannelMessage("No tags specified, Trivia not started. (try using 'all' or 'topics')");
             }
 		}
 
@@ -286,29 +293,20 @@ namespace JerpDoesBots
 		{
 			if (m_IsActive)
 			{
-                if (m_BotBrain.ActionTimer.ElapsedMilliseconds  > m_TimeSinceLastAnswer + m_TimeToAnswer)
+                if (m_BotBrain.actionTimer.ElapsedMilliseconds  > m_TimeSinceLastAnswer + m_TimeToAnswer)
                 {
                     m_BotBrain.sendDefaultChannelMessage("Time's up!  No-one successfully answered!");
                     advanceToNextQuestion(true);
                 }
-                else
+                else if (m_Throttler.isReady)
                 {
-                    bool minTimeReached = m_BotBrain.ActionTimer.ElapsedMilliseconds > m_MessageTimeLast + m_MessageThrottle;
-                    bool maxTimeReached = m_BotBrain.ActionTimer.ElapsedMilliseconds > m_MessageTimeLast + m_MessageThrottleMax;
-                    bool linesPassedReached = m_BotBrain.LineCount > m_LastLineCount + m_LineCountMinimum;
+                    m_Throttler.trigger();
+                    string questionString = "";
+                    triviaQuestion currentQuestion = getCurrentQuestion();
+                    if (currentQuestion != null)
+                        questionString = "Current question is: " + getCurrentQuestion().getFormattedTitle();
 
-                    if (maxTimeReached || (minTimeReached && linesPassedReached))
-                    {
-                        string questionString = "";
-                        triviaQuestion currentQuestion = getCurrentQuestion();
-                        if (currentQuestion != null)
-                            questionString = "Current question is: " + getCurrentQuestion().getFormattedTitle();
-
-                        m_BotBrain.sendDefaultChannelMessage("A Trivia game's running!  " + questionString);
-
-                        m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
-                        m_LastLineCount = m_BotBrain.LineCount;
-                    }
+                    m_BotBrain.sendDefaultChannelMessage("A Trivia game's running!  " + questionString);
                 }
 			}
 		}
@@ -329,10 +327,10 @@ namespace JerpDoesBots
             }
             else
             {
-                m_MessageTimeLast = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+                m_Throttler.trigger();
                 m_BotBrain.sendDefaultChannelMessage("Next Question: " + getCurrentQuestion().getFormattedTitle());
             }
-            m_TimeSinceLastAnswer = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+            m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
         }
 
         private bool load()
@@ -374,6 +372,11 @@ namespace JerpDoesBots
 
         public trivia(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
+            m_Throttler = new throttler(aJerpBot);
+            m_Throttler.waitTimeMax = 120000;
+            m_Throttler.lineCountReductionMax = 15;
+            m_Throttler.lineCountReduction = 4000;
+
             m_LoadSuccessful = load();
             m_Scores = new Dictionary<userEntry, int>();
             m_Questions = new List<triviaQuestion>();

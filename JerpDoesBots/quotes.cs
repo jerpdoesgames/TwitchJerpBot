@@ -11,12 +11,12 @@ namespace JerpDoesBots
 			{
 				string addQuoteQuery = "INSERT INTO quotes (submitter, message, game) values (@param1, @param2, @param3)";
 
-				SQLiteCommand addQuoteCommand = new SQLiteCommand(addQuoteQuery, m_BotBrain.BotData);
+				SQLiteCommand addQuoteCommand = new SQLiteCommand(addQuoteQuery, m_BotBrain.storageDB);
 
 				string gameString;
 
-				if (m_BotBrain.Game.Length > 0)
-					gameString = m_BotBrain.Game;
+				if (m_BotBrain.game.Length > 0)
+					gameString = m_BotBrain.game;
 				else
 					gameString = "No Game";
 
@@ -26,7 +26,7 @@ namespace JerpDoesBots
 
 				if (addQuoteCommand.ExecuteNonQuery() > 0)
 				{
-					long lastInsertID = m_BotBrain.BotData.LastInsertRowId;
+					long lastInsertID = m_BotBrain.storageDB.LastInsertRowId;
 
 					m_BotBrain.sendDefaultChannelMessage("Quote " + lastInsertID + " added!");
 				}
@@ -48,7 +48,7 @@ namespace JerpDoesBots
 			{
 				string getQuoteQuery = "SELECT * FROM quotes WHERE quoteID=" + quoteID + " LIMIT 1";
 
-				SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, m_BotBrain.BotData);
+				SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, m_BotBrain.storageDB);
 				SQLiteDataReader getQuoteReader = getQuoteCommand.ExecuteReader();
 
 				if (getQuoteReader.HasRows && getQuoteReader.Read())
@@ -75,7 +75,7 @@ namespace JerpDoesBots
 			{
 				string removeQuoteQuery = "DELETE FROM quotes WHERE quoteID=" + quoteID;
 
-				SQLiteCommand removeQuoteCommand = new SQLiteCommand(removeQuoteQuery, m_BotBrain.BotData);
+				SQLiteCommand removeQuoteCommand = new SQLiteCommand(removeQuoteQuery, m_BotBrain.storageDB);
 
 				if (removeQuoteCommand.ExecuteNonQuery() > 0)
 				{
@@ -92,7 +92,7 @@ namespace JerpDoesBots
 		{
 			string getQuoteQuery = "SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1";
 
-			SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, m_BotBrain.BotData);
+			SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, m_BotBrain.storageDB);
 			SQLiteDataReader getQuoteReader = getQuoteCommand.ExecuteReader();
 
 			if (getQuoteReader.HasRows && getQuoteReader.Read())
@@ -119,7 +119,7 @@ namespace JerpDoesBots
 				if (Int32.TryParse(argumentList[0], out quoteID))
 				{
 					string editQuoteQuery = "UPDATE quotes SET message=@param1 WHERE quoteID=@param2";
-					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, m_BotBrain.BotData);
+					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, m_BotBrain.storageDB);
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param1", argumentList[1]));
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param2", quoteID));
 
@@ -144,7 +144,7 @@ namespace JerpDoesBots
 				if (Int32.TryParse(argumentList[0], out quoteID))
 				{
 					string editQuoteQuery = "UPDATE quotes SET game=@param1 WHERE quoteID=@param2";
-					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, m_BotBrain.BotData);
+					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, m_BotBrain.storageDB);
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param1", argumentList[1]));
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param2", quoteID));
 
@@ -163,7 +163,7 @@ namespace JerpDoesBots
 		public quotes(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			string createQuoteTableQuery = "CREATE TABLE IF NOT EXISTS quotes (quoteID INTEGER PRIMARY KEY ASC, submitter TEXT, message TEXT, game TEXT)";
-			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, m_BotBrain.BotData);
+			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, m_BotBrain.storageDB);
 			createQuoteTableCommand.ExecuteNonQuery();
 
 			chatCommandDef tempDef = new chatCommandDef("quote", display, true, true);

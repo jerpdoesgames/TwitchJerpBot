@@ -20,6 +20,7 @@ namespace JerpDoesBots
     public class soundCommandConfig
     {
         public List<soundCommandDef> soundList { get; set; }
+        public bool enabled { get; set; }
     }
 
     class soundCommands : botModule
@@ -35,6 +36,8 @@ namespace JerpDoesBots
         private float m_GlobalVolume = 0.5f;
         private bool m_IsEnabled = false;
 
+        public bool isEnabled { get { return m_IsEnabled; } set { m_IsEnabled = value; } }
+
         private bool onCooldown(soundCommandDef aSound, userEntry commandUser)
         {
             if (m_OutputDevice.PlaybackState == PlaybackState.Playing)
@@ -44,8 +47,8 @@ namespace JerpDoesBots
                 return false;
 
             if (
-                (m_BotBrain.ActionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_ALL > aSound.lastUsed) &&
-                (aSound != m_lastSound || m_BotBrain.ActionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_PERSOUND > aSound.lastUsed)
+                (m_BotBrain.actionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_ALL > aSound.lastUsed) &&
+                (aSound != m_lastSound || m_BotBrain.actionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_PERSOUND > aSound.lastUsed)
             )
             {
                 return false;
@@ -84,7 +87,7 @@ namespace JerpDoesBots
 
                     m_OutputDevice.Volume = Math.Min(soundVolume, 1.0f);
                     m_OutputDevice.Play();
-                    curSound.lastUsed = m_BotBrain.ActionTimer.ElapsedMilliseconds;
+                    curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
                     m_lastSound = curSound;
 
                     if (isRandom)
@@ -206,6 +209,8 @@ namespace JerpDoesBots
         {
             if (loadSounds())
             {
+                isEnabled = m_Config.enabled;
+
                 chatCommandDef tempDef = new chatCommandDef("sound", playSound, true, true);
                 tempDef.addSubCommand(new chatCommandDef("volume", setVolume, false, false));
                 tempDef.addSubCommand(new chatCommandDef("list", getList, true, true));
