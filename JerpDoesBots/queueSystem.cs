@@ -727,23 +727,26 @@ namespace JerpDoesBots
 			{
                 lock (messageLastLock)
                 {
-                    string newJoinString = joinString();
-                    if (!m_UpdateImmediately && userAddedRecently)
+                    if (m_Throttler.isReady)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " entries have been added to the queue since last update.  " + newJoinString);
-                        usersAddedRecently.Clear();
-                        userAddedRecently = false;
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(description))
-                            m_BotBrain.sendDefaultChannelMessage("A queue is currently open.  " + newJoinString);
+                        string newJoinString = joinString();
+                        if (!m_UpdateImmediately && userAddedRecently)
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " entries have been added to the queue since last update.  " + newJoinString);
+                            usersAddedRecently.Clear();
+                            userAddedRecently = false;
+                        }
                         else
-                            m_BotBrain.sendDefaultChannelMessage("A queue is currently open. (" + description + ")  " + newJoinString);
+                        {
+                            if (string.IsNullOrEmpty(description))
+                                m_BotBrain.sendDefaultChannelMessage("A queue is currently open.  " + newJoinString);
+                            else
+                                m_BotBrain.sendDefaultChannelMessage("A queue is currently open. (" + description + ")  " + newJoinString);
 
+                        }
+
+                        m_Throttler.trigger();
                     }
-
-                    m_Throttler.trigger();
                 }
 			}
 		}
