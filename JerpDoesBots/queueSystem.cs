@@ -259,7 +259,12 @@ namespace JerpDoesBots
 					{
 						if (validateUser(commandUser) && validateInput(argumentString))
 						{
-							queueData newData = new queueData(commandUser, argumentString);
+                            string dataToEnter = argumentString;
+                            if (m_QueueType == QUEUE_TYPE_MARIOMAKER || m_QueueType == QUEUE_TYPE_MARIOMAKER2)
+                            {
+                                dataToEnter = dataToEnter.ToUpper();
+                            }
+							queueData newData = new queueData(commandUser, dataToEnter);
 							m_EntryList.Add(newData);
 							usersAddedRecently.Add(newData);
 							userAddedRecently = true;

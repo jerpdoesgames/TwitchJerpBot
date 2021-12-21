@@ -10,6 +10,7 @@ using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace JerpDoesBots
 {
@@ -171,6 +172,11 @@ namespace JerpDoesBots
             }
 
             return false;
+        }
+
+        public string stripPunctuation(string aInput, bool aStripWhitespace = false)
+        {
+            return new string(aInput.Where(c => (!char.IsPunctuation(c) && (!aStripWhitespace || !char.IsWhiteSpace(c)))).ToArray()); // TODO: Something without linq
         }
 
         public void executeAndLog(connectionCommand commandToExecute)

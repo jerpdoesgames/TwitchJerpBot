@@ -150,7 +150,7 @@ namespace JerpDoesBots
         {
             foreach (string curTag in aQuestion.tags)
             {
-                if (curTag.ToLower() == aTag.ToLower())
+                if (m_BotBrain.stripPunctuation(curTag.ToLower(), true) == m_BotBrain.stripPunctuation(aTag.ToLower(), true))
                 {
                     return true;
                 }
@@ -269,7 +269,7 @@ namespace JerpDoesBots
                 {
                     foreach (string curAnswer in currentQuestion.answers)
                     {
-                        if (curAnswer.ToLower() == aMessage.ToLower())
+                        if (m_BotBrain.stripPunctuation(curAnswer.ToLower(), true) == m_BotBrain.stripPunctuation(aMessage.ToLower(), true))
                         {
                             string addendumString = "";
 
