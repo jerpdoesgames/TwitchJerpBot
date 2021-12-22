@@ -43,7 +43,7 @@ namespace JerpDoesBots
                 int ozToDrink = (int)(m_OzPerHour * hoursPassed);
                 string mlToDrink = string.Format("{0:n0}", (int)(ozToDrink * OZ_TO_ML));
 
-                return hoursPassed + " hours have passed, you should have had at least " + (m_OzPerHour * hoursPassed) + "oz (" + mlToDrink + "ml) to drink.";
+                return hoursPassed + " hours have passed, you should have had at least " + (m_OzPerHour * hoursPassed) + "oz (" + mlToDrink + "ml) to drink. jerpSip";
             }
             
             return "No drink reminders yet - but feel free to have a swig anyways!";

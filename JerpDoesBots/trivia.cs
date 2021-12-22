@@ -322,7 +322,7 @@ namespace JerpDoesBots
                 if (fromSuccessOrFail)
                 {
                     string scoreString = getTopScoreString();
-                    m_BotBrain.sendDefaultChannelMessage("Trivia is over!  The top scorers are: " + scoreString);
+                    m_BotBrain.sendDefaultChannelMessage("Trivia is over! jerpHype The top scorers are: " + scoreString);
                 }
             }
             else

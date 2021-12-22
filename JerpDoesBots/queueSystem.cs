@@ -35,7 +35,7 @@ namespace JerpDoesBots
             public queueConfigWeightedRandom weightedRandom { get; set; }
         }
 
-        public struct queueData
+        class queueData
 		{
 			public userEntry user;
 			public string data;
@@ -532,17 +532,14 @@ namespace JerpDoesBots
         public void subNext(userEntry commandUser, string argumentString)
         {
             List<queueData> subList = getSubList();
-            queueData nextEntry = new queueData(); // Cannot be null
+            queueData nextEntry;
             bool foundEntry = false;
 
             if (subList.Count > 0)
             {
                 nextEntry = subList[0];
                 foundEntry = true;
-            }
 
-            if (foundEntry)
-            {
                 m_EntryList.Remove(nextEntry);
 
                 switch (m_QueueType)
@@ -559,7 +556,8 @@ namespace JerpDoesBots
                         break;
                 }
             }
-            else
+
+            if (foundEntry)
             {
                 if (isActive)
                     m_BotBrain.sendDefaultChannelMessage("No subscriber entries in this queue.  " + joinString());
@@ -572,7 +570,7 @@ namespace JerpDoesBots
         public void subRandom(userEntry commandUser, string argumentString)
         {
             int userCount = m_EntryList.Count();
-            queueData nextEntry = new queueData(); // Cannot be null
+            queueData nextEntry;
             bool foundEntry = false;
 
             List<queueData> subList = getSubList();
@@ -582,10 +580,7 @@ namespace JerpDoesBots
                 int selectID = m_BotBrain.randomizer.Next(0, subList.Count - 1);
                 nextEntry = m_EntryList[selectID];
                 foundEntry = true;
-            }
 
-            if (foundEntry)
-            {
                 m_EntryList.Remove(nextEntry);
 
                 switch (m_QueueType)
@@ -602,7 +597,8 @@ namespace JerpDoesBots
                         break;
                 }
             }
-            else
+
+            if (!foundEntry)
             {
                 if (isActive)
                     m_BotBrain.sendDefaultChannelMessage("No subscriber entries in this queue.  " + joinString());
@@ -644,7 +640,7 @@ namespace JerpDoesBots
             }
         }
 
-        public float calculateUserWeight(queueData aData)
+        float calculateUserWeight(queueData aData)
         {
             float outputWeight  = m_LoadSuccessful ? m_config.weightedRandom.valueBase : 100.0f;
 
