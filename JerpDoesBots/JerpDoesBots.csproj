@@ -165,6 +165,7 @@
     <Compile Include="delaySender.cs" />
     <Compile Include="hostMessages.cs" />
     <Compile Include="hostMessagesConfig.cs" />
+    <Compile Include="localizer.cs" />
     <Compile Include="lurkShout.cs" />
     <Compile Include="autoShoutout.cs" />
     <Compile Include="botCommand.cs" />

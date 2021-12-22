@@ -70,7 +70,7 @@ namespace JerpDoesBots
 
                     if (getCommandReader.HasRows)
                     {
-                        m_BotBrain.sendDefaultChannelMessage("Unable to add alias '" + commandName + "' - already exists.");
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("aliasAddFailExists"), commandName));
                     }
                     else
                     {
@@ -85,9 +85,9 @@ namespace JerpDoesBots
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param5", argumentList[1]));          // Message
 
                         if (addCommandCommand.ExecuteNonQuery() > 0)
-                            m_BotBrain.sendDefaultChannelMessage("Alias '" + argumentList[0] + "' added!");
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("aliasAddSuccess"), argumentList[0]));
                         else
-                            m_BotBrain.sendDefaultChannelMessage("Unable to add Alias '" + argumentList[0] + "'");
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("aliasAddFail"), argumentList[0]));
                     }
                 }
                 else
@@ -96,7 +96,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("New alias makes reference to existing aliases (prohibited to avoid circular references).");
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("aliasAddFailLoop"));
             }
             
         }

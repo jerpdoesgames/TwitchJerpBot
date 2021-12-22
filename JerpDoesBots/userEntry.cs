@@ -62,8 +62,6 @@ namespace JerpDoesBots
 			set { m_IsBroadcaster = value; }
 		}
 
-		public int level			{ get { return calculateLevel(m_Loyalty, m_Nickname); } }
-
 		public void addPoints(int pointsToAdd)
 		{
 			m_Points += pointsToAdd;
@@ -84,31 +82,6 @@ namespace JerpDoesBots
 			updateRowCommand.ExecuteNonQuery();
 
 			m_LastUpdate = updateTime;
-		}
-
-		public static int calculateLevel(int aUserScore, string aUsername = "")
-		{
-			// TODO: decide on a formula for level
-
-			if (aUsername.ToLower() == "jerp")
-				return 9999;
-
-			if (aUserScore >= 2500)
-				return 5;
-
-			if (aUserScore >= 1750)
-				return 4;
-
-			if (aUserScore >= 1000)
-				return 3;
-
-			if (aUserScore >= 250)
-				return 2;
-
-			if (aUserScore >= 100)
-				return 1;
-
-			return 0;
 		}
 
 		private bool createUser(string aUsername)

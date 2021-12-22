@@ -91,7 +91,7 @@ namespace JerpDoesBots
                     m_lastSound = curSound;
 
                     if (isRandom)
-                        m_BotBrain.sendDefaultChannelMessage("Playing random sound " + curSound.name);
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundPlayRandom"), curSound.name));
                 }
             }
         }
@@ -137,7 +137,7 @@ namespace JerpDoesBots
             {
                 newVolume = Math.Min(newVolume, 1.0f);
                 m_GlobalVolume = newVolume;
-                m_BotBrain.sendDefaultChannelMessage("Global volume set to " + newVolume);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetGlobalVolume"), newVolume));
             }
         }
 
@@ -145,19 +145,19 @@ namespace JerpDoesBots
         {
             m_IsEnabled = true;
 
-            m_BotBrain.sendDefaultChannelMessage("Sound command enabled - use !sound list to see what's available.");
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundEnabled"));
         }
 
         public void disable(userEntry commandUser, string argumentString)
         {
             m_IsEnabled = false;
 
-            m_BotBrain.sendDefaultChannelMessage("Sound command disabled.");
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundDisabled"));
         }
 
         public void getList(userEntry commandUser, string argumentString)
         {
-            m_BotBrain.sendDefaultChannelMessage("Sound list here: jerp.tv/sounds.html");
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundList"));
         }
 
         public void makeList(userEntry commandUser, string argumentString)
@@ -172,7 +172,7 @@ namespace JerpDoesBots
 
             string soundNameString = string.Join(", ", soundNames);
 
-            Console.WriteLine("Available sounds are: " + soundNameString);
+            Console.WriteLine("Available sounds are: " + soundNameString);  // TODO: This should probably be removed or changed since I don't want to localize something going to the console and this is too long for a chat message
         }
 
         private bool loadSounds()
@@ -194,9 +194,9 @@ namespace JerpDoesBots
         public void reloadSounds(userEntry commandUser, string argumentString)
         {
             if (loadSounds())
-                m_BotBrain.sendDefaultChannelMessage("Reloaded sound config.");
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadSuccess"));
             else
-                m_BotBrain.sendDefaultChannelMessage("Failed to reload sound config(?)");
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadFail"));
         }
 
         public void playRandom(userEntry commandUser, string argumentString)

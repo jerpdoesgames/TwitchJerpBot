@@ -14,13 +14,14 @@ namespace JerpDoesBots
 		private List<userEntry> usersAddedRecently;
 		private bool userAddedRecently = false;
 		string description;
+		string m_SharedJoinSuffix;
 
 		public void about(userEntry commandUser, string argumentString)
 		{
 			if (!string.IsNullOrEmpty(description))
-				m_BotBrain.sendDefaultChannelMessage("This raffle: " + description);
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleDescriptionAnnounce"), description));
 			else
-				m_BotBrain.sendDefaultChannelMessage("This raffle has not yet been described");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleDescriptionEmpty"));
 		}
 
 		public void describe(userEntry commandUser, string argumentString)
@@ -30,7 +31,7 @@ namespace JerpDoesBots
 				description = argumentString;
                 if (isActive)
                 {
-                    m_BotBrain.sendDefaultChannelMessage("Raffle description updated.");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleDescriptionSet"));
                 }
 			}
 		}
@@ -58,7 +59,7 @@ namespace JerpDoesBots
 		public void reset(userEntry commandUser, string argumentString)
 		{
 			resetEntries();
-			m_BotBrain.sendDefaultChannelMessage("Raffle has been cleared.");
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleCleared"));
 		}
 
 		public void open(userEntry commandUser, string argumentString)
@@ -66,7 +67,7 @@ namespace JerpDoesBots
             lock(messageLastLock)
             {
                 resetEntries();
-                m_BotBrain.sendDefaultChannelMessage("Raffle has been reset and opened.  Type !raffle to enter.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleOpenedCleared") + m_SharedJoinSuffix);
 
 				m_Throttler.trigger();
 
@@ -78,16 +79,16 @@ namespace JerpDoesBots
 		public void close(userEntry commandUser, string argumentString)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage("Raffle closed.");
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleClosed"));
 		}
 
 		public void count(userEntry commandUser, string argumentString)
 		{
 			int userCount = userList.Count();
 			if (isActive)
-				m_BotBrain.sendDefaultChannelMessage("There are " + userCount + " user(s) in the raffle.  Type !raffle to join.");
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleUserCount"), userCount) + m_SharedJoinSuffix);
 			else
-				m_BotBrain.sendDefaultChannelMessage("There are " + userCount + " user(s) in the raffle.");
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleUserCount"), userCount));
 		}
 
 		public void draw(userEntry commandUser, string argumentString)
@@ -107,13 +108,14 @@ namespace JerpDoesBots
 				if (usersAddedRecently.Count == 0)
 					userAddedRecently = false;
 
-				m_BotBrain.sendDefaultChannelMessage(chosenUser.Nickname + " has been chosen and removed from the list.");
-			} else
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleUserSelected"), chosenUser.Nickname));
+			}
+			else
 			{
 				if (isActive)
-					m_BotBrain.sendDefaultChannelMessage("No users are in this raffle. People need to type !raffle to join");
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleCountEmpty") + m_SharedJoinSuffix);
 				else
-					m_BotBrain.sendDefaultChannelMessage("No users are in this raffle. How about opening it back up again so people can enter?");
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleCountEmpty") + "  " + m_BotBrain.Localizer.getString("raffleHintOpen"));
 			}
 
 		}
@@ -128,12 +130,12 @@ namespace JerpDoesBots
 					{
 						if (userAddedRecently)
 						{
-							m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " user(s) have been added to the raffle since last update.  Type !raffle to be added.");
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + m_SharedJoinSuffix);
 							usersAddedRecently.Clear();
 							userAddedRecently = false;
 						}
 						else
-							m_BotBrain.sendDefaultChannelMessage("A raffle is currently open.  Type !raffle to be added.");
+							m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleAnnounceOpen") + m_SharedJoinSuffix);
 
 						m_Throttler.trigger();
 					}
@@ -147,6 +149,8 @@ namespace JerpDoesBots
 			m_Throttler.waitTimeMax = 15000;
 			m_Throttler.lineCountMinimum = 8;
 			m_Throttler.messagesReduceTimer = false;
+
+			m_SharedJoinSuffix = "  " + m_BotBrain.Localizer.getString("raffleHintJoin");
 
 			userList = new Dictionary<string, userEntry>();
 			usersAddedRecently = new List<userEntry>();

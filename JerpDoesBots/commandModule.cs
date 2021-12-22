@@ -12,7 +12,7 @@ namespace JerpDoesBots
 		protected string insertQuery = "INSERT OR IGNORE INTO commands_custom (submitter, modifier, command_name, lastmod, allow_normal, message) values (@param1, @param2, @param3, @param4, @param5, @param6)";
 		protected string selectQuery = "SELECT * FROM commands_custom WHERE command_name = @param1 LIMIT 1";
 		protected string createQuery = "CREATE TABLE IF NOT EXISTS commands_custom (commandID INTEGER PRIMARY KEY ASC, command_name TEXT UNIQUE, submitter TEXT, modifier TEXT, lastmod INTEGER, allow_normal INTEGER, message TEXT)";
-		protected string formatHint = "Expected format: !command add [name] [allowNormalUsers (0/1)] [message]";
+		protected string formatHint; // Filled out via localizer in constructor
 		protected string removeQuery = "DELETE FROM commands_custom WHERE command_name=@param1";
 		protected string useGame = null;
 
@@ -29,14 +29,14 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				useGame = argumentString;
-				m_BotBrain.sendDefaultChannelMessage("Now using \"" + argumentString + "\" for game-specific commands.");
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandGameForced"), argumentString));
 			}
 		}
 
 		public void clearGame(userEntry commandUser, string argumentString)
 		{
 			useGame = null;
-			m_BotBrain.sendDefaultChannelMessage("Auto-select mode resumed for game-specific commands. ("+m_BotBrain.game+")");
+			m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandGameAuto"), m_BotBrain.game));
 		}
 
 		public SQLiteDataReader loadCommand(string commandName)
@@ -166,7 +166,7 @@ namespace JerpDoesBots
 
 				if (getCommandReader.HasRows)
 				{
-					m_BotBrain.sendDefaultChannelMessage("Unable to add command '" + argumentList[0] + "' - already exists.");
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandAddFailExists"), argumentList[0]));
 				}
 				else
 				{
@@ -185,9 +185,9 @@ namespace JerpDoesBots
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param7", getGameString()));          // Current Game (unused in base)
 
 					if (addCommandCommand.ExecuteNonQuery() > 0)
-						m_BotBrain.sendDefaultChannelMessage("Command '" + argumentList[0] + "' added!");
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandAddSuccess"), argumentList[0]));
 					else
-						m_BotBrain.sendDefaultChannelMessage("Unable to add command '" + argumentList[0] + "'");
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandAddFail"), argumentList[0]));
 				}
 			}
 			else
@@ -212,11 +212,11 @@ namespace JerpDoesBots
 
 				if (removeCommandCommand.ExecuteNonQuery() > 0)
 				{
-					m_BotBrain.sendDefaultChannelMessage("Command '" + argumentString + "' removed");
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandRemoveSuccess"), argumentString));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage("Command not found!");
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("commandRemoveFailNotFound"));
 				}
 			}
 		}
@@ -230,6 +230,7 @@ namespace JerpDoesBots
 
 		public commandModule(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
+			formatHint = m_BotBrain.Localizer.getString("commandFormatHint");
 			// TODO: Add ability to list out commands.
 		}
 	}

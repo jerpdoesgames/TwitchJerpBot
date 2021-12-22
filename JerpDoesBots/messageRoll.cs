@@ -112,7 +112,7 @@ namespace JerpDoesBots
 
                 if (messageToSend.IndexOf('!') == 0)
                 {
-                    userEntry jerpUser = m_BotBrain.checkCreateUser("jerp");
+                    userEntry jerpUser = m_BotBrain.checkCreateUser(m_BotBrain.OwnerUsername);
 
                     m_BotBrain.processUserCommand(jerpUser, messageToSend);
                 }
