@@ -63,6 +63,7 @@ namespace JerpDoesBots
 		private string m_QueueType = QUEUE_TYPE_PLAIN;
 		private string m_QueueMode = QUEUE_MODE_NORMAL;
         private bool m_LoadSuccessful = false;
+        private queueData m_CurEntry;
         private queueConfig m_config;
 
         private string joinString()
@@ -72,13 +73,13 @@ namespace JerpDoesBots
                 switch (m_QueueType)
                 {
                     case QUEUE_TYPE_MARIOMAKER:
-                        return modeString() + "type !queue ####-####-####-#### to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintMarioMaker");
                     case QUEUE_TYPE_MARIOMAKER2:
-                        return modeString() + "type !queue ###-###-### to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintMarioMaker2");
                     case QUEUE_TYPE_GENERIC:
-                        return modeString() + "!queue [message] to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintGeneric");
                     default:
-                        return modeString() + "type !queue to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintPlain");
                 }
             }
 
@@ -90,11 +91,11 @@ namespace JerpDoesBots
             switch (m_QueueMode)
             {
                 case QUEUE_MODE_SUBS:
-                    return "Queue is open to subs & mods only.  ";
+                    return m_BotBrain.Localizer.getString("queueModeSubOnly") + "  ";
                 case QUEUE_MODE_FOLLOWERS:
-                    return "Queue is open to followers, subs, & mods.  ";
+                    return m_BotBrain.Localizer.getString("queueModeFollowers") + "  ";
                 default:
-                    return "Queue is open to all viewers.  ";
+                    return m_BotBrain.Localizer.getString("queueModeAll") + "  ";
             }
         }
 
@@ -103,7 +104,7 @@ namespace JerpDoesBots
 			m_EntryList.Clear();
 			usersAddedRecently.Clear();
 			if (announce)
-				m_BotBrain.sendDefaultChannelMessage("queue has been reset.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReset"));
 		}
 
 		public void resetEntries(userEntry commandUser, string argumentString)
@@ -177,9 +178,9 @@ namespace JerpDoesBots
                 m_QueueMode = argumentString;
 
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to mode '" + m_QueueMode + "' - " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueModeSet"), m_QueueMode) + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to mode '" + m_QueueMode + "'");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueModeSet"), m_QueueMode));
             }
         }
 
@@ -207,19 +208,20 @@ namespace JerpDoesBots
 				reset(false);
 				m_QueueType = argumentString;
 
-				if (isActive)
-					m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to type '" + m_QueueType + "' - " + joinString());
-				else
-					m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to type '" + m_QueueType + "'");
+
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueTypeSet"), m_QueueType) + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueTypeSet"), m_QueueType));
 			}
 		}
 
 		public void about(userEntry commandUser, string argumentString)
 		{
 			if (!string.IsNullOrEmpty(description))
-				m_BotBrain.sendDefaultChannelMessage("This Queue: " + description);
-			else
-				m_BotBrain.sendDefaultChannelMessage("This queue has not yet been described");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueDescriptionDisplay"), description));
+            else
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueDescriptionEmpty"));
 		}
 
 		public void describe(userEntry commandUser, string argumentString)
@@ -227,17 +229,18 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				description = argumentString;
-				m_BotBrain.sendDefaultChannelMessage("Queue description updated.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueDescriptionUpdated"));
 			}
 		}
 
 		public void count(userEntry commandUser, string argumentString)
 		{
 			int userCount = m_EntryList.Count();
-			if (isActive)
-				m_BotBrain.sendDefaultChannelMessage("There are " + userCount + " entries in the queue.  (" + m_ListMax + " max, " + m_MaxPerUser + " per user)  " + joinString());
+
+            if (isActive)
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser) + "  " + joinString());
 			else
-				m_BotBrain.sendDefaultChannelMessage("There are " + userCount + " entries in the queue.  (" + m_ListMax + " max, " + m_MaxPerUser + " per user)  ");
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser));
 		}
 
 		public void enter(userEntry commandUser, string argumentString)
@@ -271,18 +274,18 @@ namespace JerpDoesBots
 
                             if (m_UpdateImmediately)
                             {
-                                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + ": new entry added in position " + m_EntryList.Count);
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntrySuccess"), commandUser.Nickname, m_EntryList.Count));
                             }
 						}
 					}
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + ": Max allowable entries reached! (" + m_MaxPerUser + " allowed per user.)");
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntryFailMaxPerUser"), commandUser.Nickname, m_MaxPerUser));
                     }
 				}
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + ": The queue is full!  Please try again later. (" + m_EntryList.Count + " entries total.)");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntryFailQueueFull"), commandUser.Nickname, m_EntryList.Count));
                 }
 			}
             else
@@ -321,15 +324,15 @@ namespace JerpDoesBots
             {
                 if (totalEntries > 1)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s next entry is in position " + position + ".  They have " + totalEntries + " entries total.");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionSingle"), commandUser.Nickname, position, totalEntries));
                 }
                 {
-                    m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s in position " + position);
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionMultiple"), commandUser.Nickname, position));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("Could not find " + commandUser.Nickname + " in the queue.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
             }
         }
 
@@ -349,16 +352,16 @@ namespace JerpDoesBots
 
                         if (totalEntries > 1)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s next entry (in position " + position + ") has been updated.  They have " + totalEntries + " entries total.");
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccessMultiple"), commandUser.Nickname, position, totalEntries));
                         }
                         {
-                            m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s entry in position " + position + " has been updated.");
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccess"), commandUser.Nickname, position));
                         }
                     } // TODO: Consider message for invalid entries.
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage("Could not find " + commandUser.Nickname + " in the queue.");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
                 }
             }
         }
@@ -375,11 +378,11 @@ namespace JerpDoesBots
                 if (resetEntries)
                 {
                     reset(false);
-                    m_BotBrain.sendDefaultChannelMessage("Queue has been reset and opened.  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueOpenedReset") + "  " + newJoinString);
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage("Queue has been opened.  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueOpened") + "  " + newJoinString);
                 }
 
                 m_Throttler.trigger();
@@ -391,7 +394,7 @@ namespace JerpDoesBots
 		public void close(userEntry commandUser, string argumentString)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage("Queue closed.");
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueClosed"));
 		}
 
         public void setMaxCount(userEntry commandUser, string argumentString)
@@ -400,13 +403,14 @@ namespace JerpDoesBots
             if (Int32.TryParse(argumentString, out newListMax))
             {
                 m_ListMax = newListMax;
-                m_BotBrain.sendDefaultChannelMessage("Max entries set to " + m_ListMax);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueMaxEntriesSet"), m_ListMax));
             }
         }
 
         private string closedMessage(userEntry commandUser)
         {
-            return "Sorry " + commandUser.Nickname + ", no queue is currently open.";
+            
+            return string.Format(m_BotBrain.Localizer.getString("queueClosedReply"), commandUser.Nickname);
         }
 
         private void outputGenericClosedMessage(userEntry commandUser)
@@ -451,11 +455,11 @@ namespace JerpDoesBots
                     listString += getEntryString(curEntry, curPos);
                 }
 
-                m_BotBrain.sendDefaultChannelMessage("Queue Entries: " + listString);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueListDisplay"), listString));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("No entries in the queue.  " + joinString());
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
             }
 
         }
@@ -473,15 +477,42 @@ namespace JerpDoesBots
             }
             if (removeCount == 1)
             {
-                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + " has been removed from the queue.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveSingle"), commandUser.Nickname));
             }
             else if (removeCount > 1)
             {
-                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + " has been removed from the queue ("+removeCount+" entries total).");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveMultiple"), commandUser.Nickname, removeCount));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + " doesn't appear to be in the queue.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveNotFound"), commandUser.Nickname));
+            }
+        }
+
+        public void current(userEntry commandUser, string argumentString)
+        {
+            if (m_CurEntry != null)
+            {
+                switch (m_QueueType)
+                {
+                    case QUEUE_TYPE_PLAIN:
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayPlain"), m_CurEntry.user.Nickname));
+                        break;
+                    case QUEUE_TYPE_MARIOMAKER:
+                    case QUEUE_TYPE_MARIOMAKER2:
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        break;
+                    case QUEUE_TYPE_GENERIC:
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayGeneric"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        break;
+                }
+            }
+            else
+            {
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty") + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -492,27 +523,16 @@ namespace JerpDoesBots
 			if (userCount > 0)
 			{
 				queueData nextEntry = m_EntryList[0];
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-				switch (m_QueueType)
-				{
-					case QUEUE_TYPE_PLAIN:
-						m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen and removed from the queue.");
-						break;
-					case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen with level code: " + nextEntry.data);
-						break;
-					case QUEUE_TYPE_GENERIC:
-						m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen: " + nextEntry.data);
-						break;
-				}
-			} else
+                announceSelection(nextEntry);
+            } else
 			{
-				if (isActive)
-					m_BotBrain.sendDefaultChannelMessage("No entries in this queue.  " + joinString());
-				else
-					m_BotBrain.sendDefaultChannelMessage("No entries in the queue. How about opening it back up again so people can enter?");
-			}
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+            }
 		}
 
         private List<queueData> getSubList()
@@ -528,6 +548,22 @@ namespace JerpDoesBots
             return subList;
         }
 
+        private void announceSelection(queueData aEntry, string aPrefix = "")
+        {
+            switch (m_QueueType)
+            {
+                case QUEUE_TYPE_PLAIN:
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectPlain"), aEntry.user.Nickname));
+                    break;
+                case QUEUE_TYPE_MARIOMAKER:
+                case QUEUE_TYPE_MARIOMAKER2:
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMaker"), aEntry.user.Nickname, aEntry.data));
+                    break;
+                case QUEUE_TYPE_GENERIC:
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectGeneric"), aEntry.user.Nickname, aEntry.data));
+                    break;
+            }
+        }
 
         public void subNext(userEntry commandUser, string argumentString)
         {
@@ -540,29 +576,17 @@ namespace JerpDoesBots
                 nextEntry = subList[0];
                 foundEntry = true;
 
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen with level code: " + nextEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen: " + nextEntry.data);
-                        break;
-                }
+                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteSub") + " ");
             }
 
-            if (foundEntry)
+            if (!foundEntry)
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") +  "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
 
         }
@@ -581,29 +605,18 @@ namespace JerpDoesBots
                 nextEntry = m_EntryList[selectID];
                 foundEntry = true;
 
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
 
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen with level code: " + nextEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen: " + nextEntry.data);
-                        break;
-                }
+                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteSubRandom") + " ");
             }
 
             if (!foundEntry)
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -616,27 +629,16 @@ namespace JerpDoesBots
                 int selectID = m_BotBrain.randomizer.Next(0, userCount - 1);
 
                 queueData nextEntry = m_EntryList[selectID];
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen with level code: " + nextEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen: " + nextEntry.data);
-                        break;
-                }
+                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteRandom") + " ");
             }
             else
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -698,27 +700,16 @@ namespace JerpDoesBots
                     curWeight += curEntry.randomWeight;
                 }
 
+                m_CurEntry = curEntry;
                 m_EntryList.Remove(curEntry);
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(curEntry.user.Nickname + " has been (weighted) randomly chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(curEntry.user.Nickname + " has been (weighted) randomly chosen with level code: " + curEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(curEntry.user.Nickname + " has been (weighted) randomly chosen: " + curEntry.data);
-                        break;
-                }
+                announceSelection(curEntry, m_BotBrain.Localizer.getString("queueSelectNoteWeightedRandom") + " ");
             }
             else
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -733,16 +724,16 @@ namespace JerpDoesBots
                         string newJoinString = joinString();
                         if (!m_UpdateImmediately && userAddedRecently)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " entries have been added to the queue since last update.  " + newJoinString);
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueAnnounceEntriesSinceUpdate"), usersAddedRecently.Count) + "  " + newJoinString);
                             usersAddedRecently.Clear();
                             userAddedRecently = false;
                         }
                         else
                         {
                             if (string.IsNullOrEmpty(description))
-                                m_BotBrain.sendDefaultChannelMessage("A queue is currently open.  " + newJoinString);
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + "  " + newJoinString);
                             else
-                                m_BotBrain.sendDefaultChannelMessage("A queue is currently open. (" + description + ")  " + newJoinString);
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + " (" + description + ")  " + newJoinString);
 
                         }
 
