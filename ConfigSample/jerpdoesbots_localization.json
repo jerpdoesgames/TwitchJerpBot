@@ -91,6 +91,22 @@
           "raffleAnnounceOpen":                  "A raffle is currently open.",
           "raffleAnnounceAddedRecently":         "{0} user(s) have been added to the raffle since last update.",
           "hostMessageLoadSuccess":              "Reloaded host message config.",
-          "hostMessageLoadFail":                 "Failed to reload host messages(?)"
+          "hostMessageLoadFail":                 "Failed to reload host messages(?)",
+          "counterGameSet":                      "Game set to {0}",
+          "counterGameClear":                    "Forced game cleared (game is now '{0}')",
+          "counterValueSetEmpty":                "Must specify an amount!",
+          "counterValueSet":                     "Counter '{0}' set to {1} [{2}]",
+          "counterValueSetFailOwner":            "Unable to {0} - owner is currently set to '{1}' for counter '{2}'.",
+          "counterNotSpecified":                 "No counter specified!",
+          "counterDisplay":                      "'{0}' is currently {1} [{2}]",
+          "counterFailNotFound":                 "Unable to find counter named {0}",
+          "counterRemoveSuccess":                "Counter '{0}' deleted for {1}",
+          "counterDescriptionUpdateSuccess":     "Counter '{0}' description updated.",
+          "counterDescriptionUpdateFailEmpty":   "How about passing in a description?",
+          "counterDescriptionAnnounceFailEmpty": "No description for counter '{0}' [{1}]",
+          "counterOwnerSetSuccess":              "Counter '{0}' owner set to {1}.",
+          "counterOwnerSetFailEmpty":            "How about passing in an owner?.",
+          "counterOwnerClear":                   "Counter '{0}' owner cleared.",
+          "counterDescriptionDisplay":           "{0}: {1}"
     }
 }
