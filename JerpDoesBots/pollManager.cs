@@ -32,20 +32,18 @@ namespace JerpDoesBots
 
 					if (m_Throttler.isReady)
 					{
-						string choiceNewString = "";
-						string choiceUpdatedString = "";
+						string output = !string.IsNullOrEmpty(description) ? m_BotBrain.Localizer.getString("pollAnnounceDescribed") : m_BotBrain.Localizer.getString("pollAnnounce");
+						output += "  " + string.Format(m_BotBrain.Localizer.getString("pollChoiceList"), getChoiceString()) + "  ";
+						output += m_BotBrain.Localizer.getString("pollVoteHint") + "  ";
+						output += string.Format(m_BotBrain.Localizer.getString("pollVotesCurrent"), userChoices.Count);
+
 						if (choicesNew > 0)
-							choiceNewString = "  " + choicesNew + " new votes.";
+							output += "  " + string.Format(m_BotBrain.Localizer.getString("pollNewVoteCount"), choicesNew);
 
 						if (choicesUpdated > 0)
-							choiceUpdatedString = "  " + choicesUpdated + " updated votes.";
+							output += "  " + string.Format(m_BotBrain.Localizer.getString("pollUpdatedVoteCount"), choicesUpdated);
 
-						string choiceString = getChoiceString();
-
-						if (!string.IsNullOrEmpty(description))
-							m_BotBrain.sendDefaultChannelMessage("A poll is running (\"" + description + "\") - choices are " + choiceString + "  Type !vote # to cast your vote.  " + userChoices.Count + " vote(s) so far." + choiceNewString + choiceUpdatedString);
-						else
-							m_BotBrain.sendDefaultChannelMessage("A poll is currently open - choices are " + choiceString + "  Type !vote # to cast your vote.  " + userChoices.Count + " vote(s) so far." + choiceNewString + choiceUpdatedString);
+						m_BotBrain.sendDefaultChannelMessage(output);
 
 						choicesNew = 0;
 						choicesUpdated = 0;
@@ -63,9 +61,9 @@ namespace JerpDoesBots
 			hasPoll = false;
 
 			if (isActive)
-				m_BotBrain.sendDefaultChannelMessage("Poll closed and cleared.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollCloseClear"));
 			else
-				m_BotBrain.sendDefaultChannelMessage("Poll cleared.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollClear"));
 
 			isActive = false;
 		}
@@ -136,7 +134,6 @@ namespace JerpDoesBots
                         hasPoll = true;
 
                         choiceList = newChoices;
-                        string choiceString = getChoiceString();
                         string descString = "";
 
 
@@ -145,17 +142,17 @@ namespace JerpDoesBots
                             descString = " (" + description + ")";
                         }
 
-                        m_BotBrain.sendDefaultChannelMessage("A new poll has been opened!" + descString + " Choices are " + choiceString + ".  Type !vote # to cast your vote.");
+                        m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollOpenSuccess") + descString + "  " + string.Format(m_BotBrain.Localizer.getString("pollChoiceList"), getChoiceString()) + "  " + m_BotBrain.Localizer.getString("pollVoteHint"));
 						m_Throttler.trigger();
                     }
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage("Unable to open poll - " + newChoices.Count + " choices is more than the max of " + choicesMax);
-                    }
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("pollOpenFailChoiceMax"), newChoices.Count, choicesMax));
+					}
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage("Invalid choice list - poll not created!");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollOpenFailInvalidChoices"));
                 }
             }
 
@@ -164,23 +161,22 @@ namespace JerpDoesBots
 		public void close(userEntry commandUser, string argumentString)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage("Poll closed.");
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollClose"));
 		}
 
 		public void about(userEntry commandUser, string argumentString)
 		{
 			if (!string.IsNullOrEmpty(description))
-				m_BotBrain.sendDefaultChannelMessage("This Poll: " + description);
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("pollDescriptionAnnounce"), description));
 			else
-				m_BotBrain.sendDefaultChannelMessage("This poll has not yet been described");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollDescriptionEmpty"));
 		}
 
         public void choices(userEntry commandUser, string argumentString)
         {
             if (isActive)
             {
-                string choiceString = getChoiceString();
-                m_BotBrain.sendDefaultChannelMessage("Choices are " + choiceString + ".  Type !vote # to cast your vote.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("pollChoiceList"), getChoiceString()) + "  " + m_BotBrain.Localizer.getString("pollVoteHint"));
             }
         }
 
@@ -191,7 +187,7 @@ namespace JerpDoesBots
 				description = argumentString;
                 if (isActive)
                 {
-                    m_BotBrain.sendDefaultChannelMessage("Poll description updated.");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollDescriptionUpdate"));
                 }
 			}
 		}
@@ -201,12 +197,12 @@ namespace JerpDoesBots
 			if (hasPoll)
 			{
 				if (isActive)
-					m_BotBrain.sendDefaultChannelMessage(userChoices.Count + " vote(s) have been counted so far.");
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("pollCountActive"), userChoices.Count));
 				else
-					m_BotBrain.sendDefaultChannelMessage(userChoices.Count + " vote(s) were counted in the last poll.");
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("pollCountInactive"), userChoices.Count));
 			} else
 			{
-				m_BotBrain.sendDefaultChannelMessage("No poll on record.  Why not start one?");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("pollNotFound"));
 			}
 		}
 
@@ -224,18 +220,17 @@ namespace JerpDoesBots
 
 		public void results(userEntry commandUser, string argumentString)
 		{
+			string output = "";
 			if (hasPoll)
 			{
-                string closeString = "";
                 if (!string.IsNullOrEmpty(argumentString) && argumentString == "1")
                 {
                     isActive = false;
-                    closeString = "Poll Closed.  ";
+                    output += m_BotBrain.Localizer.getString("pollClose") + "  ";
                 }
 
 				if (userChoices.Count > 0)
 				{
-					string output = closeString+ "Poll results: ";
 					Dictionary<int, int> choiceTotals = new Dictionary<int, int>();
 
 					// Clone the list so we can sort it via results without screwing up the voting
@@ -268,6 +263,7 @@ namespace JerpDoesBots
 					bool counted = false;
                     List<int> tieList = new List<int>();
                     int topValue = 0;
+					string resultsString = "";
 
 					for (var i = 0; i < choiceTotalList.Count; i++)
 					{
@@ -278,29 +274,29 @@ namespace JerpDoesBots
                         }
 
 						if (counted)
-							output += ", ";
+							resultsString += ", ";
 
-						output += choiceTotalList[i].name + ": " + choiceTotalList[i].count;
+						resultsString += choiceTotalList[i].name + ": " + choiceTotalList[i].count;
 						counted = true;
 					}
 
-                    string tieString = "";
-                    if (tieList.Count > 1)
+					output += string.Format(m_BotBrain.Localizer.getString("pollResults"), resultsString);
+
+					if (tieList.Count > 1)
                     {
                         int randomChoice = m_BotBrain.randomizer.Next(0, tieList.Count - 1);
-                        tieString = "Random tiebreaker is " + (tieList[randomChoice] + 1) + ": " + choiceList[tieList[randomChoice]];
-
+						output += "  " + string.Format(m_BotBrain.Localizer.getString("pollTiebreaker"), (tieList[randomChoice] + 1), choiceList[tieList[randomChoice]]);
                     }
-
-                    m_BotBrain.sendDefaultChannelMessage(output);
 				}
                 else
 				{
+					output += m_BotBrain.Localizer.getString("pollNoVotes");
                     int randomChoice = m_BotBrain.randomizer.Next(0, choiceList.Count - 1);
 
-					m_BotBrain.sendDefaultChannelMessage(closeString + "No votes yet!  Random tiebreaker is "+(randomChoice + 1) +":" + choiceList[randomChoice]);
+					output += "  " + string.Format(m_BotBrain.Localizer.getString("pollTiebreaker"), (randomChoice + 1), choiceList[randomChoice]);
 				}
 
+				m_BotBrain.sendDefaultChannelMessage(output);
 			}
 		}
 
