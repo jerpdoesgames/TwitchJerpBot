@@ -176,6 +176,6 @@
           "pollAnnounce":                        "A poll is currently open.",
           "pollChoiceList":                      "Choices are: {0}.",
           "pollVotesCurrent":                    "{0} vote(s) so far.",
-          "pollResults":                         "Poll results: "
+          "pollResults":                         "Poll results: {0}"
     }
 }
