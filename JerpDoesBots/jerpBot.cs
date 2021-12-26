@@ -561,7 +561,7 @@ namespace JerpDoesBots
             }
         }
 
-        public TwitchLib.Api.V5.Models.Channels.Channel getSingleChannelInfoByName(string aChannelName)
+        public TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation getSingleChannelInfoByName(string aChannelName)
         {
 
             Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> userInfoTask = Task.Run(() => m_TwitchAPI.Helix.Users.GetUsersAsync(null, new List<string>() { aChannelName }));
@@ -571,13 +571,13 @@ namespace JerpDoesBots
             {
                 string userID = userInfoTask.Result.Users[0].Id;
 
-                // TODO: Switch to Helix
-                Task<TwitchLib.Api.V5.Models.Channels.Channel> channelInfoTask = Task.Run(() => m_TwitchAPI.V5.Channels.GetChannelByIDAsync(userID));
+                Task<TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.GetChannelInformationResponse> channelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.GetChannelInformationAsync(userID));
+
                 channelInfoTask.Wait();
 
                 if (channelInfoTask.Result != null)
                 {
-                    return channelInfoTask.Result;
+                    return channelInfoTask.Result.Data[0];
                 }
             }
 
@@ -604,12 +604,12 @@ namespace JerpDoesBots
             {
                 string lastGame = "";
 
-                TwitchLib.Api.V5.Models.Channels.Channel channelInfo = getSingleChannelInfoByName(nickname);
+                TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(nickname);
 
-                if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.Game))
-                    lastGame = "  " + string.Format(m_Localizer.getString("shoutoutLastPlaying"), channelInfo.Game);
+                if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.GameName))
+                    lastGame = "  " + string.Format(m_Localizer.getString("shoutoutLastPlaying"), channelInfo.GameName);
 
-                sendDefaultChannelMessage(string.Format(m_Localizer.getString("shoutoutMessage"), channelInfo.DisplayName, channelInfo.DisplayName.ToLower()) + lastGame);
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
             }
         }
 
@@ -842,10 +842,10 @@ namespace JerpDoesBots
 
         private void requestChannelInfo()
         {
-            TwitchLib.Api.V5.Models.Channels.Channel channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
-            m_Game = channelInfo.Game;
+            TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
+            m_Game = channelInfo.GameName;
 
-            Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.Id));
+            Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.BroadcasterId));
             getStreamTagsTask.Wait();
 
             m_Tags = getStreamTagsTask.Result.Data;
