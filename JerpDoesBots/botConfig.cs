@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Web.Script.Serialization;
 
@@ -9,7 +8,21 @@ namespace JerpDoesBots
     {
         public string client_id { get; set; }
         public int channel_id { get; set; }
-        public string oauth { get; set; }
+
+		// Required Scopes:
+		// channel:manage:redemptions		Channel Point rewards
+		// channel:edit:commercial			Start a commercial
+		// channel:manage:broadcast			Change title, game, language, etc. (also stream markers)
+		// channel:read:predictions			Read predictions
+		// channel:manage:predictions		Manage predictions
+
+		// https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions
+
+		// Eventually?:
+		// channel:read:polls				Read polls
+		// channel:manage:polls				Create/end polls
+
+		public string oauth { get; set; }
 	}
 
 	public class botConnection
@@ -26,7 +39,6 @@ namespace JerpDoesBots
 	{
 		public twitchAPIConfig twitch_api { get; set; }
 		public List<botConnection> connections { get; set; }
-		public string helpText { get; set; }
 	}
 
 	class botConfig

@@ -359,12 +359,35 @@ namespace JerpDoesBots
 
         public void getGameCommand(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoViewCountLive"), m_Game));
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoCurrentGame"), m_Game));
         }
 
         public void getStreamTitle(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoViewCountLive"), m_Title));
+            if ((commandUser.isBroadcaster || commandUser.isModerator) && !string.IsNullOrEmpty(argumentString))
+            {
+                try
+                {
+                    TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest() { Title = argumentString };
+                    Task modifyChannelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.ModifyChannelInformationAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newChannelInfoRequest));
+                    modifyChannelInfoTask.Wait();
+
+                    m_Title = argumentString;
+
+                    sendDefaultChannelMessage(string.Format(m_Localizer.getString("modifyChannelInfoTitleSuccess"), m_Title));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to update stream title: " + e.Message);   // TODO: I'm now realizing I totally trashed logging a while back and never really updated it.
+                    sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoTitleFail"));
+                }
+            }
+            else
+            {
+                sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoStreamTitle"), m_Title));
+            }
+
+            
         }
 
         public void getViewCount(userEntry commandUser, string argumentString)
@@ -385,10 +408,7 @@ namespace JerpDoesBots
 
         public void getHelpString(userEntry commandUser, string argumentString)
         {
-            if (!string.IsNullOrEmpty(m_CoreConfig.configData.helpText))
-            {
-                sendChannelMessage(m_DefaultChannel, m_CoreConfig.configData.helpText);
-            }
+            sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
         }
 
         public void quitCommand(userEntry commandUser, string argumentString)
@@ -844,6 +864,7 @@ namespace JerpDoesBots
         {
             TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
             m_Game = channelInfo.GameName;
+            m_Title = channelInfo.Title;
 
             Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.BroadcasterId));
             getStreamTagsTask.Wait();

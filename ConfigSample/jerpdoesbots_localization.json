@@ -16,7 +16,7 @@
           "commandRemoveFailNotFound":           "Command not found!",
           "commandFormatHint":                   "Expected format: !command add [name] [allowNormalUsers (0/1)] [message]",
           "commandGameFormatHint":               "Expected format: !gamecommand add [name] [allowNormalUsers (0/1)] [message]",
-          "shoutoutMessage":                     "Check out {0} and give 'em a follow! ( twitch.tv/{1}) )",
+          "shoutoutMessage":                     "Check out {0} and give 'em a follow! ( twitch.tv/{1} )",
           "shoutoutMessageCustom":               "Check out {0}: {1} ( twitch.tv/{2}) )",
           "shoutoutLastPlaying":                 "They were last playing {0}",
           "infoCurrentGame":                     "Current game is {0}",
@@ -176,6 +176,10 @@
           "pollAnnounce":                        "A poll is currently open.",
           "pollChoiceList":                      "Choices are: {0}.",
           "pollVotesCurrent":                    "{0} vote(s) so far.",
-          "pollResults":                         "Poll results: {0}"
+          "pollResults":                         "Poll results: {0}",
+          "helpText":                            "JerpBot manual here: https://docs.google.com/document/d/1sPkbBbCsWPpCJRseWStzaFwwvOe1oyMz8RFQSVhCSss/edit?usp=sharing",
+          "modifyChannelInfoTitleSuccess":       "Title updated to \"{0}\"",
+          "modifyChannelInfoTitleFail":          "Failed to update title!"
+
     }
 }
