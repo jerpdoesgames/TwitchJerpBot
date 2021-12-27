@@ -1,0 +1,9 @@
+{
+    "weightedRandom": {
+        "subModifier": 1.15,
+        "followModifier": 1.25,
+        "valueBase": 100,
+        "valuePerMinute": 2,
+        "maxMinutesPassed": 120
+    }
+}
