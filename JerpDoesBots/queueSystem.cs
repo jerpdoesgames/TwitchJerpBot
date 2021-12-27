@@ -787,6 +787,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("subrandom", subRandom, true, false));
             tempDef.addSubCommand(new chatCommandDef("replace", replace, true, true));
             tempDef.addSubCommand(new chatCommandDef("subNext", subNext, true, false));
+            tempDef.addSubCommand(new chatCommandDef("current", current, true, true));
             tempDef.UseGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 
