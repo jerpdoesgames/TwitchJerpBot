@@ -179,7 +179,10 @@
           "pollResults":                         "Poll results: {0}",
           "helpText":                            "JerpBot manual here: https://docs.google.com/document/d/1sPkbBbCsWPpCJRseWStzaFwwvOe1oyMz8RFQSVhCSss/edit?usp=sharing",
           "modifyChannelInfoTitleSuccess":       "Title updated to \"{0}\"",
-          "modifyChannelInfoTitleFail":          "Failed to update title!"
+          "modifyChannelInfoTitleFail":          "Failed to update title!",
+          "modifyChannelInfoFailProfileNotFound": "Unable to update channel info - profile not found.",
+          "modifyChannelInfoFailRequestFail":     "Unable to update channel info - request failed.",
+          "modifyChannelInfoSuccess":             "Channel info updated."
 
     }
 }

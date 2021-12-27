@@ -24,6 +24,8 @@ namespace JerpDoesBots
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
 
+        public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
+
         public string OwnerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
 
         private DateTime m_LiveStartTime;
@@ -362,6 +364,30 @@ namespace JerpDoesBots
             sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoCurrentGame"), m_Game));
         }
 
+        public void updateChannelInfo(TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfo, List<string> newTags = null)
+        {
+            try
+            {
+                Task modifyChannelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.ModifyChannelInformationAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newChannelInfo));
+                modifyChannelInfoTask.Wait();
+
+                requestChannelInfo();   // TODO: I mean, this is kind of the lazy way to do it
+
+                if (newTags != null)
+                {
+                    Task replaceTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.ReplaceStreamTagsAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newTags));
+                    replaceTagsTask.Wait();
+                }
+
+                sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoSuccess"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to update channel info/tags: " + e.Message);
+                sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoFailRequestFail"));
+            }
+        }
+
         public void getStreamTitle(userEntry commandUser, string argumentString)
         {
             if ((commandUser.isBroadcaster || commandUser.isModerator) && !string.IsNullOrEmpty(argumentString))
@@ -386,8 +412,6 @@ namespace JerpDoesBots
             {
                 sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoStreamTitle"), m_Title));
             }
-
-            
         }
 
         public void getViewCount(userEntry commandUser, string argumentString)

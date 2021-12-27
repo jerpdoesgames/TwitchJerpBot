@@ -35,6 +35,7 @@
             hydrateReminder hydrateManager      = new hydrateReminder(botGeneral);
             delaySender delaySendManager        = new delaySender(botGeneral);
 			hostMessages hostMessageModule		= new hostMessages(botGeneral);
+			streamProfiles streamProfileManager = new streamProfiles(botGeneral);
 
 			customCommandModule.initTable();
 			gameCommandModule.initTable();
