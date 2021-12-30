@@ -189,7 +189,7 @@
           "predictionDisplayLastActive":         "Last prediction: \"{0}\". (Currently active! - feel free to vote)",
           "predictionDisplayLastNoOutcome":      "Last prediction: \"{0}\". (Failed to get outcome)",
           "predictionCreateFail":                "Failed to create prediction: {0}",
-          "predictionCreateFailArgCount":        "Need to specify 4 arguments separated by the pipe '|' symbol (duration|title|outcome1|outcome2).",
+          "predictionCreateFailArgCount":        "Need to specify 4 arguments separated by the slash '/' character (duration/title/outcome1/outcome2).",
           "predictionCreateFailTitleLength":     "Title must be between 1 and 45 characters.",
           "predictionCreateFailDuration":        "Duration must between 1 and 1800 seconds.",
           "predictionCreateFailOutcomeCount":    "Must specify exactly 2 outcomes.",

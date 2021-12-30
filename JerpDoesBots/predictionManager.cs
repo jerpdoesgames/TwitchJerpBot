@@ -162,7 +162,7 @@ namespace JerpDoesBots
 
 		public void create(userEntry commandUser, string argumentString)
         {
-			string[] argArray = argumentString.Split('|');
+			string[] argArray = argumentString.Split('/');
 			if (argArray.Length >= 5)
             {
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("predictionCreateFail"), m_BotBrain.Localizer.getString("predictionCreateFailOutcomeCount")));
