@@ -19,23 +19,24 @@
 
 			jerpBot botGeneral					= new jerpBot(logGeneral, tempConfig);
 
-			raffle raffleModule					= new raffle(botGeneral);
-			quotes quoteModule					= new quotes(botGeneral);
-			customCommand customCommandModule	= new customCommand(botGeneral);
-			gameCommand gameCommandModule		= new gameCommand(botGeneral);
-			counter counterModule				= new counter(botGeneral);
-			queueSystem queueModule				= new queueSystem(botGeneral);
-			autoShoutout shoutoutModule			= new autoShoutout(botGeneral);
-            lurkShoutout lurkShoutModule        = new lurkShoutout(botGeneral);
-            messageRoll rollModule				= new messageRoll(botGeneral);
-			pollManager pollModule				= new pollManager(botGeneral);
-            soundCommands soundManager	        = new soundCommands(botGeneral);
-            commandAlias aliasManager           = new commandAlias(botGeneral);
-            trivia triviaManager                = new trivia(botGeneral);
-            hydrateReminder hydrateManager      = new hydrateReminder(botGeneral);
-            delaySender delaySendManager        = new delaySender(botGeneral);
-			hostMessages hostMessageModule		= new hostMessages(botGeneral);
-			streamProfiles streamProfileManager = new streamProfiles(botGeneral);
+			raffle raffleModule						  = new raffle(botGeneral);
+			quotes quoteModule						  = new quotes(botGeneral);
+			customCommand customCommandModule		  = new customCommand(botGeneral);
+			gameCommand gameCommandModule			  = new gameCommand(botGeneral);
+			counter counterModule					  = new counter(botGeneral);
+			queueSystem queueModule					  = new queueSystem(botGeneral);
+			autoShoutout shoutoutModule				  = new autoShoutout(botGeneral);
+            lurkShoutout lurkShoutModule			  = new lurkShoutout(botGeneral);
+            messageRoll rollModule					  = new messageRoll(botGeneral);
+			pollManager pollModule					  = new pollManager(botGeneral);
+            soundCommands soundManager				  = new soundCommands(botGeneral);
+            commandAlias aliasManager				  = new commandAlias(botGeneral);
+            trivia triviaManager					  = new trivia(botGeneral);
+            hydrateReminder hydrateManager			  = new hydrateReminder(botGeneral);
+            delaySender delaySendManager			  = new delaySender(botGeneral);
+			hostMessages hostMessageModule			  = new hostMessages(botGeneral);
+			streamProfiles streamProfileManager		  = new streamProfiles(botGeneral);
+			predictionManager streamPredictionManager = new predictionManager(botGeneral);
 
 			customCommandModule.initTable();
 			gameCommandModule.initTable();

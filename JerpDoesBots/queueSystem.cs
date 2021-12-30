@@ -326,6 +326,7 @@ namespace JerpDoesBots
                 {
                     m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionSingle"), commandUser.Nickname, position, totalEntries));
                 }
+                else
                 {
                     m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionMultiple"), commandUser.Nickname, position));
                 }
@@ -702,7 +703,7 @@ namespace JerpDoesBots
 
                 m_CurEntry = curEntry;
                 m_EntryList.Remove(curEntry);
-                announceSelection(curEntry, m_BotBrain.Localizer.getString("queueSelectNoteWeightedRandom") + " ");
+                announceSelection(curEntry, m_BotBrain.Localizer.getString("queueSelectNoteWeightedRandom"));
             }
             else
             {
