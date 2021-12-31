@@ -355,6 +355,7 @@ namespace JerpDoesBots
                         {
                             m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccessMultiple"), commandUser.Nickname, position, totalEntries));
                         }
+                        else
                         {
                             m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccess"), commandUser.Nickname, position));
                         }
