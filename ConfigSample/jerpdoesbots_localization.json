@@ -205,6 +205,9 @@
           "predictionDecideSuccess":             "Winner chosen!: {0}",
           "predictionDecideFail":                "Failed to decide prediction (unknown reason).",
           "predictionDecideFailOutcomeInvalid":  "Failed to decide prediction - invalid outcome choice.",
-          "predictionDecideFailStatus":          "There's no current prediction to decide!."
+          "predictionDecideFailStatus":          "There's no current prediction to decide!.",
+          "soundSetDeviceNumberSuccess":         "Sound device set to {0}: {1}",
+          "soundSetDeviceNumberFailRange":       "Sound device must be a value from -1 to {0}.  -1 is considered default.",
+          "soundDeviceListEntry":                "Device {0}: {1}"
     }
 }
