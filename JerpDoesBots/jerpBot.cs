@@ -49,9 +49,12 @@ namespace JerpDoesBots
 
         public TimeSpan timeSinceLive {
             get {
-                // TODO: Handle this properly if not live / not nullable
-                DateTime curTime = DateTime.Now.ToUniversalTime();
-                return curTime.Subtract(m_LiveStartTime);
+                if (IsLive)
+                {
+                    DateTime curTime = DateTime.Now.ToUniversalTime();
+                    return curTime.Subtract(m_LiveStartTime);
+                }
+                return new TimeSpan(0);
             }
         }
 
