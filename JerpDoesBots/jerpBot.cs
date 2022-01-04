@@ -46,7 +46,6 @@ namespace JerpDoesBots
 
         public int subsThisSession { get { return m_SubsThisSession; } }
 
-
         public TimeSpan timeSinceLive {
             get {
                 if (IsLive)

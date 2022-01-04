@@ -183,6 +183,7 @@
     <Compile Include="hydrateReminder.cs" />
     <Compile Include="messageRollConfig.cs" />
     <Compile Include="messageRollEntry.cs" />
+    <Compile Include="marioMakerAPI.cs" />
     <Compile Include="trivia.cs" />
     <Compile Include="soundCommands.cs" />
     <Compile Include="commandModule.cs" />

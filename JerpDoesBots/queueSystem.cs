@@ -7,16 +7,16 @@ using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
-	class queueSystem : botModule
-	{
-		public const string QUEUE_MODE_NORMAL		= "all";
-		public const string QUEUE_MODE_FOLLOWERS	= "followers";
-		public const string QUEUE_MODE_SUBS	    	= "subs";
+    class queueSystem : botModule
+    {
+        public const string QUEUE_MODE_NORMAL = "all";
+        public const string QUEUE_MODE_FOLLOWERS = "followers";
+        public const string QUEUE_MODE_SUBS = "subs";
 
-		public const string QUEUE_TYPE_PLAIN		= "plain";
-		public const string QUEUE_TYPE_GENERIC		= "generic";
-		public const string QUEUE_TYPE_MARIOMAKER	= "mariomaker";
-        public const string QUEUE_TYPE_MARIOMAKER2  = "mariomaker2";
+        public const string QUEUE_TYPE_PLAIN = "plain";
+        public const string QUEUE_TYPE_GENERIC = "generic";
+        public const string QUEUE_TYPE_MARIOMAKER = "mariomaker";
+        public const string QUEUE_TYPE_MARIOMAKER2 = "mariomaker2";
 
         public Regex marioMakerCodeReg = new Regex(@"^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}$");
         public Regex marioMaker2CodeReg = new Regex(@"^[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}$");
@@ -30,9 +30,56 @@ namespace JerpDoesBots
             public int maxMinutesPassed { get; set; }
         }
 
+        class marioMakerTagCombination
+        {
+            public List<marioMakerLevelTag> tags { get; set;}
+        }
+
+        class queueConfigMarioMaker2
+        {
+            public bool useAPI { get; set; }
+            public bool useFilter { get; set; }
+            public List<marioMakerTagCombination> tagCombinationsAllow { get; set; }
+            public List<marioMakerTagCombination> tagCombinationsExlude { get; set; }
+            public List<marioMakerLevelTag> tagsExclude { get; set; }
+            public float clearPercentageMax { get; set; }
+            public float clearPercentageMin { get; set; }
+            public int clearsMin { get; set; }
+            public int clearsMax { get; set; }
+            public int playsMin { get; set; }
+            public int playsMax { get; set; }
+            public int attemptsMin { get; set; }
+            public int attemptsMax { get; set; }
+            public float likePercentageMin { get; set; }
+            public float likePercentageMax { get; set; }
+            public double fastestTimeMin { get; set; }
+            public double fastestTimeMax { get; set; }
+            public double levelInfoCacheTime { get; set; }
+            public marioMakerClearConditionRequirement clearConditionRequirement { get; set; }
+
+            public queueConfigMarioMaker2()
+            {
+                clearPercentageMax = -1;
+                clearPercentageMin = -1;
+                clearsMin = -1;
+                clearsMax = -1;
+                playsMin = -1;
+                playsMax = -1;
+                likePercentageMin = -1;
+                likePercentageMax = -1;
+                fastestTimeMin = -1;
+                fastestTimeMax = -1;
+                attemptsMin = -1;
+                attemptsMax = -1;
+            }
+        }
+
         class queueConfig
         {
+            public int maxEntries { get; set; }
             public queueConfigWeightedRandom weightedRandom { get; set; }
+            public queueConfigMarioMaker2 marioMaker2 { get; set; }
+            public double permitNoFilterTime { get; set; }
         }
 
         class queueData
@@ -41,7 +88,22 @@ namespace JerpDoesBots
 			public string data;
             public DateTime addTime;
             public int randomWeight;
-			public queueData(userEntry aUser, string aData = null)
+            private marioMakerLevelInfo m_LevelInfo;
+
+            public marioMakerLevelInfo levelInfo
+            {
+                get
+                {
+                    if (m_LevelInfo == null && !string.IsNullOrEmpty(data))
+                    {
+                        m_LevelInfo = marioMakerAPI.getLevelInfo(data);
+                        return m_LevelInfo;
+                    }
+                    return null;
+                }
+            }
+
+            public queueData(userEntry aUser, string aData = null)
 			{
 				user = aUser;
 				data = aData;
@@ -65,6 +127,8 @@ namespace JerpDoesBots
         private bool m_LoadSuccessful = false;
         private queueData m_CurEntry;
         private queueConfig m_config;
+        private Dictionary<userEntry, DateTime> m_PermitList;
+        private Dictionary<string, marioMakerLevelInfo> m_MarioMaker2LevelInfoCache;
 
         private string joinString()
 		{
@@ -243,6 +307,222 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser));
 		}
 
+        private bool isValidFilterLevel(marioMakerLevelInfo aLevelInfo, out string reasonString)
+        {
+            reasonString = "";
+            bool isValid = true;
+            List<string> reasonList = new List<string>();
+
+            if (m_config.marioMaker2.tagsExclude != null && m_config.marioMaker2.tagsExclude.Count > 0)
+            {
+                List<string> foundInvalidTags = new List<string>();
+                foreach (marioMakerLevelTag curTag in m_config.marioMaker2.tagsExclude)
+                {
+                    for(int i = 0; i < aLevelInfo.tags.Count; i++)
+                    {
+                        if (curTag == aLevelInfo.tags[i])
+                            foundInvalidTags.Add(aLevelInfo.tags_name[i]);
+                    }
+                }
+
+                if (foundInvalidTags.Count > 0)
+                {
+                    reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTag"), string.Join(", ", foundInvalidTags)));
+                    isValid = false;
+                }
+            }
+
+            if (m_config.marioMaker2.clearConditionRequirement == marioMakerClearConditionRequirement.forbidden && !string.IsNullOrEmpty(aLevelInfo.clear_condition_name))
+            {
+                reasonList.Add(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearConditionExluded"));
+                isValid = false;
+            }
+
+            if (m_config.marioMaker2.clearConditionRequirement == marioMakerClearConditionRequirement.mandatory && string.IsNullOrEmpty(aLevelInfo.clear_condition_name))
+            {
+                reasonList.Add(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearConditionOnly"));
+                isValid = false;
+            }
+
+            if (m_config.marioMaker2.tagCombinationsAllow != null && m_config.marioMaker2.tagCombinationsAllow.Count > 0)
+            {
+                bool foundTagPair = false;
+
+                foreach (marioMakerTagCombination allowPair in m_config.marioMaker2.tagCombinationsAllow)
+                {
+                    if (aLevelInfo.hasAllTags(allowPair.tags))
+                    {
+                        foundTagPair = true;
+                        break;
+                    }
+                }
+
+                if (!foundTagPair)
+                {
+                    reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTagCombinationAllow"), string.Join(", ", aLevelInfo.tags_name)));
+                    isValid = false;
+                }
+            }
+
+            if (m_config.marioMaker2.tagCombinationsExlude != null && m_config.marioMaker2.tagCombinationsExlude.Count > 0)
+            {
+                foreach (marioMakerTagCombination excludePair in m_config.marioMaker2.tagCombinationsExlude)
+                {
+                    if (aLevelInfo.hasAllTags(excludePair.tags))
+                    {
+                        reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTagCombinationExlude"), string.Join(", ", aLevelInfo.tags_name)));
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+
+            if (
+                m_config.marioMaker2.fastestTimeMin != -1 &&
+                m_config.marioMaker2.fastestTimeMax != -1 &&
+                (
+                    aLevelInfo.fastestClearTime.TotalSeconds < m_config.marioMaker2.fastestTimeMin ||
+                    aLevelInfo.fastestClearTime.TotalSeconds > m_config.marioMaker2.fastestTimeMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTime"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.fastestTimeMin != -1 && aLevelInfo.fastestClearTime.TotalSeconds < m_config.marioMaker2.fastestTimeMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTimeMin"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.fastestTimeMax != -1 && aLevelInfo.fastestClearTime.TotalSeconds > m_config.marioMaker2.fastestTimeMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTimeMax"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.likePercentageMin != -1 &&
+                m_config.marioMaker2.likePercentageMax != -1 &&
+                (
+                    aLevelInfo.likePercentage < m_config.marioMaker2.likePercentageMin ||
+                    aLevelInfo.likePercentage > m_config.marioMaker2.likePercentageMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercent"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.likePercentageMin != -1 && aLevelInfo.likePercentage < m_config.marioMaker2.likePercentageMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercentMin"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.likePercentageMax != -1 && aLevelInfo.likePercentage > m_config.marioMaker2.likePercentageMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercentMax"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.clearPercentageMin != -1 &&
+                m_config.marioMaker2.clearPercentageMax != -1 &&
+                (
+                    aLevelInfo.clearPercentage < m_config.marioMaker2.clearPercentageMin ||
+                    aLevelInfo.clearPercentage > m_config.marioMaker2.clearPercentageMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercent"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearPercentageMin != -1 && aLevelInfo.clearPercentage < m_config.marioMaker2.clearPercentageMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercentMin"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearPercentageMax != -1 && aLevelInfo.clearPercentage > m_config.marioMaker2.clearPercentageMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercentMax"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.attemptsMin != -1 &&
+                m_config.marioMaker2.attemptsMax != -1 &&
+                (
+                    aLevelInfo.attempts < m_config.marioMaker2.attemptsMin ||
+                    aLevelInfo.attempts > m_config.marioMaker2.attemptsMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttempts"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin, m_config.marioMaker2.attemptsMax));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.attemptsMin != -1 && aLevelInfo.attempts < m_config.marioMaker2.attemptsMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttemptsMin"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.attemptsMax != -1 && aLevelInfo.attempts > m_config.marioMaker2.attemptsMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttemptsMax"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMax));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.playsMin != -1 &&
+                m_config.marioMaker2.playsMax != -1 &&
+                (
+                    aLevelInfo.plays < m_config.marioMaker2.playsMin ||
+                    aLevelInfo.plays > m_config.marioMaker2.playsMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlays"), aLevelInfo.plays, m_config.marioMaker2.playsMin, m_config.marioMaker2.playsMax));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.playsMin != -1 && aLevelInfo.plays < m_config.marioMaker2.playsMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlaysMin"), aLevelInfo.plays, m_config.marioMaker2.playsMin));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.playsMax != -1 && aLevelInfo.plays > m_config.marioMaker2.playsMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlaysMax"), aLevelInfo.plays, m_config.marioMaker2.playsMax));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.clearsMin != -1 &&
+                m_config.marioMaker2.clearsMax != -1 &&
+                (
+                    aLevelInfo.clears < m_config.marioMaker2.clearsMin ||
+                    aLevelInfo.clears > m_config.marioMaker2.clearsMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClears"), aLevelInfo.clears, m_config.marioMaker2.clearsMin, m_config.marioMaker2.clearsMax));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearsMin != -1 && aLevelInfo.clears < m_config.marioMaker2.clearsMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearsMin"), aLevelInfo.clears, m_config.marioMaker2.clearsMin));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearsMax != -1 && aLevelInfo.clears > m_config.marioMaker2.clearsMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearsMax"), aLevelInfo.clears, m_config.marioMaker2.clearsMax));
+                isValid = false;
+            }
+
+            if (!isValid)
+            {
+                reasonString = string.Join("  ", reasonList);
+            }
+
+            return isValid;
+        }
+
 		public void enter(userEntry commandUser, string argumentString)
 		{
 			if (isActive)
@@ -263,18 +543,58 @@ namespace JerpDoesBots
 						if (validateUser(commandUser) && validateInput(argumentString))
 						{
                             string dataToEnter = argumentString;
+
                             if (m_QueueType == QUEUE_TYPE_MARIOMAKER || m_QueueType == QUEUE_TYPE_MARIOMAKER2)
                             {
                                 dataToEnter = dataToEnter.ToUpper();
                             }
-							queueData newData = new queueData(commandUser, dataToEnter);
-							m_EntryList.Add(newData);
-							usersAddedRecently.Add(newData);
-							userAddedRecently = true;
 
-                            if (m_UpdateImmediately)
+                            marioMakerLevelInfo newLevelInfo;
+                            bool entryPassedFilter = true;
+
+                            if (m_QueueType == QUEUE_TYPE_MARIOMAKER2 && m_config.marioMaker2.useAPI)
                             {
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntrySuccess"), commandUser.Nickname, m_EntryList.Count));
+                                if (!m_MarioMaker2LevelInfoCache.ContainsKey(dataToEnter) || DateTime.Now.Subtract(m_MarioMaker2LevelInfoCache[dataToEnter].queryTime).TotalSeconds > m_config.marioMaker2.levelInfoCacheTime)
+                                {
+                                    newLevelInfo = marioMakerAPI.getLevelInfo(dataToEnter);
+                                    if (newLevelInfo != null)
+                                        m_MarioMaker2LevelInfoCache[dataToEnter] = newLevelInfo;
+                                }
+                                else
+                                {
+                                    newLevelInfo = m_MarioMaker2LevelInfoCache[dataToEnter];
+                                }
+
+                                if (newLevelInfo != null)
+                                {
+                                    if (m_config.marioMaker2.useFilter && (!m_PermitList.ContainsKey(commandUser) || DateTime.Now.Subtract(m_PermitList[commandUser]).TotalSeconds > m_config.permitNoFilterTime))
+                                    {
+                                        string filterFailReasons;
+                                        if (!isValidFilterLevel(newLevelInfo, out filterFailReasons))
+                                        {
+                                            entryPassedFilter = false;
+                                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalid"), commandUser.Nickname, filterFailReasons));
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelNotFound"), commandUser.Nickname));
+                                    entryPassedFilter = false;
+                                }
+                            }
+
+                            if (entryPassedFilter)
+                            {
+                                queueData newData = new queueData(commandUser, dataToEnter);
+                                m_EntryList.Add(newData);
+                                usersAddedRecently.Add(newData);
+                                userAddedRecently = true;
+
+                                if (m_UpdateImmediately)
+                                {
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntrySuccess"), commandUser.Nickname, m_EntryList.Count));
+                                }
                             }
 						}
 					}
@@ -442,7 +762,6 @@ namespace JerpDoesBots
 
         public void list(userEntry commandUser, string argumentString)
         {
-
             if (m_EntryList.Count > 0)
             {
                 int curPos = 0;
@@ -491,6 +810,21 @@ namespace JerpDoesBots
             }
         }
 
+        public void viewLevel(userEntry commandUser, string argumentString)
+        {
+            if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
+            {
+                if (m_CurEntry != null)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerViewLevelDisplay"), m_CurEntry.data));
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty"));
+            }
+            else
+            {
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("marioMakerViewLevelDisplayFailInvalidType"));
+            }
+        }
+
         public void current(userEntry commandUser, string argumentString)
         {
             if (m_CurEntry != null)
@@ -502,7 +836,19 @@ namespace JerpDoesBots
                         break;
                     case QUEUE_TYPE_MARIOMAKER:
                     case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        if (m_config.marioMaker2.useAPI)
+                        {
+                            marioMakerLevelInfo curLevel = marioMakerAPI.getLevelInfo(m_CurEntry.data);
+                            if (curLevel != null)
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMakerAPI"), m_CurEntry.user.Nickname, m_CurEntry.data, m_CurEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
+                            }
+                        }
+                        else
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        }
+
                         break;
                     case QUEUE_TYPE_GENERIC:
                         m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayGeneric"), m_CurEntry.user.Nickname, m_CurEntry.data));
@@ -644,6 +990,17 @@ namespace JerpDoesBots
             }
         }
 
+        public void permitNoFilter(userEntry commandUser, string argumentString)
+        {
+            if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
+            {
+                userEntry newUser = m_BotBrain.checkCreateUser(argumentString);
+                m_PermitList.Add(newUser, DateTime.Now);
+
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
+            }
+        }
+
         float calculateUserWeight(queueData aData)
         {
             float outputWeight  = m_LoadSuccessful ? m_config.weightedRandom.valueBase : 100.0f;
@@ -736,7 +1093,6 @@ namespace JerpDoesBots
                                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + "  " + newJoinString);
                             else
                                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + " (" + description + ")  " + newJoinString);
-
                         }
 
                         m_Throttler.trigger();
@@ -767,8 +1123,14 @@ namespace JerpDoesBots
 
             m_EntryList = new List<queueData>();
 			usersAddedRecently = new List<queueData>();
+            m_PermitList = new Dictionary<userEntry, DateTime>();
+            m_MarioMaker2LevelInfoCache = new Dictionary<string, marioMakerLevelInfo>();
 
             m_LoadSuccessful = load();
+            if (m_config.maxEntries > 0)
+            {
+                m_ListMax = m_config.maxEntries;
+            }
 
             chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);
 			tempDef.addSubCommand(new chatCommandDef("open", open, true, false));
@@ -790,9 +1152,10 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("replace", replace, true, true));
             tempDef.addSubCommand(new chatCommandDef("subNext", subNext, true, false));
             tempDef.addSubCommand(new chatCommandDef("current", current, true, true));
+            tempDef.addSubCommand(new chatCommandDef("permit", permitNoFilter, true, false));
+            tempDef.addSubCommand(new chatCommandDef("viewlevel", viewLevel, true, false));
             tempDef.UseGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
-
 		}
 	}
 }
