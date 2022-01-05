@@ -825,6 +825,14 @@ namespace JerpDoesBots
             }
         }
 
+        public void reloadSettings(userEntry commandUser, string argumentString)
+        {
+            if (load())
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReloadSuccess"));
+            else
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReloadFail"));
+        }
+
         public void current(userEntry commandUser, string argumentString)
         {
             if (m_CurEntry != null)
@@ -1110,6 +1118,11 @@ namespace JerpDoesBots
                 if (!string.IsNullOrEmpty(queueConfigString))
                 {
                     m_config = new JavaScriptSerializer().Deserialize<queueConfig>(queueConfigString);
+                    if (m_config.maxEntries > 0)
+                    {
+                        m_ListMax = m_config.maxEntries;
+                    }
+                    m_LoadSuccessful = true;
                     return true;
                 }
             }
@@ -1126,11 +1139,7 @@ namespace JerpDoesBots
             m_PermitList = new Dictionary<userEntry, DateTime>();
             m_MarioMaker2LevelInfoCache = new Dictionary<string, marioMakerLevelInfo>();
 
-            m_LoadSuccessful = load();
-            if (m_config.maxEntries > 0)
-            {
-                m_ListMax = m_config.maxEntries;
-            }
+            load();
 
             chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);
 			tempDef.addSubCommand(new chatCommandDef("open", open, true, false));
@@ -1154,6 +1163,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("current", current, true, true));
             tempDef.addSubCommand(new chatCommandDef("permit", permitNoFilter, true, false));
             tempDef.addSubCommand(new chatCommandDef("viewlevel", viewLevel, true, false));
+            tempDef.addSubCommand(new chatCommandDef("reload", reloadSettings, false, false));
             tempDef.UseGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 		}

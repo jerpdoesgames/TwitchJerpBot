@@ -237,6 +237,8 @@
           "marioMakerLevelInvalidClearConditionOnly": "Must contain a clear condition.",
           "marioMakerLevelInvalidClearConditionExluded": "Cannot contain a clear condition.",
           "queuePermitNoFilterDisplay": "{0} is allowed to bypass the queue for {1} seconds.",
-          "queueCurEntryDisplayMarioMakerAPI":      "Current entry is {0} with level code: {1} (\"{2}\") | Clear Percent: {3} | Fastest Clear: {4} | Tags: {5}"
+          "queueCurEntryDisplayMarioMakerAPI":      "Current entry is {0} with level code: {1} (\"{2}\") | Clear Percent: {3} | Fastest Clear: {4} | Tags: {5}",
+          "queueReloadSuccess":      "Queue settings reloaded successfully.",
+          "queueReloadFail":      "Queue settings failed to reload."
     }
 }
