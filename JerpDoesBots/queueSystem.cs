@@ -851,6 +851,10 @@ namespace JerpDoesBots
                             {
                                 m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMakerAPI"), m_CurEntry.user.Nickname, m_CurEntry.data, m_CurEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
                             }
+                            else
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("marioMakerLevelNotFound"));
+                            }
                         }
                         else
                         {
@@ -913,7 +917,23 @@ namespace JerpDoesBots
                     break;
                 case QUEUE_TYPE_MARIOMAKER:
                 case QUEUE_TYPE_MARIOMAKER2:
-                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMaker"), aEntry.user.Nickname, aEntry.data));
+                    if (m_QueueType == QUEUE_TYPE_MARIOMAKER2 && m_config.marioMaker2.useAPI)
+                    {
+                        marioMakerLevelInfo curLevel = marioMakerAPI.getLevelInfo(aEntry.data);
+                        if (curLevel != null)
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMakerAPI"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data, aEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
+                        }
+                        else
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMaker2API"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                        }
+                    }
+                    else
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMaker2API"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                    }
+                        
                     break;
                 case QUEUE_TYPE_GENERIC:
                     m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectGeneric"), aEntry.user.Nickname, aEntry.data));
