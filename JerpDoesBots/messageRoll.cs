@@ -123,10 +123,6 @@ namespace JerpDoesBots
             {
                 return newMessage.text;
             }
-            else
-            {
-                m_Loaded = false;
-            }
 
             return null;
         }
@@ -172,14 +168,15 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage(messageToSend);
                 }
 
-
-                m_Throttler.trigger();
             }
+
+            m_Throttler.trigger();
         }
 
         public void forceNext(userEntry commandUser, string argumentString)
         {
-            sendNextMessage();
+            if (m_Loaded)
+                sendNextMessage();
         }
 
         public messageRoll(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
