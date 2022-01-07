@@ -100,6 +100,8 @@ namespace JerpDoesBots
         public string Title { get { return m_Title; } set { m_Title = value; } }
         private int m_ViewersLast = 0;
 
+        public int viewersLast { get { return m_ViewersLast; } }
+
         private string m_Game = "";
         public string game { get { return m_Game; } }
 
@@ -727,6 +729,19 @@ namespace JerpDoesBots
                         sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserModCheckFail"), checkUser.Nickname));
                 }
             }
+        }
+
+        public int getNumChattersFollowing(out int numChattersTotal)
+        {
+            numChattersTotal = 0;
+            int totalFollowers = 0;
+            foreach (string curKey in userList.Keys)
+            {
+                numChattersTotal++;
+                if (userList[curKey].isFollower)
+                    totalFollowers++;
+            }
+            return totalFollowers;
         }
 
         public void randomNumber(userEntry commandUser, string argumentString)
