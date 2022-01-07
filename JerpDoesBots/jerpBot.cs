@@ -737,9 +737,12 @@ namespace JerpDoesBots
             int totalFollowers = 0;
             foreach (string curKey in userList.Keys)
             {
-                numChattersTotal++;
-                if (userList[curKey].isFollower)
-                    totalFollowers++;
+                if (userList[curKey].inChannel)
+                {
+                    numChattersTotal++;
+                    if (userList[curKey].isFollower)
+                        totalFollowers++;
+                }
             }
             return totalFollowers;
         }
