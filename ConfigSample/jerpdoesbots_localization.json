@@ -135,7 +135,7 @@
           "queueClosed":                         "Queue closed..",
           "queueModeSet":                        "Queue cleared and set to mode '{0}'.",
           "queueTypeSet":                        "Queue cleared and set to type '{0}'.",
-          "queueCountAnnounce":                  "There are {0} entries in the queue ({1} max, {2} per user).",
+          "queueCountAnnounce":                  "There are {0} entries in the queue ({1} entries max, {2} per user, {3} online, {4} are away).",
           "queueEntryFailMaxPerUser":            "{0}: Max allowable entries reached! ({1} allowed per user).",
           "queueEntrySuccess":                   "{0}: New entry added in position {1}.",
           "queueEntryFailQueueFull":             "{0}: The queue is full!  Please try again later. ({1} entries total)",
@@ -242,6 +242,8 @@
           "queuePermitNoFilterDisplay": "{0} is allowed to bypass the queue's filters for {1} seconds.",
           "queueCurEntryDisplayMarioMakerAPI":      "Current entry is {0} with level code: {1} (\"{2}\") | Clear Percent: {3} | Fastest Clear: {4} | Tags: {5}",
           "queueReloadSuccess":      "Queue settings reloaded successfully.",
-          "queueReloadFail":      "Queue settings failed to reload."
+          "queueReloadFail":      "Queue settings failed to reload.",
+          "brbSetAway":      "{0} is now set to 'away' and will be ignored/skipped by most commands (queues, etc.)",
+          "brbSetBack":      "Welcome back, {0}!"
     }
 }

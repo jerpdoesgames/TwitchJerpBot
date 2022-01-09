@@ -7,6 +7,36 @@ using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
+    class queueData
+    {
+        public userEntry user;
+        public string data;
+        public DateTime addTime;
+        public int randomWeight;
+        private marioMakerLevelInfo m_LevelInfo;
+
+        public marioMakerLevelInfo levelInfo
+        {
+            get
+            {
+                if (m_LevelInfo == null && !string.IsNullOrEmpty(data))
+                {
+                    m_LevelInfo = marioMakerAPI.getLevelInfo(data);
+                    return m_LevelInfo;
+                }
+                return null;
+            }
+        }
+
+        public queueData(userEntry aUser, string aData = null)
+        {
+            user = aUser;
+            data = aData;
+            addTime = DateTime.Now.ToUniversalTime();
+            randomWeight = 0;
+        }
+    }
+
     class queueSystem : botModule
     {
         public const string QUEUE_MODE_NORMAL = "all";
@@ -81,36 +111,6 @@ namespace JerpDoesBots
             public queueConfigMarioMaker2 marioMaker2 { get; set; }
             public double permitNoFilterTime { get; set; }
         }
-
-        class queueData
-		{
-			public userEntry user;
-			public string data;
-            public DateTime addTime;
-            public int randomWeight;
-            private marioMakerLevelInfo m_LevelInfo;
-
-            public marioMakerLevelInfo levelInfo
-            {
-                get
-                {
-                    if (m_LevelInfo == null && !string.IsNullOrEmpty(data))
-                    {
-                        m_LevelInfo = marioMakerAPI.getLevelInfo(data);
-                        return m_LevelInfo;
-                    }
-                    return null;
-                }
-            }
-
-            public queueData(userEntry aUser, string aData = null)
-			{
-				user = aUser;
-				data = aData;
-                addTime = DateTime.Now.ToUniversalTime();
-                randomWeight = 0;
-            }
-		}
 
         private throttler m_Throttler;
         private readonly object messageLastLock = new object();
@@ -878,15 +878,17 @@ namespace JerpDoesBots
 
         public void next(userEntry commandUser, string argumentString)
 		{
-			int userCount = m_EntryList.Count();
+            List<queueData> entryList = getEntryList();
+            int userCount = entryList.Count();
 
 			if (userCount > 0)
 			{
-				queueData nextEntry = m_EntryList[0];
+				queueData nextEntry = entryList[0];
                 m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
                 announceSelection(nextEntry);
-            } else
+            }
+            else
 			{
                 if (isActive)
                     m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
@@ -894,19 +896,6 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
 		}
-
-        private List<queueData> getSubList()
-        {
-            List<queueData> subList = new List<queueData>();
-
-            foreach (queueData mainListEntry in m_EntryList)
-            {
-                if (mainListEntry.user.isSubscriber)
-                    subList.Add(mainListEntry);
-            }
-
-            return subList;
-        }
 
         private void announceSelection(queueData aEntry, string aPrefix = "")
         {
@@ -943,7 +932,7 @@ namespace JerpDoesBots
 
         public void subNext(userEntry commandUser, string argumentString)
         {
-            List<queueData> subList = getSubList();
+            List<queueData> subList = getEntryList(true, false, true, false);
             queueData nextEntry;
             bool foundEntry = false;
 
@@ -969,16 +958,15 @@ namespace JerpDoesBots
 
         public void subRandom(userEntry commandUser, string argumentString)
         {
-            int userCount = m_EntryList.Count();
             queueData nextEntry;
             bool foundEntry = false;
 
-            List<queueData> subList = getSubList();
+            List<queueData> subList = getEntryList(true, false, true, false);
 
             if (subList.Count > 0)
             {
                 int selectID = m_BotBrain.randomizer.Next(0, subList.Count - 1);
-                nextEntry = m_EntryList[selectID];
+                nextEntry = subList[selectID];
                 foundEntry = true;
 
                 m_CurEntry = nextEntry;
@@ -998,13 +986,14 @@ namespace JerpDoesBots
 
         public void random(userEntry commandUser, string argumentString)
         {
-            int userCount = m_EntryList.Count();
+            List<queueData> entryList = getEntryList();
+            int userCount = entryList.Count();
 
             if (userCount > 0)
             {
                 int selectID = m_BotBrain.randomizer.Next(0, userCount - 1);
 
-                queueData nextEntry = m_EntryList[selectID];
+                queueData nextEntry = entryList[selectID];
                 m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
                 announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteRandom") + " ");
@@ -1051,36 +1040,52 @@ namespace JerpDoesBots
             return outputWeight;
         }
 
-        public int calculateTotalUserWeight()
+        public int calculateTotalUserWeight(List<queueData> aEntryList)
         {
             int totalWeight = 0;
             queueData curEntry;
 
-            for (int i = 0; i < m_EntryList.Count; i++)
+            for (int i = 0; i < aEntryList.Count; i++)
             {
-                curEntry = m_EntryList[i];
-                curEntry.randomWeight = (int)Math.Round(calculateUserWeight(m_EntryList[i]));
+                curEntry = aEntryList[i];
+                curEntry.randomWeight = (int)Math.Round(calculateUserWeight(aEntryList[i]));
                 totalWeight += curEntry.randomWeight;
             }
 
             return totalWeight;
         }
 
+        private List<queueData> getEntryList(bool ignoreBrb = true, bool ignoreOffline = false, bool mustSub = false, bool mustFollow = false)
+        {
+            List<queueData> outList = new List<queueData>();
+
+            foreach (queueData curEnry in m_EntryList)
+            {
+                if ((ignoreBrb || !curEnry.user.isBrb) && (ignoreOffline || curEnry.user.inChannel) && (!mustSub || curEnry.user.isSubscriber) && (!mustFollow || curEnry.user.isFollower))
+                    outList.Add(curEnry);
+            }
+
+            return outList;
+        }
+
         public void weightedRandom(userEntry commandUser, string argumentString)
         {
-            int userCount = m_EntryList.Count();
+            List<queueData> entryList = getEntryList();
+
+            int userCount = entryList.Count();
 
             if (userCount > 0)
             {
-                int totalWeight = calculateTotalUserWeight();
+                int totalWeight = calculateTotalUserWeight(entryList);
                 int targValue = m_BotBrain.randomizer.Next(0, totalWeight);
                 int curWeight = 0;
-                queueData curEntry = m_EntryList[0];
 
-                for (int i = 0; i < m_EntryList.Count; i++)
+                queueData curEntry = entryList[0];
+
+                for (int i = 0; i < entryList.Count; i++)
                 {
-                    curEntry = m_EntryList[i];
-                    if (i == m_EntryList.Count - 1 || (targValue >= curWeight && targValue < (curWeight + curEntry.randomWeight)))
+                    curEntry = entryList[i];
+                    if (i == entryList.Count - 1 || (targValue >= curWeight && targValue < (curWeight + curEntry.randomWeight)))
                     {
                         break;  // Found user
                     }

@@ -6,28 +6,29 @@ namespace JerpDoesBots
 {
 	class userEntry
 	{
-		private bool	m_NeedsUpdate	= false;	// Whether we need to update this in the database
-		private long	m_LastUpdate		= 0;	// Last time we've updated this in the database
-		// private int		level			= 0;
-		private bool	m_Initialized = false;
-		private bool	m_InChannel = false;
-		private int		m_ViewerID;
-		private string	m_Nickname;					// ^[a-zA-Z0-9_]{4,25}$
-		public string	Nickname { get { return m_Nickname; } }
+		private bool m_NeedsUpdate = false; // Whether we need to update this in the database
+		private long m_LastUpdate = 0;  // Last time we've updated this in the database
+										// private int		level			= 0;
+		private bool m_Initialized = false;
+		private bool m_InChannel = false;
+		private int m_ViewerID;
+		private string m_Nickname;                  // ^[a-zA-Z0-9_]{4,25}$
+		public string Nickname { get { return m_Nickname; } }
 
-		private int		m_Loyalty					= 0;
-		private int		m_Points					= 0;
-		private bool	m_IsFollower				= false;
-		private bool	m_isVIP						= false;
-		private bool	m_isPartner					= false;
+		private int m_Loyalty = 0;
+		private int m_Points = 0;
+		private bool m_IsFollower = false;
+		private bool m_isVIP = false;
+		private bool m_isPartner = false;
 
-		private bool	m_IsSubscriber			= false;
-		private bool	m_IsTurbo					= false;
-		private bool	m_IsModerator				= false;
-		private bool	m_IsBroadcaster			= false;
-		private bool	m_IsHosting				= false;
-		private int		m_SessionMessageCount		= 0;
-		private int		m_SessionCommandCount		= 0;
+		private bool m_IsSubscriber = false;
+		private bool m_IsTurbo = false;
+		private bool m_IsModerator = false;
+		private bool m_IsBroadcaster = false;
+		private bool m_IsHosting = false;
+		private int m_SessionMessageCount = 0;
+		private int m_SessionCommandCount = 0;
+		private bool m_IsBrb = false;
 
 		private SQLiteConnection botDatabase;
 
@@ -43,15 +44,18 @@ namespace JerpDoesBots
 			m_NeedsUpdate = true;
 		}
 
-		public bool inChannel		{ get { return m_InChannel; } set { m_InChannel = value; } }
-		public bool needsUpdate		{ get { return m_NeedsUpdate; } }
-		public bool isSubscriber	{ get { return m_IsSubscriber; } set { m_IsSubscriber = value; } }
-		public bool isFollower		{ get { return m_IsFollower; } }
-		public bool isVIP			{ get { return m_isVIP; } set { m_isVIP = value; } }
+		public bool inChannel { get { return m_InChannel; } set { m_InChannel = value; } }
+		public bool needsUpdate { get { return m_NeedsUpdate; } }
+		public bool isSubscriber { get { return m_IsSubscriber; } set { m_IsSubscriber = value; } }
+		public bool isFollower { get { return m_IsFollower; } }
+		public bool isVIP { get { return m_isVIP; } set { m_isVIP = value; } }
 		public bool isPartner { get { return m_isPartner; } set { m_isPartner = value; } }
 
-		public bool isTurbo			{ get { return m_IsTurbo; } }
-		public bool isModerator		{ get { return m_IsModerator; } set { m_IsModerator = value; } }
+		public bool isTurbo { get { return m_IsTurbo; } }
+		public bool isModerator { get { return m_IsModerator; } set { m_IsModerator = value; } }
+
+		public bool isBrb { get { return m_IsBrb; } set { m_IsBrb = value; } }
+ 
 		public bool isHosting		{
 			get { return m_IsHosting; }
 			set { m_IsHosting = value; }

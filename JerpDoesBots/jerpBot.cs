@@ -435,6 +435,18 @@ namespace JerpDoesBots
                 sendChannelMessage(m_DefaultChannel, m_Localizer.getString("infoNewSubCountNone"));
         }
 
+        public void setUserBrb(userEntry commandUser, string argumentString)
+        {
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetAway"), m_SubsThisSession.ToString()));
+            commandUser.isBrb = true;
+        }
+
+        public void setUserBack(userEntry commandUser, string argumentString)
+        {
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetBack"), m_SubsThisSession.ToString()));
+            commandUser.isBrb = false;
+        }
+
         public void getHelpString(userEntry commandUser, string argumentString)
         {
             sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
@@ -1019,7 +1031,9 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
             chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
             chatCommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
-            chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, true));
+            chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
+            chatCommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
+            chatCommandList.Add(new chatCommandDef("back", setUserBack, true, true));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
