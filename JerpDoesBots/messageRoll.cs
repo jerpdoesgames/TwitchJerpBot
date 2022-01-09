@@ -81,10 +81,11 @@ namespace JerpDoesBots
 
         private bool isValidMessage(int aIndex)
         {
-            messageRollEntry curMessage = m_Config.messageList[m_MessageIndex];
             if (m_MessageIndex < m_Config.messageList.Count)
             {
+                messageRollEntry curMessage = m_Config.messageList[m_MessageIndex];
                 if (
+                    curMessage != null &&
                     isValidGame(curMessage) &&
                     isValidTags(curMessage) &&
                     isValidFollowPercentage(curMessage.followPercentMin, curMessage.followPercentMax) &&
@@ -100,7 +101,7 @@ namespace JerpDoesBots
         public void nextMessageIndex()
         {
             m_MessageIndex++;
-            if (m_MessageIndex > m_Config.messageList.Count)
+            if (m_MessageIndex >= m_Config.messageList.Count)
                 m_MessageIndex = 0;
         }
 
