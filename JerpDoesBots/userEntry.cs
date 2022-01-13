@@ -122,19 +122,19 @@ namespace JerpDoesBots
 			return false;
 		}
 
-		public userEntry(string aUsername, SQLiteConnection aBotData)
+		public userEntry(string aNickname, SQLiteConnection aBotData)
 		{
-			if (!String.IsNullOrEmpty(aUsername))
+			if (!String.IsNullOrEmpty(aNickname))
 			{
 				botDatabase = aBotData;
 
-				if (loadUser(aUsername))
+				if (loadUser(aNickname))
 					m_Initialized = true;
-				else if (createUser(aUsername))
+				else if (createUser(aNickname))
 					m_Initialized = true;
 				
 				if (m_Initialized)
-					m_Nickname	= aUsername;
+					m_Nickname	= aNickname;
 			}
 		}
 	}

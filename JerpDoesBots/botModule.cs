@@ -6,6 +6,8 @@
 		public virtual void onUserMessage(userEntry aUser, string aMessage) {}
         public virtual void onUserJoin(userEntry aUser) {}
         public virtual void onPrivateMessage(userEntry aUser, string aMessage) {}
+		public virtual void onChannelPointRedemption(userEntry aUser, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID) { }
+		
 		public virtual void onHost(string aHostName, int aViewerCount) { }
 
 		private bool m_RequiresConnection	= true;

@@ -35,10 +35,16 @@ namespace JerpDoesBots
 		public List<string> channels { get; set; }
 	}
 
+    public class pubSubConfig
+    {
+		public string oauth { get; set; }
+	}
+
 	public class botConfigData
 	{
 		public twitchAPIConfig twitch_api { get; set; }
 		public List<botConnection> connections { get; set; }
+		public pubSubConfig pubsub { get; set; }
 	}
 
 	class botConfig

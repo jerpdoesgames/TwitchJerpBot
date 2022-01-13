@@ -244,6 +244,18 @@
           "queueReloadSuccess":      "Queue settings reloaded successfully.",
           "queueReloadFail":      "Queue settings failed to reload.",
           "brbSetAway":      "{0} is now set to 'away' and will be ignored/skipped by most commands (queues, etc.)",
-          "brbSetBack":      "Welcome back, {0}!"
+          "brbSetBack":      "Welcome back, {0}!",
+          "raffleHintJoinReward":      "Use the \"{0}\" channel point reward to join.",
+          "rafflePointRedemptionEnabled": "Raffles now require a channel point reward to join.",
+          "rafflePointRedemptionDisabled": "Raffles no-longer require channel points to join.",
+          "raffleRewardCreateFail": "Failed to create channel point reward to join raffles.",
+          "raffleRewardUpdateEnabledFail": "Failed to update raffle join channel point reward enabled state.",
+          "raffleAddUserFailNeedRedemption": "{0}: Unable to join raffle - need to use the \"{1}\" channel point reward.",
+          "raffleRewardRedeemStatusFulfilledFail": "{0}: Unable to set raffle channel point reward to \"claimed\".",
+          "raffleRewardRedeemFailUserExists": "Already joined this raffle.",
+          "raffleRewardRedeemFailInactive": "No raffle is currently open.",
+          "raffleRewardRedeemFailNoRewardRequired": "No channel point is required for this raffle.",
+          "raffleRewardRefund": "{0}: Unable to enter raffle, points will be refunded.  {1}",
+          "raffleRewardRedeemStatusCanceledFail": "{0}: Failed to refund channel points."
     }
 }

@@ -1,0 +1,8 @@
+{
+    "rewardInfo": {
+        "title": "Enter Raffle (jerpBot)",
+        "prompt": "Use this reward to enter the current active Raffle.",
+        "cost": 500
+    },
+    "requireRewardRedemptionOnLoad": false
+}

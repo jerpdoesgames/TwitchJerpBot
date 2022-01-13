@@ -1,8 +1,14 @@
 {
+	"soundsConfig": {
+		"enabled": true
+	},
 	"twitch_api": {
 		"client_id": "",
 		"channel_id": 0,
 		"oauth": "aaaaaaaaaaaaa"
+	},
+	"pubsub": {
+		"oauth": "bbbbbbbbbbbbb"
 	},
 	"connections": [
 		{

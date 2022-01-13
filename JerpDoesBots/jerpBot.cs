@@ -9,6 +9,8 @@ using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
+using TwitchLib.PubSub;
+using TwitchLib.PubSub.Events;
 using System.Threading.Tasks;
 using System.Linq;
 
@@ -20,6 +22,7 @@ namespace JerpDoesBots
         ConnectionCredentials m_TwitchCredentialsOwner;
         botConfig m_CoreConfig;
         TwitchClient m_TwitchClientBot;
+        TwitchPubSub m_TwitchPubSubBot;
         TwitchClient m_TwitchClientOwner;
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
@@ -536,17 +539,18 @@ namespace JerpDoesBots
 
         }
 
-        public userEntry checkCreateUser(string username, bool canCreate = true)
+        public userEntry checkCreateUser(string aUsername, bool canCreate = true)
         {
             userEntry userEntry;
-            if (m_UserList.ContainsKey(username) && m_UserList[username] != null)
+            string keyName = aUsername.ToLower();
+            if (m_UserList.ContainsKey(keyName) && m_UserList[keyName] != null)
             {
-                userEntry = m_UserList[username];
+                userEntry = m_UserList[keyName];
             }
             else if (canCreate)
             {
-                userEntry = new userEntry(username, m_StorageDB);
-                m_UserList[username] = userEntry;
+                userEntry = new userEntry(aUsername, m_StorageDB);
+                m_UserList[keyName] = userEntry;
             }
             else
             {
@@ -556,22 +560,22 @@ namespace JerpDoesBots
             return userEntry;
         }
 
-        public void processJoinPart(string nickname, bool hasJoined)
+        public void processJoinPart(string aNickname, bool aHasJoined)
         {
-            userEntry messageUser = checkCreateUser(nickname);
-            messageUser.inChannel = hasJoined;
+            userEntry messageUser = checkCreateUser(aNickname);
+            messageUser.inChannel = aHasJoined;
         }
 
-        public void processUserMessage(string nickname, string message)
+        public void processUserMessage(string aNickname, string aMessage)
         {
-            userEntry messageUser = checkCreateUser(nickname);
+            userEntry messageUser = checkCreateUser(aNickname);
 
             m_LineCount++;
 
-            if (message[0] == '!')  // Try to assume this is a command
+            if (aMessage[0] == '!')  // Try to assume this is a command
             {
                 messageUser.incrementCommandCount();
-                processUserCommand(messageUser, message);
+                processUserCommand(messageUser, aMessage);
             }
             else
             {
@@ -580,18 +584,31 @@ namespace JerpDoesBots
                 {
                     tempModule = m_Modules[i];
 
-                    if (moduleValidForAction(tempModule))
-                        tempModule.onUserMessage(messageUser, message);
+                    if (isModuleValidForUserAction(tempModule))
+                        tempModule.onUserMessage(messageUser, aMessage);
                 }
 
                 messageUser.incrementMessageCount();
-                if (message.Length <= MESSAGE_VOTE_MAX_LENGTH && message.IndexOf(" ") == -1)
-                    processUserCommand(messageUser, "!vote " + message);
-                        
+                if (aMessage.Length <= MESSAGE_VOTE_MAX_LENGTH && aMessage.IndexOf(" ") == -1)
+                    processUserCommand(messageUser, "!vote " + aMessage);
             }
         }
 
-        private bool moduleValidForAction(botModule aModule)
+        public void processChannelPointRedemption(string aNickname, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
+        {
+            userEntry messageUser = checkCreateUser(aNickname);
+
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
+            {
+                tempModule = m_Modules[i];
+
+                if (isModuleValidForUserAction(tempModule))
+                    tempModule.onChannelPointRedemption(messageUser, aRewardTitle, aRewardCost, aRewardUserInput, aRewardID, aRedemptionID);
+            }
+        }
+
+        private bool isModuleValidForUserAction(botModule aModule)
         {
             if (
                 (!aModule.requiresConnection || m_HasChatConnection) &&
@@ -614,7 +631,7 @@ namespace JerpDoesBots
                 {
                     tempModule = m_Modules[i];
 
-                    if (moduleValidForAction(tempModule))
+                    if (isModuleValidForUserAction(tempModule))
                         tempModule.frame();
                 }
 
@@ -871,7 +888,7 @@ namespace JerpDoesBots
             m_SubsThisSession++;
         }
 
-        private void Client_OnLog(object sender, OnLogArgs e)
+        private void Client_OnLog(object sender, TwitchLib.Client.Events.OnLogArgs e)
         {
             Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
         }
@@ -892,7 +909,7 @@ namespace JerpDoesBots
             {
                 tempModule = m_Modules[i];
 
-                if (moduleValidForAction(tempModule))
+                if (isModuleValidForUserAction(tempModule))
                     tempModule.onUserJoin(joinedUser);
             }
         }
@@ -910,7 +927,7 @@ namespace JerpDoesBots
             {
                 tempModule = m_Modules[i];
 
-                if (moduleValidForAction(tempModule))
+                if (isModuleValidForUserAction(tempModule))
                     tempModule.onHost(e.BeingHostedNotification.HostedByChannel, e.BeingHostedNotification.Viewers);
             }
         }
@@ -935,7 +952,6 @@ namespace JerpDoesBots
             if (aStream != null)
             {
                 m_IsLive = true;
-                // m_Game = aStream.GameName;
                 m_ViewersLast = aStream.ViewerCount;
                 m_LiveStartTime = aStream.StartedAt;
             }
@@ -957,6 +973,25 @@ namespace JerpDoesBots
         private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
         {
             ParseStreamData(e.Stream);
+        }
+
+        // ==========================================================
+
+        private void PubSub_OnChannelPointsRewardRedeemed(object sender, OnChannelPointsRewardRedeemedArgs e)
+        {
+            processChannelPointRedemption(e.RewardRedeemed.Redemption.User.DisplayName, e.RewardRedeemed.Redemption.Reward.Title, e.RewardRedeemed.Redemption.Reward.Cost, e.RewardRedeemed.Redemption.UserInput, e.RewardRedeemed.Redemption.Reward.Id, e.RewardRedeemed.Redemption.Id);
+        }
+
+        private void PubSub_OnServiceConnected(object sender, EventArgs e)
+        {
+            Console.WriteLine("Connected to PubSub service, sending topics...");
+            m_TwitchPubSubBot.SendTopics(m_CoreConfig.configData.pubsub.oauth);
+        }
+
+        private void PubSub_OnListenResponse(object sender, OnListenResponseArgs e)
+        {
+            if (!e.Successful)
+                throw new Exception($"Failed to listen! Response: {e.Response}");
         }
 
         // ==========================================================
@@ -1016,7 +1051,17 @@ namespace JerpDoesBots
             m_TwitchClientBot.Connect();
             m_TwitchClientOwner.Connect();
 
-			m_ActionTimer = Stopwatch.StartNew();
+            m_TwitchPubSubBot = new TwitchPubSub();
+
+            m_TwitchPubSubBot.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
+            m_TwitchPubSubBot.OnPubSubServiceConnected += PubSub_OnServiceConnected;
+            m_TwitchPubSubBot.OnListenResponse += PubSub_OnListenResponse;
+
+            m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
+
+            m_TwitchPubSubBot.Connect();
+
+            m_ActionTimer = Stopwatch.StartNew();
 
 			chatCommandList = new List<chatCommandDef>();
 			chatCommandList.Add(new chatCommandDef("botquit", this.quitCommand, false, false));
