@@ -256,6 +256,8 @@
           "raffleRewardRedeemFailInactive": "No raffle is currently open.",
           "raffleRewardRedeemFailNoRewardRequired": "No channel point is required for this raffle.",
           "raffleRewardRefund": "{0}: Unable to enter raffle, points will be refunded.  {1}",
-          "raffleRewardRedeemStatusCanceledFail": "{0}: Failed to refund channel points."
+          "raffleRewardRedeemStatusCanceledFail": "{0}: Failed to refund channel points.",
+          "infoChattersFollowing": "There are {0} chatters following (out of {1} chatters total).",
+          "announceFollowEvent": "Thanks for the follow, {0}!"
     }
 }

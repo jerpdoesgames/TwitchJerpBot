@@ -1,7 +1,7 @@
 {
-	"soundsConfig": {
-		"enabled": true
-	},
+	"updateTwitchIDsOnUserJoins": false,
+	"followerStaleCheckSeconds": 360,
+	"announceFollowEvents": true,
 	"twitch_api": {
 		"client_id": "",
 		"channel_id": 0,

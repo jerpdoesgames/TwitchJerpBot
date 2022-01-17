@@ -45,6 +45,9 @@ namespace JerpDoesBots
 		public twitchAPIConfig twitch_api { get; set; }
 		public List<botConnection> connections { get; set; }
 		public pubSubConfig pubsub { get; set; }
+		public bool updateTwitchIDsOnUserJoins { get; set; }
+		public long followerStaleCheckSeconds { get; set; }
+		public bool announceFollowEvents { get; set; }
 	}
 
 	class botConfig

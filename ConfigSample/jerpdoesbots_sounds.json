@@ -1,4 +1,7 @@
 ﻿{
+  "enabled": true,
+  "useDevice": -1,
+  "globalVolume": 1.0,
   "soundList": [
     {
       "name": "soundname",

@@ -21,6 +21,14 @@ namespace JerpDoesBots
     {
         public List<soundCommandDef> soundList { get; set; }
         public bool enabled { get; set; }
+        public int useDevice { get; set; }
+        public float globalVolume { get; set; }
+
+        public soundCommandConfig()
+        {
+            useDevice = -1;
+            globalVolume = 1.0f;
+        }
     }
 
     class soundCommands : botModule
@@ -34,7 +42,7 @@ namespace JerpDoesBots
         private WaveOutEvent m_OutputEvent;
         private int m_DeviceNumber = -1;
 
-        private float m_GlobalVolume = 0.5f;
+        private float m_GlobalVolume = 1.0f;
         private bool m_IsEnabled = false;
 
         public bool isEnabled { get { return m_IsEnabled; } set { m_IsEnabled = value; } }
@@ -201,6 +209,16 @@ namespace JerpDoesBots
                 if (!string.IsNullOrEmpty(configFileString))
                 {
                     m_Config = new JavaScriptSerializer().Deserialize<soundCommandConfig>(configFileString);
+
+                    if (m_Config.useDevice >= -1 && m_Config.useDevice < WaveOut.DeviceCount)
+                    {
+                        m_DeviceNumber = m_Config.useDevice;
+                    }
+
+                    m_GlobalVolume = Math.Min(m_Config.globalVolume, 1.0f);
+
+                    m_IsEnabled = m_Config.enabled;
+
                     return true;
                 }
             }

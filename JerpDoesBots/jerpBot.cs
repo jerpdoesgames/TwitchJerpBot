@@ -44,6 +44,7 @@ namespace JerpDoesBots
         private string m_DefaultChannel;
         private bool m_IsReadyToClose = false; // Ready to completely end the program
         private int m_SubsThisSession = 0;
+        private long m_FollowerStaleCheckSeconds = 360;  // Amount of time that must pass before checking to see if someone's following
         private localizer m_Localizer;
         public localizer Localizer { get { return m_Localizer; } }
 
@@ -450,6 +451,13 @@ namespace JerpDoesBots
             commandUser.isBrb = false;
         }
 
+        public void announceChatterFollowingCount(userEntry commandUser, string argumentString)
+        {
+            int chattersTotal;
+            int chattersFollowing = getNumChattersFollowing(out chattersTotal);
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoChattersFollowing"), chattersFollowing.ToString(), chattersTotal.ToString()));
+        }
+
         public void getHelpString(userEntry commandUser, string argumentString)
         {
             sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
@@ -558,6 +566,39 @@ namespace JerpDoesBots
             }
 
             return userEntry;
+        }
+
+        public bool checkUpdateIsFollower(userEntry aUser)
+        {
+            if (!aUser.isBroadcaster)
+            {
+                TimeSpan timeSinceFollowCheck = DateTime.Now.Subtract(aUser.lastFollowCheckTime);
+
+                if (timeSinceFollowCheck.TotalSeconds > m_FollowerStaleCheckSeconds && !string.IsNullOrEmpty(aUser.twitchUserID))
+                {
+                    try
+                    {
+                        Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, OwnerID);
+                        userFollowsTask.Wait();
+
+                        if (userFollowsTask.Result != null)
+                        {
+                            aUser.isFollower = (userFollowsTask.Result.TotalFollows > 0);
+                            aUser.lastFollowCheckTime = DateTime.Now;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Failed to check following status for: " + aUser.Nickname);
+                    }
+                }
+            }
+            else
+            {
+                aUser.isFollower = true;
+            }
+
+            return aUser.isFollower;
         }
 
         public void processJoinPart(string aNickname, bool aHasJoined)
@@ -720,7 +761,7 @@ namespace JerpDoesBots
 
                 if (checkUser != null)
                 {
-                    if (checkUser.isFollower)
+                    if (checkUpdateIsFollower(checkUser))
                         sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserFollowCheckPass"), checkUser.Nickname));
                     else
                         sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserFollowCheckFail"), checkUser.Nickname));
@@ -766,10 +807,13 @@ namespace JerpDoesBots
             int totalFollowers = 0;
             foreach (string curKey in userList.Keys)
             {
-                if (userList[curKey].inChannel)
+                if (
+                    userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[0].nickname.ToLower() && // Skip bot
+                    userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[1].nickname.ToLower() && // Skip owner
+                    userList[curKey].inChannel)
                 {
                     numChattersTotal++;
-                    if (userList[curKey].isFollower)
+                    if (checkUpdateIsFollower(userList[curKey]))
                         totalFollowers++;
                 }
             }
@@ -863,6 +907,8 @@ namespace JerpDoesBots
                 messageUser.isSubscriber = e.ChatMessage.IsSubscriber;
                 messageUser.isVIP = e.ChatMessage.IsVip;
                 messageUser.isPartner = e.ChatMessage.IsPartner;
+                messageUser.inChannel = true;
+                messageUser.twitchUserID = e.ChatMessage.UserId;
 
                 processUserMessage(e.ChatMessage.Username, e.ChatMessage.Message);
             }
@@ -903,6 +949,27 @@ namespace JerpDoesBots
             userEntry joinedUser = checkCreateUser(e.Username);
             joinedUser.inChannel = true;
 
+            // This is a massive rate limit risk, disabled by default
+            if (m_CoreConfig.configData.updateTwitchIDsOnUserJoins)
+            {
+                List<string> userList = new List<string>();
+                userList.Add(e.Username.ToLower());
+
+                try
+                {
+                    Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> getUserIDTask = m_TwitchAPI.Helix.Users.GetUsersAsync(null, userList);
+                    getUserIDTask.Wait();
+
+                    if (getUserIDTask.Result != null && getUserIDTask.Result.Users.Length >= 1)
+                    {
+                        joinedUser.twitchUserID = getUserIDTask.Result.Users[0].Id;
+                    }
+                }
+                catch (Exception exceptionInfo)
+                {
+                    Console.Write("Could not grab user ID for user " + e.Username + ": " + exceptionInfo.Message);
+                }
+            }
 
             botModule tempModule;
             for (int i = 0; i < m_Modules.Count; i++)
@@ -994,6 +1061,18 @@ namespace JerpDoesBots
                 throw new Exception($"Failed to listen! Response: {e.Response}");
         }
 
+        private void PubSub_OnFollowResponse(object sender, OnFollowArgs e)
+        {
+            userEntry messageUser = checkCreateUser(e.DisplayName);
+            messageUser.isFollower = true;
+            messageUser.twitchUserID = e.UserId;
+            messageUser.lastFollowCheckTime = DateTime.Now;
+            if (m_CoreConfig.configData.announceFollowEvents)
+            {
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), e.DisplayName));
+            }
+        }
+
         // ==========================================================
 
         public jerpBot(logger useLog, botConfig aConfig)
@@ -1004,6 +1083,8 @@ namespace JerpDoesBots
 			actionQueue = new Queue<connectionCommand>();
             m_CoreConfig = aConfig;
             m_Localizer = new localizer(this);
+
+            m_FollowerStaleCheckSeconds = m_CoreConfig.configData.followerStaleCheckSeconds;
 
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
 
@@ -1056,8 +1137,10 @@ namespace JerpDoesBots
             m_TwitchPubSubBot.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
             m_TwitchPubSubBot.OnPubSubServiceConnected += PubSub_OnServiceConnected;
             m_TwitchPubSubBot.OnListenResponse += PubSub_OnListenResponse;
+            m_TwitchPubSubBot.OnFollow += PubSub_OnFollowResponse;
 
             m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
+            m_TwitchPubSubBot.ListenToFollows(m_CoreConfig.configData.twitch_api.channel_id.ToString());
 
             m_TwitchPubSubBot.Connect();
 
@@ -1079,6 +1162,7 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
             chatCommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
             chatCommandList.Add(new chatCommandDef("back", setUserBack, true, true));
+            chatCommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");

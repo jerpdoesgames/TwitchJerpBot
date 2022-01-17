@@ -181,7 +181,7 @@ namespace JerpDoesBots
             switch(m_QueueMode)
             {
                 case QUEUE_MODE_FOLLOWERS:
-                    return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber || queueUser.isFollower);
+                    return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber || m_BotBrain.checkUpdateIsFollower(queueUser));
                 case QUEUE_MODE_SUBS:
                     return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber);
                 default:
@@ -915,12 +915,12 @@ namespace JerpDoesBots
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMaker2API"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                            m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
                         }
                     }
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMaker2API"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                        m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
                     }
                         
                     break;
@@ -932,7 +932,7 @@ namespace JerpDoesBots
 
         public void subNext(userEntry commandUser, string argumentString)
         {
-            List<queueData> subList = getEntryList(true, false, true, false);
+            List<queueData> subList = getEntryList(false, true, true, false);
             queueData nextEntry;
             bool foundEntry = false;
 
@@ -961,7 +961,7 @@ namespace JerpDoesBots
             queueData nextEntry;
             bool foundEntry = false;
 
-            List<queueData> subList = getEntryList(true, false, true, false);
+            List<queueData> subList = getEntryList(false, true, true, false);
 
             if (subList.Count > 0)
             {
@@ -1031,7 +1031,7 @@ namespace JerpDoesBots
 
             outputWeight += (Math.Min(minutesSinceAdd, maxMinutesPassed) * valuePerMinute);
 
-            if (aData.user.isFollower)
+            if (m_BotBrain.checkUpdateIsFollower(aData.user))
                 outputWeight *= (m_LoadSuccessful ? m_config.weightedRandom.followModifier : 1.25f);
 
             if (aData.user.isSubscriber)
@@ -1055,13 +1055,13 @@ namespace JerpDoesBots
             return totalWeight;
         }
 
-        private List<queueData> getEntryList(bool ignoreBrb = true, bool ignoreOffline = false, bool mustSub = false, bool mustFollow = false)
+        private List<queueData> getEntryList(bool ignoreBrb = false, bool ignoreOffline = true, bool mustSub = false, bool mustFollow = false)
         {
             List<queueData> outList = new List<queueData>();
 
             foreach (queueData curEnry in m_EntryList)
             {
-                if ((ignoreBrb || !curEnry.user.isBrb) && (ignoreOffline || curEnry.user.inChannel) && (!mustSub || curEnry.user.isSubscriber) && (!mustFollow || curEnry.user.isFollower))
+                if ((ignoreBrb || !curEnry.user.isBrb) && (ignoreOffline || curEnry.user.inChannel) && (!mustSub || curEnry.user.isSubscriber) && (!mustFollow || m_BotBrain.checkUpdateIsFollower(curEnry.user)))
                     outList.Add(curEnry);
             }
 

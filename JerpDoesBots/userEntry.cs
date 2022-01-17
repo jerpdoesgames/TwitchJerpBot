@@ -29,6 +29,7 @@ namespace JerpDoesBots
 		private int m_SessionMessageCount = 0;
 		private int m_SessionCommandCount = 0;
 		private bool m_IsBrb = false;
+		private string m_TwitchUserID;
 
 		private SQLiteConnection botDatabase;
 
@@ -47,7 +48,7 @@ namespace JerpDoesBots
 		public bool inChannel { get { return m_InChannel; } set { m_InChannel = value; } }
 		public bool needsUpdate { get { return m_NeedsUpdate; } }
 		public bool isSubscriber { get { return m_IsSubscriber; } set { m_IsSubscriber = value; } }
-		public bool isFollower { get { return m_IsFollower; } }
+		public bool isFollower { get { return m_IsFollower; } set { m_IsFollower = value; } }
 		public bool isVIP { get { return m_isVIP; } set { m_isVIP = value; } }
 		public bool isPartner { get { return m_isPartner; } set { m_isPartner = value; } }
 
@@ -55,6 +56,11 @@ namespace JerpDoesBots
 		public bool isModerator { get { return m_IsModerator; } set { m_IsModerator = value; } }
 
 		public bool isBrb { get { return m_IsBrb; } set { m_IsBrb = value; } }
+
+		public string twitchUserID { get { return m_TwitchUserID; } set { m_TwitchUserID = value; } }
+
+		private DateTime m_LastFollowCheckTime;
+		public DateTime lastFollowCheckTime { get; set; }
  
 		public bool isHosting		{
 			get { return m_IsHosting; }
