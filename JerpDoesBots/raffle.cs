@@ -84,7 +84,6 @@ namespace JerpDoesBots
 		private bool checkCreateChannelPointRedemptionReward(out bool bAlreadyExists)
         {
 			bAlreadyExists = false;
-			TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward raffleRedemptionReward = null;
 
 			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.OwnerID);
 			getRewardsTask.Wait();
@@ -101,37 +100,33 @@ namespace JerpDoesBots
 				}
 			}
 
-			if (raffleRedemptionReward == null)
-            {
-				TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest();
-				createRewardRequest.Cost = m_config.rewardInfo.cost;
-				createRewardRequest.Title = m_config.rewardInfo.title;
-				createRewardRequest.Prompt = m_config.rewardInfo.description;
-				createRewardRequest.IsEnabled = true;
+			// Doesn't already exist, create it
+			TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest();
+			createRewardRequest.Cost = m_config.rewardInfo.cost;
+			createRewardRequest.Title = m_config.rewardInfo.title;
+			createRewardRequest.Prompt = m_config.rewardInfo.description;
+			createRewardRequest.IsEnabled = true;
 
-				try
-				{
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.OwnerID, createRewardRequest);
-					createRewardTask.Wait();
+			try
+			{
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.OwnerID, createRewardRequest);
+				createRewardTask.Wait();
 
-					if (createRewardTask.Result == null)
-					{
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardCreateFail"));
-						return false;
-					}
-					else
-                    {
-						return true;	// Successfully created
-                    }
-				}
-				catch (Exception e)
+				if (createRewardTask.Result == null)
 				{
 					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardCreateFail"));
 					return false;
 				}
+				else
+				{
+					return true;    // Successfully created
+				}
 			}
-
-			return false;	// Should never realistically be able to reach this
+			catch (Exception e)
+			{
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardCreateFail"));
+				return false;
+			}
 		}
 
 		private bool updateChannelPointRedemptionRewardEnabled(bool aEnabled)

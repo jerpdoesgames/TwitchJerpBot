@@ -258,6 +258,7 @@
           "raffleRewardRefund": "{0}: Unable to enter raffle, points will be refunded.  {1}",
           "raffleRewardRedeemStatusCanceledFail": "{0}: Failed to refund channel points.",
           "infoChattersFollowing": "There are {0} chatters following (out of {1} chatters total).",
-          "announceFollowEvent": "Thanks for the follow, {0}!"
+          "announceFollowEvent": "Thanks for the follow, {0}!",
+          "channelPointRewardsCreatedRemoved": "Channel Point rewards updated: {0} added, {1} removed."
     }
 }
