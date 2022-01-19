@@ -24,6 +24,7 @@ namespace JerpDoesBots
 			public string title { get; set; }
 			public string description { get; set; }
 			public int cost { get; set; }
+			public string backgroundColor { get; set; }
 		}
 
 		class raffleConfig
@@ -63,7 +64,13 @@ namespace JerpDoesBots
 						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("rafflePointRedemptionEnabled"));
 
 					if (m_IsActive)
-						updateChannelPointRedemptionRewardEnabled(true);
+                    {
+						bool alreadyExists = false;
+						checkCreateChannelPointRedemptionReward(out alreadyExists);
+
+						if (alreadyExists)
+							updateChannelPointRedemptionRewardEnabled(true);
+					}
 				}
 				else
 				{
@@ -105,6 +112,7 @@ namespace JerpDoesBots
 			createRewardRequest.Cost = m_config.rewardInfo.cost;
 			createRewardRequest.Title = m_config.rewardInfo.title;
 			createRewardRequest.Prompt = m_config.rewardInfo.description;
+			createRewardRequest.BackgroundColor = m_config.rewardInfo.backgroundColor;
 			createRewardRequest.IsEnabled = true;
 
 			try
@@ -240,6 +248,7 @@ namespace JerpDoesBots
 					)
 				)
                 {
+					// TODO: Handle something like, if the reward exists but it's not required, disable the reward
 					resetEntries();
 					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleOpenedCleared") + getJoinString());
 
