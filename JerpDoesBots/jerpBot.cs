@@ -1142,7 +1142,17 @@ namespace JerpDoesBots
             m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
             m_TwitchPubSubBot.ListenToFollows(m_CoreConfig.configData.twitch_api.channel_id.ToString());
 
-            m_TwitchPubSubBot.Connect();
+            OperatingSystem osInfo = Environment.OSVersion;
+
+            if (osInfo.Platform == PlatformID.Win32NT && osInfo.Version.Major == 10)    // Websockets requires Win8+, but I'm just gonna check for Win10 cause who's using 8?
+            {
+                m_TwitchPubSubBot.Connect();
+            }
+            else
+            {
+                Console.WriteLine("Unable to check for followers via websockets -- requires Win10");
+            }
+            
 
             m_ActionTimer = Stopwatch.StartNew();
 
