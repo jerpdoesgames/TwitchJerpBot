@@ -1144,13 +1144,15 @@ namespace JerpDoesBots
 
             OperatingSystem osInfo = Environment.OSVersion;
 
-            if (osInfo.Platform == PlatformID.Win32NT && osInfo.Version.Major == 10)    // Websockets requires Win8+, but I'm just gonna check for Win10 cause who's using 8?
+            Version win8version = new Version(6, 2, 9200, 0);
+
+            if (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version)    // Websockets requires Win8+
             {
                 m_TwitchPubSubBot.Connect();
             }
             else
             {
-                Console.WriteLine("Unable to check for followers via websockets -- requires Win10");
+                Console.WriteLine("Unable to check for followers/channel point redemptions, etc. via websockets -- requires Win8+");
             }
             
 
