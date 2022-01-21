@@ -21,6 +21,14 @@ namespace JerpDoesBots
     {
         public List<soundCommandDef> soundList { get; set; }
         public bool enabled { get; set; }
+        public int useDevice { get; set; }
+        public float globalVolume { get; set; }
+
+        public soundCommandConfig()
+        {
+            useDevice = -1;
+            globalVolume = 1.0f;
+        }
     }
 
     class soundCommands : botModule
@@ -31,16 +39,17 @@ namespace JerpDoesBots
 
         private soundCommandConfig m_Config;
         private soundCommandDef m_lastSound;
-        private WaveOutEvent m_OutputDevice;
+        private WaveOutEvent m_OutputEvent;
+        private int m_DeviceNumber = -1;
 
-        private float m_GlobalVolume = 0.5f;
+        private float m_GlobalVolume = 1.0f;
         private bool m_IsEnabled = false;
 
         public bool isEnabled { get { return m_IsEnabled; } set { m_IsEnabled = value; } }
 
         private bool onCooldown(soundCommandDef aSound, userEntry commandUser)
         {
-            if (m_OutputDevice.PlaybackState == PlaybackState.Playing)
+            if (m_OutputEvent.PlaybackState == PlaybackState.Playing)
                 return true;
 
             if (commandUser.isBroadcaster)
@@ -78,20 +87,23 @@ namespace JerpDoesBots
 
                 if (File.Exists(soundPath))
                 {
+                    
                     AudioFileReader audioFile = new AudioFileReader(soundPath);
-                    m_OutputDevice.Init(audioFile);
+                    m_OutputEvent.DeviceNumber = m_DeviceNumber;
+                    m_OutputEvent.Init(audioFile);
 
                     float soundVolume = m_GlobalVolume;
                     if (curSound.volume > 0)
                         soundVolume *= curSound.volume;
 
-                    m_OutputDevice.Volume = Math.Min(soundVolume, 1.0f);
-                    m_OutputDevice.Play();
+                    m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
+                    m_OutputEvent.Play();
+
                     curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
                     m_lastSound = curSound;
 
                     if (isRandom)
-                        m_BotBrain.sendDefaultChannelMessage("Playing random sound " + curSound.name);
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundPlayRandom"), curSound.name));
                 }
             }
         }
@@ -130,6 +142,34 @@ namespace JerpDoesBots
             }
         }
 
+        // This is for people like Jerp who haven't updated all of their rigs to Win10
+        public void setDevice(userEntry commandUser, string argumentString)
+        {
+            bool success = false;
+            int deviceNumber;
+            if (Int32.TryParse(argumentString, out deviceNumber))
+            {
+                if (deviceNumber >= -1 && deviceNumber < WaveOut.DeviceCount)
+                {
+                    m_DeviceNumber = deviceNumber;
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
+                    success = true;
+                }
+            }
+
+            if (!success)
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
+        }
+
+        public void getDeviceList(userEntry commandUser, string argumentString)
+        {
+            for (int i=0; i < WaveOut.DeviceCount; i++)
+            {
+                WaveOutCapabilities curDevice = WaveOut.GetCapabilities(i);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
+            }
+        }
+
         public void setVolume(userEntry commandUser, string argumentString)
         {
             float newVolume;
@@ -137,7 +177,7 @@ namespace JerpDoesBots
             {
                 newVolume = Math.Min(newVolume, 1.0f);
                 m_GlobalVolume = newVolume;
-                m_BotBrain.sendDefaultChannelMessage("Global volume set to " + newVolume);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetGlobalVolume"), newVolume));
             }
         }
 
@@ -145,34 +185,19 @@ namespace JerpDoesBots
         {
             m_IsEnabled = true;
 
-            m_BotBrain.sendDefaultChannelMessage("Sound command enabled - use !sound list to see what's available.");
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundEnabled"));
         }
 
         public void disable(userEntry commandUser, string argumentString)
         {
             m_IsEnabled = false;
 
-            m_BotBrain.sendDefaultChannelMessage("Sound command disabled.");
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundDisabled"));
         }
 
         public void getList(userEntry commandUser, string argumentString)
         {
-            m_BotBrain.sendDefaultChannelMessage("Sound list here: jerp.tv/sounds.html");
-        }
-
-        public void makeList(userEntry commandUser, string argumentString)
-        {
-            if (!m_IsEnabled)
-                return;
-
-            List<string> soundNames = new List<string>();
-
-            for (int i = 0; i < m_Config.soundList.Count; i++)
-                soundNames.Add(m_Config.soundList[i].name);
-
-            string soundNameString = string.Join(", ", soundNames);
-
-            Console.WriteLine("Available sounds are: " + soundNameString);
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundList"));
         }
 
         private bool loadSounds()
@@ -184,6 +209,16 @@ namespace JerpDoesBots
                 if (!string.IsNullOrEmpty(configFileString))
                 {
                     m_Config = new JavaScriptSerializer().Deserialize<soundCommandConfig>(configFileString);
+
+                    if (m_Config.useDevice >= -1 && m_Config.useDevice < WaveOut.DeviceCount)
+                    {
+                        m_DeviceNumber = m_Config.useDevice;
+                    }
+
+                    m_GlobalVolume = Math.Min(m_Config.globalVolume, 1.0f);
+
+                    m_IsEnabled = m_Config.enabled;
+
                     return true;
                 }
             }
@@ -194,9 +229,9 @@ namespace JerpDoesBots
         public void reloadSounds(userEntry commandUser, string argumentString)
         {
             if (loadSounds())
-                m_BotBrain.sendDefaultChannelMessage("Reloaded sound config.");
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadSuccess"));
             else
-                m_BotBrain.sendDefaultChannelMessage("Failed to reload sound config(?)");
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadFail"));
         }
 
         public void playRandom(userEntry commandUser, string argumentString)
@@ -214,14 +249,15 @@ namespace JerpDoesBots
                 chatCommandDef tempDef = new chatCommandDef("sound", playSound, true, true);
                 tempDef.addSubCommand(new chatCommandDef("volume", setVolume, false, false));
                 tempDef.addSubCommand(new chatCommandDef("list", getList, true, true));
-                tempDef.addSubCommand(new chatCommandDef("buildlist", makeList, false, false));
                 tempDef.addSubCommand(new chatCommandDef("enable", enable, true, false));
                 tempDef.addSubCommand(new chatCommandDef("disable", disable, true, false));
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadSounds, false, false));
                 tempDef.addSubCommand(new chatCommandDef("random", playRandom, true, true));
+                tempDef.addSubCommand(new chatCommandDef("getdevices", getDeviceList, false, false));
+                tempDef.addSubCommand(new chatCommandDef("setdevice", setDevice, false, false));
 
                 m_BotBrain.addChatCommand(tempDef);
-                m_OutputDevice = new WaveOutEvent();
+                m_OutputEvent = new WaveOutEvent();
             }
         }
     }

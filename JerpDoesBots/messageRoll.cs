@@ -12,7 +12,7 @@ namespace JerpDoesBots
 
         private throttler m_Throttler;
 
-        private bool isValidTags(int aIndex)
+        private bool isValidTags(messageRollEntry aMessage)
         {
             if (m_Config.messageList[m_MessageIndex].tags == null) // No tags to worry about
             {
@@ -20,9 +20,9 @@ namespace JerpDoesBots
             }
             else
             {
-                for (int i = 0; i < m_Config.messageList[aIndex].tags.Count; i++)
+                for (int i = 0; i < aMessage.tags.Count; i++)
                 {
-                    if (!m_BotBrain.tagInList(m_Config.messageList[aIndex].tags[i], m_BotBrain.tags))
+                    if (!m_BotBrain.tagInList(aMessage.tags[i], m_BotBrain.tags))
                         return false;
                 }
             }
@@ -30,14 +30,67 @@ namespace JerpDoesBots
             return true;
         }
 
+        private bool isValidViewerCount(int viewersMin = -1, int viewersMax = -1)
+        {
+            if (viewersMin >= 0 && viewersMax >= 0)
+            {
+                return m_BotBrain.viewersLast <= viewersMax && m_BotBrain.viewersLast >= viewersMin;
+            }
+            else if (viewersMin >= 0)
+            {
+                return m_BotBrain.viewersLast >= viewersMin;
+            }
+            else if (viewersMax >= 0)
+            {
+                return m_BotBrain.viewersLast <= viewersMax;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        private bool isValidFollowPercentage(float aFollowerPercentMin = -1, float aFollowerPercentMax = -1)
+        {
+            int totalChatters;
+            int totalFollowers = m_BotBrain.getNumChattersFollowing(out totalChatters);
+            float followPercent = (totalFollowers / totalChatters);
+
+            if (aFollowerPercentMin >= 0 && aFollowerPercentMax >= 0)
+            {
+                return followPercent <= aFollowerPercentMax && followPercent >= aFollowerPercentMin;
+            }
+            else if (aFollowerPercentMin >= 0)
+            {
+                return followPercent >= aFollowerPercentMin;
+            }
+            else if (aFollowerPercentMax >= 0)
+            {
+                return followPercent <= aFollowerPercentMax;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        private bool isValidGame(messageRollEntry aMessage)
+        {
+            return aMessage.games == null || aMessage.games.Contains(m_BotBrain.game);
+        }
+
         private bool isValidMessage(int aIndex)
         {
             if (m_MessageIndex < m_Config.messageList.Count)
             {
+                messageRollEntry curMessage = m_Config.messageList[m_MessageIndex];
                 if (
-                    (m_Config.messageList[m_MessageIndex].games == null || m_Config.messageList[m_MessageIndex].games.Contains(m_BotBrain.game)) &&
-                    isValidTags(m_MessageIndex)
-                   )
+                    curMessage != null &&
+                    isValidGame(curMessage) &&
+                    isValidTags(curMessage) &&
+                    isValidFollowPercentage(curMessage.followPercentMin, curMessage.followPercentMax) &&
+                    isValidViewerCount(curMessage.viewersMin, curMessage.viewersMax)
+                )
                 {
                     return true;
                 }
@@ -48,10 +101,9 @@ namespace JerpDoesBots
         public void nextMessageIndex()
         {
             m_MessageIndex++;
-            if (m_MessageIndex > m_Config.messageList.Count)
+            if (m_MessageIndex >= m_Config.messageList.Count)
                 m_MessageIndex = 0;
         }
-
 
         public string getNextMessage()
         {
@@ -71,10 +123,6 @@ namespace JerpDoesBots
             if (newMessage != null)
             {
                 return newMessage.text;
-            }
-            else
-            {
-                m_Loaded = false;
             }
 
             return null;
@@ -112,7 +160,7 @@ namespace JerpDoesBots
 
                 if (messageToSend.IndexOf('!') == 0)
                 {
-                    userEntry jerpUser = m_BotBrain.checkCreateUser("jerp");
+                    userEntry jerpUser = m_BotBrain.checkCreateUser(m_BotBrain.OwnerUsername);
 
                     m_BotBrain.processUserCommand(jerpUser, messageToSend);
                 }
@@ -121,14 +169,15 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelMessage(messageToSend);
                 }
 
-
-                m_Throttler.trigger();
             }
+
+            m_Throttler.trigger();
         }
 
         public void forceNext(userEntry commandUser, string argumentString)
         {
-            sendNextMessage();
+            if (m_Loaded)
+                sendNextMessage();
         }
 
         public messageRoll(jerpBot aJerpBot) : base(aJerpBot, true, true, false)

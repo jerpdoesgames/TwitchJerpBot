@@ -28,15 +28,15 @@ namespace JerpDoesBots
 				{
 					long lastInsertID = m_BotBrain.storageDB.LastInsertRowId;
 
-					m_BotBrain.sendDefaultChannelMessage("Quote " + lastInsertID + " added!");
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("quoteAddSuccess"), lastInsertID));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage("Failed to add quote!");
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteAddFail"));
 				}
 			} else
 			{
-				m_BotBrain.sendDefaultChannelMessage("Empty quote or empty game!");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteAddMissingData")) ;
 			}
 		}
 
@@ -57,10 +57,11 @@ namespace JerpDoesBots
 					string message = Convert.ToString(getQuoteReader["message"]);
 					string game = Convert.ToString(getQuoteReader["game"]);
 
-					m_BotBrain.sendDefaultChannelMessage("Quote #" + quoteID + ": " + message + " [" + game + "]");
+
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("quoteDisplay"), quoteID, message, game));
 				} else
 				{
-					m_BotBrain.sendDefaultChannelMessage("Quote not found!");
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteNotFound"));
 				}
 			} else
 			{
@@ -79,11 +80,11 @@ namespace JerpDoesBots
 
 				if (removeQuoteCommand.ExecuteNonQuery() > 0)
 				{
-					m_BotBrain.sendDefaultChannelMessage("Quote #" + quoteID + " removed");
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("quoteRemove"), quoteID));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage("Quote not found!");
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteNotFound"));
 				}
 			}
 		}
@@ -102,11 +103,11 @@ namespace JerpDoesBots
 				string game = Convert.ToString(getQuoteReader["game"]);
 				string quoteID = Convert.ToString(getQuoteReader["quoteID"]);
 
-				m_BotBrain.sendDefaultChannelMessage("Quote #" + quoteID + ": " + message + " [" + game + "]");
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("quoteDisplay"), quoteID, message, game));
 			}
 			else
 			{
-				m_BotBrain.sendDefaultChannelMessage("No quotes found (???)");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteNoneFound"));
 			}
 		}
 
@@ -125,11 +126,11 @@ namespace JerpDoesBots
 
 					if (editQuoteCommand.ExecuteNonQuery() > 0)
 					{
-						m_BotBrain.sendDefaultChannelMessage("Quote #" + quoteID + " updated");
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("quoteUpdated"), quoteID));
 					}
 					else
 					{
-						m_BotBrain.sendDefaultChannelMessage("Quote not found!");
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteNotFound"));
 					}
 				}
 			}
@@ -150,11 +151,11 @@ namespace JerpDoesBots
 
 					if (editQuoteCommand.ExecuteNonQuery() > 0)
 					{
-						m_BotBrain.sendDefaultChannelMessage("Quote #" + quoteID + " updated");
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("quoteUpdated"), quoteID));
 					}
 					else
 					{
-						m_BotBrain.sendDefaultChannelMessage("Quote not found!");
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("quoteNotFound"));
 					}
 				}
 			}

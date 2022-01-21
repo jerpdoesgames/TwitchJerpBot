@@ -1,0 +1,9 @@
+{
+    "rewardInfo": {
+        "title": "Enter Raffle (jerpBot)",
+        "description": "Use this reward to enter the current active Raffle.",
+        "cost": 500,
+        "backgroundColor": "#180906"
+    },
+    "requireRewardRedemptionOnLoad": false
+}

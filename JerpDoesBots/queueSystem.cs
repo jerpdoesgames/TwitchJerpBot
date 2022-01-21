@@ -1,35 +1,116 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
-	class queueSystem : botModule
-	{
-		public const string QUEUE_MODE_NORMAL		= "all";
-		public const string QUEUE_MODE_FOLLOWERS	= "followers";
-		public const string QUEUE_MODE_SUBS	    	= "subs";
+    class queueData
+    {
+        public userEntry user;
+        public string data;
+        public DateTime addTime;
+        public int randomWeight;
+        private marioMakerLevelInfo m_LevelInfo;
 
-		public const string QUEUE_TYPE_PLAIN		= "plain";
-		public const string QUEUE_TYPE_GENERIC		= "generic";
-		public const string QUEUE_TYPE_MARIOMAKER	= "mariomaker";
-        public const string QUEUE_TYPE_MARIOMAKER2  = "mariomaker2";
+        public marioMakerLevelInfo levelInfo
+        {
+            get
+            {
+                if (m_LevelInfo == null && !string.IsNullOrEmpty(data))
+                {
+                    m_LevelInfo = marioMakerAPI.getLevelInfo(data);
+                    return m_LevelInfo;
+                }
+                return null;
+            }
+        }
+
+        public queueData(userEntry aUser, string aData = null)
+        {
+            user = aUser;
+            data = aData;
+            addTime = DateTime.Now.ToUniversalTime();
+            randomWeight = 0;
+        }
+    }
+
+    class queueSystem : botModule
+    {
+        public const string QUEUE_MODE_NORMAL = "all";
+        public const string QUEUE_MODE_FOLLOWERS = "followers";
+        public const string QUEUE_MODE_SUBS = "subs";
+
+        public const string QUEUE_TYPE_PLAIN = "plain";
+        public const string QUEUE_TYPE_GENERIC = "generic";
+        public const string QUEUE_TYPE_MARIOMAKER = "mariomaker";
+        public const string QUEUE_TYPE_MARIOMAKER2 = "mariomaker2";
 
         public Regex marioMakerCodeReg = new Regex(@"^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}$");
         public Regex marioMaker2CodeReg = new Regex(@"^[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}$");
 
-        public struct queueData
-		{
-			public userEntry user;
-			public string data;
+        class queueConfigWeightedRandom
+        {
+            public float subModifier { get; set; }
+            public float followModifier { get; set; }
+            public float valueBase { get; set; }
+            public float valuePerMinute { get; set; }
+            public int maxMinutesPassed { get; set; }
+        }
 
-			public queueData(userEntry aUser, string aData = null)
-			{
-				user = aUser;
-				data = aData;
-			}
-		}
+        class marioMakerTagCombination
+        {
+            public List<marioMakerLevelTag> tags { get; set;}
+        }
+
+        class queueConfigMarioMaker2
+        {
+            public bool useAPI { get; set; }
+            public bool useFilter { get; set; }
+            public List<marioMakerTagCombination> tagCombinationsAllow { get; set; }
+            public List<marioMakerTagCombination> tagCombinationsExlude { get; set; }
+            public List<marioMakerLevelTag> tagsExclude { get; set; }
+            public float clearPercentageMax { get; set; }
+            public float clearPercentageMin { get; set; }
+            public int clearsMin { get; set; }
+            public int clearsMax { get; set; }
+            public int playsMin { get; set; }
+            public int playsMax { get; set; }
+            public int attemptsMin { get; set; }
+            public int attemptsMax { get; set; }
+            public float likePercentageMin { get; set; }
+            public float likePercentageMax { get; set; }
+            public double fastestTimeMin { get; set; }
+            public double fastestTimeMax { get; set; }
+            public double levelInfoCacheTime { get; set; }
+            public marioMakerClearConditionRequirement clearConditionRequirement { get; set; }
+
+            public queueConfigMarioMaker2()
+            {
+                clearPercentageMax = -1;
+                clearPercentageMin = -1;
+                clearsMin = -1;
+                clearsMax = -1;
+                playsMin = -1;
+                playsMax = -1;
+                likePercentageMin = -1;
+                likePercentageMax = -1;
+                fastestTimeMin = -1;
+                fastestTimeMax = -1;
+                attemptsMin = -1;
+                attemptsMax = -1;
+            }
+        }
+
+        class queueConfig
+        {
+            public int maxEntries { get; set; }
+            public queueConfigWeightedRandom weightedRandom { get; set; }
+            public queueConfigMarioMaker2 marioMaker2 { get; set; }
+            public double permitNoFilterTime { get; set; }
+        }
 
         private throttler m_Throttler;
         private readonly object messageLastLock = new object();
@@ -43,21 +124,26 @@ namespace JerpDoesBots
 		private string description;
 		private string m_QueueType = QUEUE_TYPE_PLAIN;
 		private string m_QueueMode = QUEUE_MODE_NORMAL;
+        private bool m_LoadSuccessful = false;
+        private queueData m_CurEntry;
+        private queueConfig m_config;
+        private Dictionary<userEntry, DateTime> m_PermitList;
+        private Dictionary<string, marioMakerLevelInfo> m_MarioMaker2LevelInfoCache;
 
-		private string joinString()
+        private string joinString()
 		{
             if (isActive)
             {
                 switch (m_QueueType)
                 {
                     case QUEUE_TYPE_MARIOMAKER:
-                        return modeString() + "type !queue ####-####-####-#### to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintMarioMaker");
                     case QUEUE_TYPE_MARIOMAKER2:
-                        return modeString() + "type !queue ###-###-### to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintMarioMaker2");
                     case QUEUE_TYPE_GENERIC:
-                        return modeString() + "!queue [message] to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintGeneric");
                     default:
-                        return modeString() + "type !queue to enter.";
+                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintPlain");
                 }
             }
 
@@ -69,11 +155,11 @@ namespace JerpDoesBots
             switch (m_QueueMode)
             {
                 case QUEUE_MODE_SUBS:
-                    return "Queue is open to subs & mods only.  ";
+                    return m_BotBrain.Localizer.getString("queueModeSubOnly") + "  ";
                 case QUEUE_MODE_FOLLOWERS:
-                    return "Queue is open to followers, subs, & mods.  ";
+                    return m_BotBrain.Localizer.getString("queueModeFollowers") + "  ";
                 default:
-                    return "Queue is open to all viewers.  ";
+                    return m_BotBrain.Localizer.getString("queueModeAll") + "  ";
             }
         }
 
@@ -82,7 +168,7 @@ namespace JerpDoesBots
 			m_EntryList.Clear();
 			usersAddedRecently.Clear();
 			if (announce)
-				m_BotBrain.sendDefaultChannelMessage("queue has been reset.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReset"));
 		}
 
 		public void resetEntries(userEntry commandUser, string argumentString)
@@ -95,7 +181,7 @@ namespace JerpDoesBots
             switch(m_QueueMode)
             {
                 case QUEUE_MODE_FOLLOWERS:
-                    return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber || queueUser.isFollower);
+                    return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber || m_BotBrain.checkUpdateIsFollower(queueUser));
                 case QUEUE_MODE_SUBS:
                     return (queueUser.isBroadcaster || queueUser.isModerator || queueUser.isSubscriber);
                 default:
@@ -156,9 +242,9 @@ namespace JerpDoesBots
                 m_QueueMode = argumentString;
 
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to mode '" + m_QueueMode + "' - " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueModeSet"), m_QueueMode) + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to mode '" + m_QueueMode + "'");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueModeSet"), m_QueueMode));
             }
         }
 
@@ -186,19 +272,20 @@ namespace JerpDoesBots
 				reset(false);
 				m_QueueType = argumentString;
 
-				if (isActive)
-					m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to type '" + m_QueueType + "' - " + joinString());
-				else
-					m_BotBrain.sendDefaultChannelMessage("Queue cleared and set to type '" + m_QueueType + "'");
+
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueTypeSet"), m_QueueType) + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueTypeSet"), m_QueueType));
 			}
 		}
 
 		public void about(userEntry commandUser, string argumentString)
 		{
 			if (!string.IsNullOrEmpty(description))
-				m_BotBrain.sendDefaultChannelMessage("This Queue: " + description);
-			else
-				m_BotBrain.sendDefaultChannelMessage("This queue has not yet been described");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueDescriptionDisplay"), description));
+            else
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueDescriptionEmpty"));
 		}
 
 		public void describe(userEntry commandUser, string argumentString)
@@ -206,18 +293,235 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				description = argumentString;
-				m_BotBrain.sendDefaultChannelMessage("Queue description updated.");
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueDescriptionUpdated"));
 			}
 		}
 
 		public void count(userEntry commandUser, string argumentString)
 		{
 			int userCount = m_EntryList.Count();
-			if (isActive)
-				m_BotBrain.sendDefaultChannelMessage("There are " + userCount + " entries in the queue.  (" + m_ListMax + " max, " + m_MaxPerUser + " per user)  " + joinString());
+
+            if (isActive)
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser) + "  " + joinString());
 			else
-				m_BotBrain.sendDefaultChannelMessage("There are " + userCount + " entries in the queue.  (" + m_ListMax + " max, " + m_MaxPerUser + " per user)  ");
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser));
 		}
+
+        private bool isValidFilterLevel(marioMakerLevelInfo aLevelInfo, out string reasonString)
+        {
+            reasonString = "";
+            bool isValid = true;
+            List<string> reasonList = new List<string>();
+
+            if (m_config.marioMaker2.tagsExclude != null && m_config.marioMaker2.tagsExclude.Count > 0)
+            {
+                List<string> foundInvalidTags = new List<string>();
+                foreach (marioMakerLevelTag curTag in m_config.marioMaker2.tagsExclude)
+                {
+                    for(int i = 0; i < aLevelInfo.tags.Count; i++)
+                    {
+                        if (curTag == aLevelInfo.tags[i])
+                            foundInvalidTags.Add(aLevelInfo.tags_name[i]);
+                    }
+                }
+
+                if (foundInvalidTags.Count > 0)
+                {
+                    reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTag"), string.Join(", ", foundInvalidTags)));
+                    isValid = false;
+                }
+            }
+
+            if (m_config.marioMaker2.clearConditionRequirement == marioMakerClearConditionRequirement.forbidden && !string.IsNullOrEmpty(aLevelInfo.clear_condition_name))
+            {
+                reasonList.Add(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearConditionExluded"));
+                isValid = false;
+            }
+
+            if (m_config.marioMaker2.clearConditionRequirement == marioMakerClearConditionRequirement.mandatory && string.IsNullOrEmpty(aLevelInfo.clear_condition_name))
+            {
+                reasonList.Add(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearConditionOnly"));
+                isValid = false;
+            }
+
+            if (m_config.marioMaker2.tagCombinationsAllow != null && m_config.marioMaker2.tagCombinationsAllow.Count > 0)
+            {
+                bool foundTagPair = false;
+
+                foreach (marioMakerTagCombination allowPair in m_config.marioMaker2.tagCombinationsAllow)
+                {
+                    if (aLevelInfo.hasAllTags(allowPair.tags))
+                    {
+                        foundTagPair = true;
+                        break;
+                    }
+                }
+
+                if (!foundTagPair)
+                {
+                    reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTagCombinationAllow"), string.Join(", ", aLevelInfo.tags_name)));
+                    isValid = false;
+                }
+            }
+
+            if (m_config.marioMaker2.tagCombinationsExlude != null && m_config.marioMaker2.tagCombinationsExlude.Count > 0)
+            {
+                foreach (marioMakerTagCombination excludePair in m_config.marioMaker2.tagCombinationsExlude)
+                {
+                    if (aLevelInfo.hasAllTags(excludePair.tags))
+                    {
+                        reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTagCombinationExlude"), string.Join(", ", aLevelInfo.tags_name)));
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+
+            if (
+                m_config.marioMaker2.fastestTimeMin != -1 &&
+                m_config.marioMaker2.fastestTimeMax != -1 &&
+                (
+                    aLevelInfo.fastestClearTime.TotalSeconds < m_config.marioMaker2.fastestTimeMin ||
+                    aLevelInfo.fastestClearTime.TotalSeconds > m_config.marioMaker2.fastestTimeMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTime"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.fastestTimeMin != -1 && aLevelInfo.fastestClearTime.TotalSeconds < m_config.marioMaker2.fastestTimeMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTimeMin"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.fastestTimeMax != -1 && aLevelInfo.fastestClearTime.TotalSeconds > m_config.marioMaker2.fastestTimeMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTimeMax"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.likePercentageMin != -1 &&
+                m_config.marioMaker2.likePercentageMax != -1 &&
+                (
+                    aLevelInfo.likePercentage < m_config.marioMaker2.likePercentageMin ||
+                    aLevelInfo.likePercentage > m_config.marioMaker2.likePercentageMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercent"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.likePercentageMin != -1 && aLevelInfo.likePercentage < m_config.marioMaker2.likePercentageMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercentMin"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.likePercentageMax != -1 && aLevelInfo.likePercentage > m_config.marioMaker2.likePercentageMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercentMax"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.clearPercentageMin != -1 &&
+                m_config.marioMaker2.clearPercentageMax != -1 &&
+                (
+                    aLevelInfo.clearPercentage < m_config.marioMaker2.clearPercentageMin ||
+                    aLevelInfo.clearPercentage > m_config.marioMaker2.clearPercentageMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercent"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearPercentageMin != -1 && aLevelInfo.clearPercentage < m_config.marioMaker2.clearPercentageMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercentMin"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2)));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearPercentageMax != -1 && aLevelInfo.clearPercentage > m_config.marioMaker2.clearPercentageMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercentMax"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.attemptsMin != -1 &&
+                m_config.marioMaker2.attemptsMax != -1 &&
+                (
+                    aLevelInfo.attempts < m_config.marioMaker2.attemptsMin ||
+                    aLevelInfo.attempts > m_config.marioMaker2.attemptsMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttempts"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin, m_config.marioMaker2.attemptsMax));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.attemptsMin != -1 && aLevelInfo.attempts < m_config.marioMaker2.attemptsMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttemptsMin"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.attemptsMax != -1 && aLevelInfo.attempts > m_config.marioMaker2.attemptsMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttemptsMax"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMax));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.playsMin != -1 &&
+                m_config.marioMaker2.playsMax != -1 &&
+                (
+                    aLevelInfo.plays < m_config.marioMaker2.playsMin ||
+                    aLevelInfo.plays > m_config.marioMaker2.playsMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlays"), aLevelInfo.plays, m_config.marioMaker2.playsMin, m_config.marioMaker2.playsMax));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.playsMin != -1 && aLevelInfo.plays < m_config.marioMaker2.playsMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlaysMin"), aLevelInfo.plays, m_config.marioMaker2.playsMin));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.playsMax != -1 && aLevelInfo.plays > m_config.marioMaker2.playsMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlaysMax"), aLevelInfo.plays, m_config.marioMaker2.playsMax));
+                isValid = false;
+            }
+
+            if (
+                m_config.marioMaker2.clearsMin != -1 &&
+                m_config.marioMaker2.clearsMax != -1 &&
+                (
+                    aLevelInfo.clears < m_config.marioMaker2.clearsMin ||
+                    aLevelInfo.clears > m_config.marioMaker2.clearsMax
+                )
+            )
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClears"), aLevelInfo.clears, m_config.marioMaker2.clearsMin, m_config.marioMaker2.clearsMax));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearsMin != -1 && aLevelInfo.clears < m_config.marioMaker2.clearsMin)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearsMin"), aLevelInfo.clears, m_config.marioMaker2.clearsMin));
+                isValid = false;
+            }
+            else if (m_config.marioMaker2.clearsMax != -1 && aLevelInfo.clears > m_config.marioMaker2.clearsMax)
+            {
+                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearsMax"), aLevelInfo.clears, m_config.marioMaker2.clearsMax));
+                isValid = false;
+            }
+
+            if (!isValid)
+            {
+                reasonString = string.Join("  ", reasonList);
+            }
+
+            return isValid;
+        }
 
 		public void enter(userEntry commandUser, string argumentString)
 		{
@@ -238,25 +542,70 @@ namespace JerpDoesBots
 					{
 						if (validateUser(commandUser) && validateInput(argumentString))
 						{
-							queueData newData = new queueData(commandUser, argumentString);
-							m_EntryList.Add(newData);
-							usersAddedRecently.Add(newData);
-							userAddedRecently = true;
+                            string dataToEnter = argumentString;
 
-                            if (m_UpdateImmediately)
+                            if (m_QueueType == QUEUE_TYPE_MARIOMAKER || m_QueueType == QUEUE_TYPE_MARIOMAKER2)
                             {
-                                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + ": new entry added in position " + m_EntryList.Count);
+                                dataToEnter = dataToEnter.ToUpper();
+                            }
+
+                            marioMakerLevelInfo newLevelInfo;
+                            bool entryPassedFilter = true;
+
+                            if (m_QueueType == QUEUE_TYPE_MARIOMAKER2 && m_config.marioMaker2.useAPI)
+                            {
+                                if (!m_MarioMaker2LevelInfoCache.ContainsKey(dataToEnter) || DateTime.Now.Subtract(m_MarioMaker2LevelInfoCache[dataToEnter].queryTime).TotalSeconds > m_config.marioMaker2.levelInfoCacheTime)
+                                {
+                                    newLevelInfo = marioMakerAPI.getLevelInfo(dataToEnter);
+                                    if (newLevelInfo != null)
+                                        m_MarioMaker2LevelInfoCache[dataToEnter] = newLevelInfo;
+                                }
+                                else
+                                {
+                                    newLevelInfo = m_MarioMaker2LevelInfoCache[dataToEnter];
+                                }
+
+                                if (newLevelInfo != null)
+                                {
+                                    if (m_config.marioMaker2.useFilter && (!m_PermitList.ContainsKey(commandUser) || DateTime.Now.Subtract(m_PermitList[commandUser]).TotalSeconds > m_config.permitNoFilterTime))
+                                    {
+                                        string filterFailReasons;
+                                        if (!isValidFilterLevel(newLevelInfo, out filterFailReasons))
+                                        {
+                                            entryPassedFilter = false;
+                                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalid"), commandUser.Nickname, filterFailReasons));
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelNotFound"), commandUser.Nickname));
+                                    entryPassedFilter = false;
+                                }
+                            }
+
+                            if (entryPassedFilter)
+                            {
+                                queueData newData = new queueData(commandUser, dataToEnter);
+                                m_EntryList.Add(newData);
+                                usersAddedRecently.Add(newData);
+                                userAddedRecently = true;
+
+                                if (m_UpdateImmediately)
+                                {
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntrySuccess"), commandUser.Nickname, m_EntryList.Count));
+                                }
                             }
 						}
 					}
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + ": Max allowable entries reached! (" + m_MaxPerUser + " allowed per user.)");
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntryFailMaxPerUser"), commandUser.Nickname, m_MaxPerUser));
                     }
 				}
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + ": The queue is full!  Please try again later. (" + m_EntryList.Count + " entries total.)");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntryFailQueueFull"), commandUser.Nickname, m_EntryList.Count));
                 }
 			}
             else
@@ -295,15 +644,47 @@ namespace JerpDoesBots
             {
                 if (totalEntries > 1)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s next entry is in position " + position + ".  They have " + totalEntries + " entries total.");
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionSingle"), commandUser.Nickname, position, totalEntries));
                 }
+                else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + "'s in position " + position);
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionMultiple"), commandUser.Nickname, position));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("Could not find " + commandUser.Nickname + " in the queue.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
+            }
+        }
+
+        public void replace(userEntry commandUser, string argumentString)
+        {
+            if (m_QueueType != QUEUE_TYPE_PLAIN)
+            {
+                int totalEntries;
+                int position = getPosition(commandUser, out totalEntries);
+
+                if (validateUser(commandUser) && totalEntries > 0)
+                {
+                    if (validateInput(argumentString))
+                    {
+                        queueData curEntry = m_EntryList[position - 1];
+                        curEntry.data = argumentString;
+
+                        if (totalEntries > 1)
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccessMultiple"), commandUser.Nickname, position, totalEntries));
+                        }
+                        else
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccess"), commandUser.Nickname, position));
+                        }
+                    } // TODO: Consider message for invalid entries.
+                }
+                else
+                {
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
+                }
             }
         }
 
@@ -319,11 +700,11 @@ namespace JerpDoesBots
                 if (resetEntries)
                 {
                     reset(false);
-                    m_BotBrain.sendDefaultChannelMessage("Queue has been reset and opened.  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueOpenedReset") + "  " + newJoinString);
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage("Queue has been opened.  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueOpened") + "  " + newJoinString);
                 }
 
                 m_Throttler.trigger();
@@ -335,7 +716,7 @@ namespace JerpDoesBots
 		public void close(userEntry commandUser, string argumentString)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage("Queue closed.");
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueClosed"));
 		}
 
         public void setMaxCount(userEntry commandUser, string argumentString)
@@ -344,13 +725,14 @@ namespace JerpDoesBots
             if (Int32.TryParse(argumentString, out newListMax))
             {
                 m_ListMax = newListMax;
-                m_BotBrain.sendDefaultChannelMessage("Max entries set to " + m_ListMax);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueMaxEntriesSet"), m_ListMax));
             }
         }
 
         private string closedMessage(userEntry commandUser)
         {
-            return "Sorry " + commandUser.Nickname + ", no queue is currently open.";
+            
+            return string.Format(m_BotBrain.Localizer.getString("queueClosedReply"), commandUser.Nickname);
         }
 
         private void outputGenericClosedMessage(userEntry commandUser)
@@ -380,7 +762,6 @@ namespace JerpDoesBots
 
         public void list(userEntry commandUser, string argumentString)
         {
-
             if (m_EntryList.Count > 0)
             {
                 int curPos = 0;
@@ -395,11 +776,11 @@ namespace JerpDoesBots
                     listString += getEntryString(curEntry, curPos);
                 }
 
-                m_BotBrain.sendDefaultChannelMessage("Queue Entries: " + listString);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueListDisplay"), listString));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("No entries in the queue.  " + joinString());
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
             }
 
         }
@@ -417,174 +798,310 @@ namespace JerpDoesBots
             }
             if (removeCount == 1)
             {
-                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + " has been removed from the queue.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveSingle"), commandUser.Nickname));
             }
             else if (removeCount > 1)
             {
-                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + " has been removed from the queue ("+removeCount+" entries total).");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveMultiple"), commandUser.Nickname, removeCount));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(commandUser.Nickname + " doesn't appear to be in the queue.");
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveNotFound"), commandUser.Nickname));
+            }
+        }
+
+        public void viewLevel(userEntry commandUser, string argumentString)
+        {
+            if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
+            {
+                if (m_CurEntry != null)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerViewLevelDisplay"), m_CurEntry.data));
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty"));
+            }
+            else
+            {
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("marioMakerViewLevelDisplayFailInvalidType"));
+            }
+        }
+
+        public void reloadSettings(userEntry commandUser, string argumentString)
+        {
+            if (load())
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReloadSuccess"));
+            else
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReloadFail"));
+        }
+
+        public void current(userEntry commandUser, string argumentString)
+        {
+            if (m_CurEntry != null)
+            {
+                switch (m_QueueType)
+                {
+                    case QUEUE_TYPE_PLAIN:
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayPlain"), m_CurEntry.user.Nickname));
+                        break;
+                    case QUEUE_TYPE_MARIOMAKER:
+                    case QUEUE_TYPE_MARIOMAKER2:
+                        if (m_config.marioMaker2.useAPI)
+                        {
+                            marioMakerLevelInfo curLevel = marioMakerAPI.getLevelInfo(m_CurEntry.data);
+                            if (curLevel != null)
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMakerAPI"), m_CurEntry.user.Nickname, m_CurEntry.data, m_CurEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
+                            }
+                            else
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("marioMakerLevelNotFound"));
+                            }
+                        }
+                        else
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        }
+
+                        break;
+                    case QUEUE_TYPE_GENERIC:
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayGeneric"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        break;
+                }
+            }
+            else
+            {
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty") + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
         public void next(userEntry commandUser, string argumentString)
 		{
-			int userCount = m_EntryList.Count();
+            List<queueData> entryList = getEntryList();
+            int userCount = entryList.Count();
 
 			if (userCount > 0)
 			{
-				queueData nextEntry = m_EntryList[0];
+				queueData nextEntry = entryList[0];
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-				switch (m_QueueType)
-				{
-					case QUEUE_TYPE_PLAIN:
-						m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen and removed from the queue.");
-						break;
-					case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen with level code: " + nextEntry.data);
-						break;
-					case QUEUE_TYPE_GENERIC:
-						m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen: " + nextEntry.data);
-						break;
-				}
-			} else
+                announceSelection(nextEntry);
+            }
+            else
 			{
-				if (isActive)
-					m_BotBrain.sendDefaultChannelMessage("No entries in this queue.  " + joinString());
-				else
-					m_BotBrain.sendDefaultChannelMessage("No entries in the queue. How about opening it back up again so people can enter?");
-			}
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+            }
 		}
 
-        private List<queueData> getSubList()
+        private void announceSelection(queueData aEntry, string aPrefix = "")
         {
-            List<queueData> subList = new List<queueData>();
-
-            foreach (queueData mainListEntry in m_EntryList)
+            switch (m_QueueType)
             {
-                if (mainListEntry.user.isSubscriber)
-                    subList.Add(mainListEntry);
+                case QUEUE_TYPE_PLAIN:
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectPlain"), aEntry.user.Nickname));
+                    break;
+                case QUEUE_TYPE_MARIOMAKER:
+                case QUEUE_TYPE_MARIOMAKER2:
+                    if (m_QueueType == QUEUE_TYPE_MARIOMAKER2 && m_config.marioMaker2.useAPI)
+                    {
+                        marioMakerLevelInfo curLevel = marioMakerAPI.getLevelInfo(aEntry.data);
+                        if (curLevel != null)
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMakerAPI"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data, aEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
+                        }
+                        else
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                        }
+                    }
+                    else
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                    }
+                        
+                    break;
+                case QUEUE_TYPE_GENERIC:
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectGeneric"), aEntry.user.Nickname, aEntry.data));
+                    break;
             }
-
-            return subList;
         }
-
 
         public void subNext(userEntry commandUser, string argumentString)
         {
-            List<queueData> subList = getSubList();
-            queueData nextEntry = new queueData(); // Cannot be null
+            List<queueData> subList = getEntryList(false, true, true, false);
+            queueData nextEntry;
             bool foundEntry = false;
 
             if (subList.Count > 0)
             {
                 nextEntry = subList[0];
                 foundEntry = true;
-            }
 
-            if (foundEntry)
-            {
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen with level code: " + nextEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been chosen: " + nextEntry.data);
-                        break;
-                }
+                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteSub") + " ");
             }
-            else
+
+            if (!foundEntry)
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") +  "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
 
         }
 
         public void subRandom(userEntry commandUser, string argumentString)
         {
-            int userCount = m_EntryList.Count();
-            queueData nextEntry = new queueData(); // Cannot be null
+            queueData nextEntry;
             bool foundEntry = false;
 
-            List<queueData> subList = getSubList();
+            List<queueData> subList = getEntryList(false, true, true, false);
 
             if (subList.Count > 0)
             {
                 int selectID = m_BotBrain.randomizer.Next(0, subList.Count - 1);
-                nextEntry = m_EntryList[selectID];
+                nextEntry = subList[selectID];
                 foundEntry = true;
-            }
 
-            if (foundEntry)
-            {
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
 
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen with level code: " + nextEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen: " + nextEntry.data);
-                        break;
-                }
+                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteSubRandom") + " ");
             }
-            else
+
+            if (!foundEntry)
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No subscriber entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
         public void random(userEntry commandUser, string argumentString)
         {
-            int userCount = m_EntryList.Count();
+            List<queueData> entryList = getEntryList();
+            int userCount = entryList.Count();
 
             if (userCount > 0)
             {
                 int selectID = m_BotBrain.randomizer.Next(0, userCount - 1);
 
-                queueData nextEntry = m_EntryList[selectID];
+                queueData nextEntry = entryList[selectID];
+                m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-                switch (m_QueueType)
-                {
-                    case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen and removed from the queue.");
-                        break;
-                    case QUEUE_TYPE_MARIOMAKER:
-                    case QUEUE_TYPE_MARIOMAKER2:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen with level code: " + nextEntry.data);
-                        break;
-                    case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(nextEntry.user.Nickname + " has been randomly chosen: " + nextEntry.data);
-                        break;
-                }
+                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteRandom") + " ");
             }
             else
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage("No entries in this queue.  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage("No entries in the queue. How about opening it back up again so people can enter?");
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+            }
+        }
+
+        public void permitNoFilter(userEntry commandUser, string argumentString)
+        {
+            if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
+            {
+                userEntry newUser = m_BotBrain.checkCreateUser(argumentString);
+                m_PermitList.Add(newUser, DateTime.Now);
+
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
+            }
+        }
+
+        float calculateUserWeight(queueData aData)
+        {
+            float outputWeight  = m_LoadSuccessful ? m_config.weightedRandom.valueBase : 100.0f;
+
+            float valuePerMinute = m_LoadSuccessful ? m_config.weightedRandom.valuePerMinute : 2.0f;
+            int maxMinutesPassed = m_LoadSuccessful ? m_config.weightedRandom.maxMinutesPassed : 120;
+
+            DateTime curTime = DateTime.Now.ToUniversalTime();
+            TimeSpan timeSinceAdd = curTime.Subtract(aData.addTime);
+            int minutesSinceAdd = (int)timeSinceAdd.TotalMinutes;
+
+            outputWeight += (Math.Min(minutesSinceAdd, maxMinutesPassed) * valuePerMinute);
+
+            if (m_BotBrain.checkUpdateIsFollower(aData.user))
+                outputWeight *= (m_LoadSuccessful ? m_config.weightedRandom.followModifier : 1.25f);
+
+            if (aData.user.isSubscriber)
+                outputWeight *= (m_LoadSuccessful ? m_config.weightedRandom.subModifier : 1.15f);
+
+            return outputWeight;
+        }
+
+        public int calculateTotalUserWeight(List<queueData> aEntryList)
+        {
+            int totalWeight = 0;
+            queueData curEntry;
+
+            for (int i = 0; i < aEntryList.Count; i++)
+            {
+                curEntry = aEntryList[i];
+                curEntry.randomWeight = (int)Math.Round(calculateUserWeight(aEntryList[i]));
+                totalWeight += curEntry.randomWeight;
+            }
+
+            return totalWeight;
+        }
+
+        private List<queueData> getEntryList(bool ignoreBrb = false, bool ignoreOffline = true, bool mustSub = false, bool mustFollow = false)
+        {
+            List<queueData> outList = new List<queueData>();
+
+            foreach (queueData curEnry in m_EntryList)
+            {
+                if ((ignoreBrb || !curEnry.user.isBrb) && (ignoreOffline || curEnry.user.inChannel) && (!mustSub || curEnry.user.isSubscriber) && (!mustFollow || m_BotBrain.checkUpdateIsFollower(curEnry.user)))
+                    outList.Add(curEnry);
+            }
+
+            return outList;
+        }
+
+        public void weightedRandom(userEntry commandUser, string argumentString)
+        {
+            List<queueData> entryList = getEntryList();
+
+            int userCount = entryList.Count();
+
+            if (userCount > 0)
+            {
+                int totalWeight = calculateTotalUserWeight(entryList);
+                int targValue = m_BotBrain.randomizer.Next(0, totalWeight);
+                int curWeight = 0;
+
+                queueData curEntry = entryList[0];
+
+                for (int i = 0; i < entryList.Count; i++)
+                {
+                    curEntry = entryList[i];
+                    if (i == entryList.Count - 1 || (targValue >= curWeight && targValue < (curWeight + curEntry.randomWeight)))
+                    {
+                        break;  // Found user
+                    }
+                    curWeight += curEntry.randomWeight;
+                }
+
+                m_CurEntry = curEntry;
+                m_EntryList.Remove(curEntry);
+                announceSelection(curEntry, m_BotBrain.Localizer.getString("queueSelectNoteWeightedRandom"));
+            }
+            else
+            {
+                if (isActive)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                else
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -594,26 +1111,48 @@ namespace JerpDoesBots
 			{
                 lock (messageLastLock)
                 {
-                    string newJoinString = joinString();
-                    if (!m_UpdateImmediately && userAddedRecently)
+                    if (m_Throttler.isReady)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(usersAddedRecently.Count + " entries have been added to the queue since last update.  " + newJoinString);
-                        usersAddedRecently.Clear();
-                        userAddedRecently = false;
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(description))
-                            m_BotBrain.sendDefaultChannelMessage("A queue is currently open.  " + newJoinString);
+                        string newJoinString = joinString();
+                        if (!m_UpdateImmediately && userAddedRecently)
+                        {
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueAnnounceEntriesSinceUpdate"), usersAddedRecently.Count) + "  " + newJoinString);
+                            usersAddedRecently.Clear();
+                            userAddedRecently = false;
+                        }
                         else
-                            m_BotBrain.sendDefaultChannelMessage("A queue is currently open. (" + description + ")  " + newJoinString);
+                        {
+                            if (string.IsNullOrEmpty(description))
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + "  " + newJoinString);
+                            else
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + " (" + description + ")  " + newJoinString);
+                        }
 
+                        m_Throttler.trigger();
                     }
-
-                    m_Throttler.trigger();
                 }
 			}
 		}
+
+        private bool load()
+        {
+            string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_queuesystem.json");
+            if (File.Exists(configPath))
+            {
+                string queueConfigString = File.ReadAllText(configPath);
+                if (!string.IsNullOrEmpty(queueConfigString))
+                {
+                    m_config = new JavaScriptSerializer().Deserialize<queueConfig>(queueConfigString);
+                    if (m_config.maxEntries > 0)
+                    {
+                        m_ListMax = m_config.maxEntries;
+                    }
+                    m_LoadSuccessful = true;
+                    return true;
+                }
+            }
+            return false;
+        }
 
 		public queueSystem(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
@@ -622,8 +1161,12 @@ namespace JerpDoesBots
 
             m_EntryList = new List<queueData>();
 			usersAddedRecently = new List<queueData>();
+            m_PermitList = new Dictionary<userEntry, DateTime>();
+            m_MarioMaker2LevelInfoCache = new Dictionary<string, marioMakerLevelInfo>();
 
-			chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);
+            load();
+
+            chatCommandDef tempDef = new chatCommandDef("queue", enter, true, true);
 			tempDef.addSubCommand(new chatCommandDef("open", open, true, false));
 			tempDef.addSubCommand(new chatCommandDef("close", close, true, false));
 			tempDef.addSubCommand(new chatCommandDef("reset", resetEntries, true, false));
@@ -637,12 +1180,17 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("setmax", setMaxCount, true, false));
             tempDef.addSubCommand(new chatCommandDef("list", list, true, true));
             tempDef.addSubCommand(new chatCommandDef("leave", leave, true, true));
-            tempDef.addSubCommand(new chatCommandDef("random", random, true, true));
-            tempDef.addSubCommand(new chatCommandDef("subrandom", subRandom, true, true));
-            tempDef.addSubCommand(new chatCommandDef("subNext", subNext, true, true));
+            tempDef.addSubCommand(new chatCommandDef("random", random, true, false));
+            tempDef.addSubCommand(new chatCommandDef("weightedrandom", weightedRandom, true, false));
+            tempDef.addSubCommand(new chatCommandDef("subrandom", subRandom, true, false));
+            tempDef.addSubCommand(new chatCommandDef("replace", replace, true, true));
+            tempDef.addSubCommand(new chatCommandDef("subNext", subNext, true, false));
+            tempDef.addSubCommand(new chatCommandDef("current", current, true, true));
+            tempDef.addSubCommand(new chatCommandDef("permit", permitNoFilter, true, false));
+            tempDef.addSubCommand(new chatCommandDef("viewlevel", viewLevel, true, false));
+            tempDef.addSubCommand(new chatCommandDef("reload", reloadSettings, false, false));
             tempDef.UseGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
-
 		}
 	}
 }

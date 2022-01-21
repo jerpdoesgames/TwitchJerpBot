@@ -9,7 +9,10 @@ using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
+using TwitchLib.PubSub;
+using TwitchLib.PubSub.Events;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace JerpDoesBots
 {
@@ -18,10 +21,16 @@ namespace JerpDoesBots
         ConnectionCredentials m_TwitchCredentialsBot;
         ConnectionCredentials m_TwitchCredentialsOwner;
         botConfig m_CoreConfig;
-        TwitchClient m_TwitchClient;
-        TwitchClient m_TwitchClientJerp;
+        TwitchClient m_TwitchClientBot;
+        TwitchPubSub m_TwitchPubSubBot;
+        TwitchClient m_TwitchClientOwner;
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
+
+        public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
+
+        public string OwnerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
+        public string OwnerID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
 
         private DateTime m_LiveStartTime;
         private SQLiteConnection m_StorageDB;
@@ -35,15 +44,20 @@ namespace JerpDoesBots
         private string m_DefaultChannel;
         private bool m_IsReadyToClose = false; // Ready to completely end the program
         private int m_SubsThisSession = 0;
+        private long m_FollowerStaleCheckSeconds = 360;  // Amount of time that must pass before checking to see if someone's following
+        private localizer m_Localizer;
+        public localizer Localizer { get { return m_Localizer; } }
 
         public int subsThisSession { get { return m_SubsThisSession; } }
 
-
         public TimeSpan timeSinceLive {
             get {
-                // TODO: Handle this properly if not live / not nullable
-                DateTime curTime = DateTime.Now.ToUniversalTime();
-                return curTime.Subtract(m_LiveStartTime);
+                if (IsLive)
+                {
+                    DateTime curTime = DateTime.Now.ToUniversalTime();
+                    return curTime.Subtract(m_LiveStartTime);
+                }
+                return new TimeSpan(0);
             }
         }
 
@@ -89,6 +103,8 @@ namespace JerpDoesBots
         private string m_Title = "";
         public string Title { get { return m_Title; } set { m_Title = value; } }
         private int m_ViewersLast = 0;
+
+        public int viewersLast { get { return m_ViewersLast; } }
 
         private string m_Game = "";
         public string game { get { return m_Game; } }
@@ -173,6 +189,11 @@ namespace JerpDoesBots
             return false;
         }
 
+        public string stripPunctuation(string aInput, bool aStripWhitespace = false)
+        {
+            return new string(aInput.Where(c => (!char.IsPunctuation(c) && (!aStripWhitespace || !char.IsWhiteSpace(c)))).ToArray()); // TODO: Something without linq
+        }
+
         public void executeAndLog(connectionCommand commandToExecute)
         {
             switch (commandToExecute.getCommandType())
@@ -180,47 +201,47 @@ namespace JerpDoesBots
                 case connectionCommand.types.channelMessage:
                     if (isValidPrivMsg(commandToExecute))
                     {
-                        m_TwitchClient.SendMessage(commandToExecute.getTarget(), commandToExecute.getMessage());
+                        m_TwitchClientBot.SendMessage(commandToExecute.getTarget(), commandToExecute.getMessage());
                     }
                     break;
 
                 case connectionCommand.types.joinChannel:
                     if (!String.IsNullOrEmpty(commandToExecute.getTarget()))
                     {
-                        m_TwitchClient.JoinChannel(commandToExecute.getTarget());
+                        m_TwitchClientBot.JoinChannel(commandToExecute.getTarget());
                     }
                     break;
 
                 case connectionCommand.types.partAllChannels:
-                    for (int i = 0; i < m_TwitchClient.JoinedChannels.Count; i++)
+                    for (int i = 0; i < m_TwitchClientBot.JoinedChannels.Count; i++)
                     {
-                        m_TwitchClient.LeaveChannel(m_TwitchClient.JoinedChannels[i]);
+                        m_TwitchClientBot.LeaveChannel(m_TwitchClientBot.JoinedChannels[i]);
                     }
                     break;
 
                 case connectionCommand.types.partChannel:
                     if (!String.IsNullOrEmpty(commandToExecute.getTarget()))
                     {
-                        m_TwitchClient.LeaveChannel(commandToExecute.getTarget());
+                        m_TwitchClientBot.LeaveChannel(commandToExecute.getTarget());
                     }
                     break;
 
                 case connectionCommand.types.privateMessage:
                     if (isValidPrivMsg(commandToExecute))
                     {
-                        m_TwitchClient.SendWhisper(commandToExecute.getTarget(), commandToExecute.getMessage());
+                        m_TwitchClientBot.SendWhisper(commandToExecute.getTarget(), commandToExecute.getMessage());
                     }
                     break;
 
                 case connectionCommand.types.quit:
-                    m_TwitchClient.Disconnect();
-                    m_TwitchClientJerp.Disconnect();
+                    m_TwitchClientBot.Disconnect();
+                    m_TwitchClientOwner.Disconnect();
                     m_IsReadyToClose = true;
                     isDone = true;
                     break;
 
                 default:
-                    Console.WriteLine("Unknown command type sent to ircConnection sendAndLog");
+                    Console.WriteLine("Unknown command type sent to executeAndLog");
                     break;
             }
         }
@@ -270,7 +291,7 @@ namespace JerpDoesBots
             if (doQueue)
                 queueAction(newCommand);
             else
-                m_TwitchClient.SendMessage(m_DefaultChannel, messageToSend);
+                m_TwitchClientBot.SendMessage(m_DefaultChannel, messageToSend);
         }
 
         public void processUserUpdates(bool forceUpdate = false)    // For any users who needs anything written to DB
@@ -349,44 +370,108 @@ namespace JerpDoesBots
 
         public void getGameCommand(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, "Current game is " + m_Game);
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoCurrentGame"), m_Game));
+        }
+
+        public void updateChannelInfo(TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfo, List<string> newTags = null)
+        {
+            try
+            {
+                Task modifyChannelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.ModifyChannelInformationAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newChannelInfo));
+                modifyChannelInfoTask.Wait();
+
+                requestChannelInfo();   // TODO: I mean, this is kind of the lazy way to do it
+
+                if (newTags != null)
+                {
+                    Task replaceTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.ReplaceStreamTagsAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newTags));
+                    replaceTagsTask.Wait();
+                }
+
+                sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoSuccess"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to update channel info/tags: " + e.Message);
+                sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoFailRequestFail"));
+            }
         }
 
         public void getStreamTitle(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, "Stream title is \"" + m_Title + "\"");
+            if ((commandUser.isBroadcaster || commandUser.isModerator) && !string.IsNullOrEmpty(argumentString))
+            {
+                try
+                {
+                    TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest() { Title = argumentString };
+                    Task modifyChannelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.ModifyChannelInformationAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newChannelInfoRequest));
+                    modifyChannelInfoTask.Wait();
+
+                    m_Title = argumentString;
+
+                    sendDefaultChannelMessage(string.Format(m_Localizer.getString("modifyChannelInfoTitleSuccess"), m_Title));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to update stream title: " + e.Message);   // TODO: I'm now realizing I totally trashed logging a while back and never really updated it.
+                    sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoTitleFail"));
+                }
+            }
+            else
+            {
+                sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoStreamTitle"), m_Title));
+            }
         }
 
         public void getViewCount(userEntry commandUser, string argumentString)
         {
             if (m_IsLive)
-                sendChannelMessage(m_DefaultChannel, "Current view count: " + m_ViewersLast);
+                sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoViewCountLive"), m_ViewersLast));
             else
-                sendChannelMessage(m_DefaultChannel, "Stream isn't live - check back later.");
+                sendChannelMessage(m_DefaultChannel, m_Localizer.getString("infoViewCountOffline"));
         }
 
         public void getNewSubCount(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format("{0} new subscriber(s) this session.", m_SubsThisSession.ToString()));
+            if (m_SubsThisSession > 0)
+                sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoNewSubCount"), m_SubsThisSession.ToString()));
+            else
+                sendChannelMessage(m_DefaultChannel, m_Localizer.getString("infoNewSubCountNone"));
+        }
+
+        public void setUserBrb(userEntry commandUser, string argumentString)
+        {
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetAway"), m_SubsThisSession.ToString()));
+            commandUser.isBrb = true;
+        }
+
+        public void setUserBack(userEntry commandUser, string argumentString)
+        {
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetBack"), m_SubsThisSession.ToString()));
+            commandUser.isBrb = false;
+        }
+
+        public void announceChatterFollowingCount(userEntry commandUser, string argumentString)
+        {
+            int chattersTotal;
+            int chattersFollowing = getNumChattersFollowing(out chattersTotal);
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoChattersFollowing"), chattersFollowing.ToString(), chattersTotal.ToString()));
         }
 
         public void getHelpString(userEntry commandUser, string argumentString)
         {
-            if (!string.IsNullOrEmpty(m_CoreConfig.configData.helpText))
-            {
-                sendChannelMessage(m_DefaultChannel, m_CoreConfig.configData.helpText);
-            }
+            sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
         }
 
         public void quitCommand(userEntry commandUser, string argumentString)
         {
             if (actionQueue.Count > 0)
             {
-                m_TwitchClient.SendMessage(m_DefaultChannel, "JerpBot is quitting, no new commands will be accepted, current queue will be processed...", false);
+                m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuitMessagesQueued"), false);
             }
             else
             {
-                m_TwitchClient.SendMessage(m_DefaultChannel, "JerpBot is quitting...", false);
+                m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuit"), false);
             }
 
             isDone = true;
@@ -462,17 +547,18 @@ namespace JerpDoesBots
 
         }
 
-        public userEntry checkCreateUser(string username, bool canCreate = true)
+        public userEntry checkCreateUser(string aUsername, bool canCreate = true)
         {
             userEntry userEntry;
-            if (m_UserList.ContainsKey(username) && m_UserList[username] != null)
+            string keyName = aUsername.ToLower();
+            if (m_UserList.ContainsKey(keyName) && m_UserList[keyName] != null)
             {
-                userEntry = m_UserList[username];
+                userEntry = m_UserList[keyName];
             }
             else if (canCreate)
             {
-                userEntry = new userEntry(username, m_StorageDB);
-                m_UserList[username] = userEntry;
+                userEntry = new userEntry(aUsername, m_StorageDB);
+                m_UserList[keyName] = userEntry;
             }
             else
             {
@@ -482,22 +568,55 @@ namespace JerpDoesBots
             return userEntry;
         }
 
-        public void processJoinPart(string nickname, bool hasJoined)
+        public bool checkUpdateIsFollower(userEntry aUser)
         {
-            userEntry messageUser = checkCreateUser(nickname);
-            messageUser.inChannel = hasJoined;
+            if (!aUser.isBroadcaster)
+            {
+                TimeSpan timeSinceFollowCheck = DateTime.Now.Subtract(aUser.lastFollowCheckTime);
+
+                if (timeSinceFollowCheck.TotalSeconds > m_FollowerStaleCheckSeconds && !string.IsNullOrEmpty(aUser.twitchUserID))
+                {
+                    try
+                    {
+                        Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, OwnerID);
+                        userFollowsTask.Wait();
+
+                        if (userFollowsTask.Result != null)
+                        {
+                            aUser.isFollower = (userFollowsTask.Result.TotalFollows > 0);
+                            aUser.lastFollowCheckTime = DateTime.Now;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Failed to check following status for: " + aUser.Nickname);
+                    }
+                }
+            }
+            else
+            {
+                aUser.isFollower = true;
+            }
+
+            return aUser.isFollower;
         }
 
-        public void processUserMessage(string nickname, string message)
+        public void processJoinPart(string aNickname, bool aHasJoined)
         {
-            userEntry messageUser = checkCreateUser(nickname);
+            userEntry messageUser = checkCreateUser(aNickname);
+            messageUser.inChannel = aHasJoined;
+        }
+
+        public void processUserMessage(string aNickname, string aMessage)
+        {
+            userEntry messageUser = checkCreateUser(aNickname);
 
             m_LineCount++;
 
-            if (message[0] == '!')  // Try to assume this is a command
+            if (aMessage[0] == '!')  // Try to assume this is a command
             {
                 messageUser.incrementCommandCount();
-                processUserCommand(messageUser, message);
+                processUserCommand(messageUser, aMessage);
             }
             else
             {
@@ -506,18 +625,31 @@ namespace JerpDoesBots
                 {
                     tempModule = m_Modules[i];
 
-                    if (moduleValidForAction(tempModule))
-                        tempModule.onUserMessage(messageUser, message);
+                    if (isModuleValidForUserAction(tempModule))
+                        tempModule.onUserMessage(messageUser, aMessage);
                 }
 
                 messageUser.incrementMessageCount();
-                if (message.Length <= MESSAGE_VOTE_MAX_LENGTH && message.IndexOf(" ") == -1)
-                    processUserCommand(messageUser, "!vote " + message);
-                        
+                if (aMessage.Length <= MESSAGE_VOTE_MAX_LENGTH && aMessage.IndexOf(" ") == -1)
+                    processUserCommand(messageUser, "!vote " + aMessage);
             }
         }
 
-        private bool moduleValidForAction(botModule aModule)
+        public void processChannelPointRedemption(string aNickname, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
+        {
+            userEntry messageUser = checkCreateUser(aNickname);
+
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
+            {
+                tempModule = m_Modules[i];
+
+                if (isModuleValidForUserAction(tempModule))
+                    tempModule.onChannelPointRedemption(messageUser, aRewardTitle, aRewardCost, aRewardUserInput, aRewardID, aRedemptionID);
+            }
+        }
+
+        private bool isModuleValidForUserAction(botModule aModule)
         {
             if (
                 (!aModule.requiresConnection || m_HasChatConnection) &&
@@ -532,7 +664,7 @@ namespace JerpDoesBots
 
         public void frame()
         {
-            if (m_TwitchClient.IsConnected)
+            if (m_TwitchClientBot.IsConnected)
             {
 
                 botModule tempModule;
@@ -540,7 +672,7 @@ namespace JerpDoesBots
                 {
                     tempModule = m_Modules[i];
 
-                    if (moduleValidForAction(tempModule))
+                    if (isModuleValidForUserAction(tempModule))
                         tempModule.frame();
                 }
 
@@ -548,7 +680,7 @@ namespace JerpDoesBots
             }
         }
 
-        public TwitchLib.Api.V5.Models.Channels.Channel getSingleChannelInfoByName(string aChannelName)
+        public TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation getSingleChannelInfoByName(string aChannelName)
         {
 
             Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> userInfoTask = Task.Run(() => m_TwitchAPI.Helix.Users.GetUsersAsync(null, new List<string>() { aChannelName }));
@@ -558,13 +690,13 @@ namespace JerpDoesBots
             {
                 string userID = userInfoTask.Result.Users[0].Id;
 
-                // TODO: Switch to Helix
-                Task<TwitchLib.Api.V5.Models.Channels.Channel> channelInfoTask = Task.Run(() => m_TwitchAPI.V5.Channels.GetChannelByIDAsync(userID));
+                Task<TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.GetChannelInformationResponse> channelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.GetChannelInformationAsync(userID));
+
                 channelInfoTask.Wait();
 
                 if (channelInfoTask.Result != null)
                 {
-                    return channelInfoTask.Result;
+                    return channelInfoTask.Result.Data[0];
                 }
             }
 
@@ -576,11 +708,11 @@ namespace JerpDoesBots
             if (m_IsLive)
             {
                 TimeSpan tempTimeSinceLive = timeSinceLive;
-                sendDefaultChannelMessage(string.Format("Stream has been live for {0} hours, {1} minutes.", tempTimeSinceLive.Hours, tempTimeSinceLive.Minutes));
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoLiveTime"), tempTimeSinceLive.Hours, tempTimeSinceLive.Minutes));
             }
             else
             {
-                sendDefaultChannelMessage("Stream isn't live - check back later.");
+                sendDefaultChannelMessage(m_Localizer.getString("infoLiveTimeOffline"));
             }
         }
 
@@ -591,12 +723,12 @@ namespace JerpDoesBots
             {
                 string lastGame = "";
 
-                TwitchLib.Api.V5.Models.Channels.Channel channelInfo = getSingleChannelInfoByName(nickname);
+                TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(nickname);
 
-                if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.Game))
-                    lastGame = "  They were last playing " + channelInfo.Game;
+                if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.GameName))
+                    lastGame = "  " + string.Format(m_Localizer.getString("shoutoutLastPlaying"), channelInfo.GameName);
 
-                sendDefaultChannelMessage("Check out " + channelInfo.DisplayName + " and give 'em a follow!  ( twitch.tv/" + channelInfo.DisplayName.ToLower() + " )" + lastGame);
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
             }
         }
 
@@ -614,9 +746,9 @@ namespace JerpDoesBots
                 if (checkUser != null)
                 {
                     if (checkUser.isSubscriber)
-                        sendDefaultChannelMessage(checkUser.Nickname + " is a sub.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserSubCheckPass"), checkUser.Nickname));
                     else
-                        sendDefaultChannelMessage(checkUser.Nickname + " is NOT a sub.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserSubCheckFail"), checkUser.Nickname));
                 }
             }
         }
@@ -629,10 +761,10 @@ namespace JerpDoesBots
 
                 if (checkUser != null)
                 {
-                    if (checkUser.isFollower)
-                        sendDefaultChannelMessage(checkUser.Nickname + " is a follower.");
+                    if (checkUpdateIsFollower(checkUser))
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserFollowCheckPass"), checkUser.Nickname));
                     else
-                        sendDefaultChannelMessage(checkUser.Nickname + " is NOT a follower.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserFollowCheckFail"), checkUser.Nickname));
                 }
             }
         }
@@ -646,9 +778,9 @@ namespace JerpDoesBots
                 if (checkUser != null)
                 {
                     if (checkUser.isBroadcaster)
-                        sendDefaultChannelMessage(checkUser.Nickname + " is the broadcaster.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserBroadcasterCheckPass"), checkUser.Nickname));
                     else
-                        sendDefaultChannelMessage(checkUser.Nickname + " is NOT the broadcaster.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserBroadcasterCheckFail"), checkUser.Nickname));
                 }
             }
         }
@@ -662,11 +794,30 @@ namespace JerpDoesBots
                 if (checkUser != null)
                 {
                     if (checkUser.isModerator)
-                        sendDefaultChannelMessage(checkUser.Nickname + " is a moderator.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserModCheckPass"), checkUser.Nickname));
                     else
-                        sendDefaultChannelMessage(checkUser.Nickname + " is NOT a moderator.");
+                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserModCheckFail"), checkUser.Nickname));
                 }
             }
+        }
+
+        public int getNumChattersFollowing(out int numChattersTotal)
+        {
+            numChattersTotal = 0;
+            int totalFollowers = 0;
+            foreach (string curKey in userList.Keys)
+            {
+                if (
+                    userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[0].nickname.ToLower() && // Skip bot
+                    userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[1].nickname.ToLower() && // Skip owner
+                    userList[curKey].inChannel)
+                {
+                    numChattersTotal++;
+                    if (checkUpdateIsFollower(userList[curKey]))
+                        totalFollowers++;
+                }
+            }
+            return totalFollowers;
         }
 
         public void randomNumber(userEntry commandUser, string argumentString)
@@ -714,7 +865,7 @@ namespace JerpDoesBots
                 }
             }
 
-            sendDefaultChannelMessage("Random number is "+randomizer.Next(randMin, randMax)+" ("+randMin+"-"+randMax+")");
+            sendDefaultChannelMessage(string.Format(m_Localizer.getString("randomizerGeneral"), randomizer.Next(randMin, randMax), randMin, randMax));
         }
 
         // ==========================================================
@@ -722,7 +873,7 @@ namespace JerpDoesBots
         private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             m_HasJoinedChannel = true;
-            m_TwitchClient.SendMessage(e.Channel, "jerpBot in da house!!!");
+            m_TwitchClientBot.SendMessage(e.Channel, m_Localizer.getString("announceChannelJoin"));
         }
 
         private void Client_OnJoinedChannelJerp(object sender, OnJoinedChannelArgs e)
@@ -735,14 +886,14 @@ namespace JerpDoesBots
             m_HasChatConnection = true;
             Console.WriteLine($"Connected to {e.AutoJoinChannel}");
             requestChannelInfo();
-            m_TwitchClient.JoinChannel(m_DefaultChannel);
+            m_TwitchClientBot.JoinChannel(m_DefaultChannel);
             
         }
 
-        private void Client_OnConnectedJerp(object sender, OnConnectedArgs e)
+        private void Client_OnConnectedOwner(object sender, OnConnectedArgs e)
         {
-            Console.WriteLine($"Jerp Connected to {e.AutoJoinChannel}");
-            m_TwitchClientJerp.JoinChannel(m_DefaultChannel);
+            Console.WriteLine($"jerpBot owner account connected to {e.AutoJoinChannel}");
+            m_TwitchClientOwner.JoinChannel(m_DefaultChannel);
         }
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
@@ -756,6 +907,8 @@ namespace JerpDoesBots
                 messageUser.isSubscriber = e.ChatMessage.IsSubscriber;
                 messageUser.isVIP = e.ChatMessage.IsVip;
                 messageUser.isPartner = e.ChatMessage.IsPartner;
+                messageUser.inChannel = true;
+                messageUser.twitchUserID = e.ChatMessage.UserId;
 
                 processUserMessage(e.ChatMessage.Username, e.ChatMessage.Message);
             }
@@ -781,7 +934,7 @@ namespace JerpDoesBots
             m_SubsThisSession++;
         }
 
-        private void Client_OnLog(object sender, OnLogArgs e)
+        private void Client_OnLog(object sender, TwitchLib.Client.Events.OnLogArgs e)
         {
             Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
         }
@@ -796,13 +949,34 @@ namespace JerpDoesBots
             userEntry joinedUser = checkCreateUser(e.Username);
             joinedUser.inChannel = true;
 
+            // This is a massive rate limit risk, disabled by default
+            if (m_CoreConfig.configData.updateTwitchIDsOnUserJoins)
+            {
+                List<string> userList = new List<string>();
+                userList.Add(e.Username.ToLower());
+
+                try
+                {
+                    Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> getUserIDTask = m_TwitchAPI.Helix.Users.GetUsersAsync(null, userList);
+                    getUserIDTask.Wait();
+
+                    if (getUserIDTask.Result != null && getUserIDTask.Result.Users.Length >= 1)
+                    {
+                        joinedUser.twitchUserID = getUserIDTask.Result.Users[0].Id;
+                    }
+                }
+                catch (Exception exceptionInfo)
+                {
+                    Console.Write("Could not grab user ID for user " + e.Username + ": " + exceptionInfo.Message);
+                }
+            }
 
             botModule tempModule;
             for (int i = 0; i < m_Modules.Count; i++)
             {
                 tempModule = m_Modules[i];
 
-                if (moduleValidForAction(tempModule))
+                if (isModuleValidForUserAction(tempModule))
                     tempModule.onUserJoin(joinedUser);
             }
         }
@@ -820,7 +994,7 @@ namespace JerpDoesBots
             {
                 tempModule = m_Modules[i];
 
-                if (moduleValidForAction(tempModule))
+                if (isModuleValidForUserAction(tempModule))
                     tempModule.onHost(e.BeingHostedNotification.HostedByChannel, e.BeingHostedNotification.Viewers);
             }
         }
@@ -829,10 +1003,11 @@ namespace JerpDoesBots
 
         private void requestChannelInfo()
         {
-            TwitchLib.Api.V5.Models.Channels.Channel channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
-            m_Game = channelInfo.Game;
+            TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
+            m_Game = channelInfo.GameName;
+            m_Title = channelInfo.Title;
 
-            Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.Id));
+            Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.BroadcasterId));
             getStreamTagsTask.Wait();
 
             m_Tags = getStreamTagsTask.Result.Data;
@@ -844,7 +1019,6 @@ namespace JerpDoesBots
             if (aStream != null)
             {
                 m_IsLive = true;
-                // m_Game = aStream.GameName;
                 m_ViewersLast = aStream.ViewerCount;
                 m_LiveStartTime = aStream.StartedAt;
             }
@@ -870,6 +1044,37 @@ namespace JerpDoesBots
 
         // ==========================================================
 
+        private void PubSub_OnChannelPointsRewardRedeemed(object sender, OnChannelPointsRewardRedeemedArgs e)
+        {
+            processChannelPointRedemption(e.RewardRedeemed.Redemption.User.DisplayName, e.RewardRedeemed.Redemption.Reward.Title, e.RewardRedeemed.Redemption.Reward.Cost, e.RewardRedeemed.Redemption.UserInput, e.RewardRedeemed.Redemption.Reward.Id, e.RewardRedeemed.Redemption.Id);
+        }
+
+        private void PubSub_OnServiceConnected(object sender, EventArgs e)
+        {
+            Console.WriteLine("Connected to PubSub service, sending topics...");
+            m_TwitchPubSubBot.SendTopics(m_CoreConfig.configData.pubsub.oauth);
+        }
+
+        private void PubSub_OnListenResponse(object sender, OnListenResponseArgs e)
+        {
+            if (!e.Successful)
+                throw new Exception($"Failed to listen! Response: {e.Response}");
+        }
+
+        private void PubSub_OnFollowResponse(object sender, OnFollowArgs e)
+        {
+            userEntry messageUser = checkCreateUser(e.DisplayName);
+            messageUser.isFollower = true;
+            messageUser.twitchUserID = e.UserId;
+            messageUser.lastFollowCheckTime = DateTime.Now;
+            if (m_CoreConfig.configData.announceFollowEvents)
+            {
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), e.DisplayName));
+            }
+        }
+
+        // ==========================================================
+
         public jerpBot(logger useLog, botConfig aConfig)
 		{
             m_UserList = new Dictionary<string, userEntry>();
@@ -877,17 +1082,20 @@ namespace JerpDoesBots
 			botLog		= useLog;
 			actionQueue = new Queue<connectionCommand>();
             m_CoreConfig = aConfig;
+            m_Localizer = new localizer(this);
+
+            m_FollowerStaleCheckSeconds = m_CoreConfig.configData.followerStaleCheckSeconds;
 
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
 
             m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
             m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
 
-            m_TwitchClient = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
-            m_TwitchClientJerp = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
+            m_TwitchClientBot = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
+            m_TwitchClientOwner = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
 
-            m_TwitchClient.Initialize(m_TwitchCredentialsBot);
-            m_TwitchClientJerp.Initialize(m_TwitchCredentialsOwner);
+            m_TwitchClientBot.Initialize(m_TwitchCredentialsBot);
+            m_TwitchClientOwner.Initialize(m_TwitchCredentialsOwner);
 
             m_TwitchAPI = new TwitchAPI();
             m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
@@ -904,27 +1112,51 @@ namespace JerpDoesBots
 
             m_StreamMonitor.Start();
 
-            m_TwitchClientJerp.OnJoinedChannel += Client_OnJoinedChannelJerp;
-            m_TwitchClientJerp.OnConnected += Client_OnConnectedJerp;
-            m_TwitchClientJerp.OnBeingHosted += Client_OnBeingHosted;
+            m_TwitchClientOwner.OnJoinedChannel += Client_OnJoinedChannelJerp;
+            m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
+            m_TwitchClientOwner.OnBeingHosted += Client_OnBeingHosted;
 
-            m_TwitchClient.OnJoinedChannel += Client_OnJoinedChannel;
+            m_TwitchClientBot.OnJoinedChannel += Client_OnJoinedChannel;
 
-            m_TwitchClient.OnLog += Client_OnLog;
-            m_TwitchClient.OnConnected += Client_OnConnected;
-            m_TwitchClient.OnConnectionError += Client_OnConnectionError;
-            m_TwitchClient.OnMessageReceived += Client_OnMessageReceived;
-            m_TwitchClient.OnUserJoined += Client_OnUserJoined;
-            m_TwitchClient.OnUserLeft += Client_OnUserLeft;
-            m_TwitchClient.OnNewSubscriber += Client_OnNewSubscriber;
-            m_TwitchClient.OnCommunitySubscription += Client_OnCommunitySubscription;
-            m_TwitchClient.OnReSubscriber += Client_OnReSubscribe;
-            m_TwitchClient.OnGiftedSubscription += Client_OnGiftedSubscription;
+            m_TwitchClientBot.OnLog += Client_OnLog;
+            m_TwitchClientBot.OnConnected += Client_OnConnected;
+            m_TwitchClientBot.OnConnectionError += Client_OnConnectionError;
+            m_TwitchClientBot.OnMessageReceived += Client_OnMessageReceived;
+            m_TwitchClientBot.OnUserJoined += Client_OnUserJoined;
+            m_TwitchClientBot.OnUserLeft += Client_OnUserLeft;
+            m_TwitchClientBot.OnNewSubscriber += Client_OnNewSubscriber;
+            m_TwitchClientBot.OnCommunitySubscription += Client_OnCommunitySubscription;
+            m_TwitchClientBot.OnReSubscriber += Client_OnReSubscribe;
+            m_TwitchClientBot.OnGiftedSubscription += Client_OnGiftedSubscription;
 
-            m_TwitchClient.Connect();
-            m_TwitchClientJerp.Connect();
+            m_TwitchClientBot.Connect();
+            m_TwitchClientOwner.Connect();
 
-			m_ActionTimer = Stopwatch.StartNew();
+            m_TwitchPubSubBot = new TwitchPubSub();
+
+            m_TwitchPubSubBot.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
+            m_TwitchPubSubBot.OnPubSubServiceConnected += PubSub_OnServiceConnected;
+            m_TwitchPubSubBot.OnListenResponse += PubSub_OnListenResponse;
+            m_TwitchPubSubBot.OnFollow += PubSub_OnFollowResponse;
+
+            m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
+            m_TwitchPubSubBot.ListenToFollows(m_CoreConfig.configData.twitch_api.channel_id.ToString());
+
+            OperatingSystem osInfo = Environment.OSVersion;
+
+            Version win8version = new Version(6, 2, 9200, 0);
+
+            if (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version)    // Websockets requires Win8+
+            {
+                m_TwitchPubSubBot.Connect();
+            }
+            else
+            {
+                Console.WriteLine("Unable to check for followers/channel point redemptions, etc. via websockets -- requires Win8+");
+            }
+            
+
+            m_ActionTimer = Stopwatch.StartNew();
 
 			chatCommandList = new List<chatCommandDef>();
 			chatCommandList.Add(new chatCommandDef("botquit", this.quitCommand, false, false));
@@ -939,8 +1171,10 @@ namespace JerpDoesBots
             chatCommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
             chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
             chatCommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
-            chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, true));
-
+            chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
+            chatCommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
+            chatCommandList.Add(new chatCommandDef("back", setUserBack, true, true));
+            chatCommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");

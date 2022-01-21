@@ -1,0 +1,99 @@
+{
+    "tagsCommon": [
+        "cc8d5abb-39c9-4942-a1ee-e1558512119e"
+    ],
+    "rewardGroups":
+    {
+        "mariomaker2": [
+            {
+                "title": "Change character to Toad",
+                "description": "I'll change to Toad when I start next level.",
+                "cost": 350,
+                "backgroundColor": "#23508f"
+            },
+            {
+                "title": "Change character to Toadette",
+                "description": "I'll change to Toadette when I start next level.",
+                "cost": 350,
+                "backgroundColor": "#a10d56"
+            },
+            {
+                "title": "Change character to Luigi",
+                "description": "I'll change to Luigi when I start next level.",
+                "cost": 250,
+                "backgroundColor": "#1f751d"
+            },
+            {
+                "title": "Change character to Mario",
+                "description": "I'll change to Mario when I start next level.",
+                "cost": 500,
+                "backgroundColor": "#bb0408"
+            }
+        ],
+        "wizardoflegend": [
+            {
+                "title": "Decide next loadout",
+                "description": "I'll change my loadout when when I start the next run.",
+                "cost": 2500,
+                "requireUserInput": true,
+                "backgroundColor": "#375a87"
+            }
+        ],
+        "gungeon": [
+            {
+                "title": "Next run: Play as Convict",
+                "description": "I'll swap when I start next run.",
+                "cost": 500,
+                "backgroundColor": "#ab4825"
+            },
+            {
+                "title": "Next run: Play as Hunter",
+                "description": "I'll swap when I start next run.",
+                "cost": 750,
+                "backgroundColor": "#1e1e55"
+            },
+            {
+                "title": "Next run: Play as Marine",
+                "description": "I'll swap when I start next run.",
+                "cost": 750,
+                "backgroundColor": "#252e57"
+            },
+            {
+                "title": "Next run: Play as Pilot",
+                "description": "I'll swap when I start next run.",
+                "cost": 2000,
+                "backgroundColor": "#2c3110"
+            },
+            {
+                "title": "Next run: Play as Robot",
+                "description": "I'll swap when I start next run.",
+                "cost": 1500,
+                "backgroundColor": "#15605d"
+            },
+            {
+                "title": "Next run: Play as Bullet",
+                "description": "I'll swap when I start next run.",
+                "cost": 1500,
+                "backgroundColor": "#525152"
+            }
+        ]
+    },
+    "entries": {
+        "mmq": {
+            "title": "Viewer Levels & Level Design | !queue add [code] (Mario Maker 2)",
+            "category": "511399",
+            "tags": [
+                "fec05015-e841-4cff-a53c-8aa1336cf863",
+                "85a78d1f-77e7-468e-a3e5-76ed7c99864b"
+            ],
+            "rewardGroup": "mariomaker2"
+        },
+        "mmqclosed": {
+            "title": "Viewer Levels (queue closed) & Level Design (Mario Maker 2)",
+            "category": "511399",
+            "tags": [
+                "fec05015-e841-4cff-a53c-8aa1336cf863"
+            ]
+        }
+    }
+}

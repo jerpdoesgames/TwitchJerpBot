@@ -1,0 +1,20 @@
+{
+    "maxEntries": 10,
+    "weightedRandom": {
+        "subModifier": 1.25,
+        "followModifier": 1.5,
+        "valueBase": 100,
+        "valuePerMinute": 5,
+        "maxMinutesPassed": 60
+    },
+    "permitNoFilterTime": 60,
+    "marioMaker2": {
+        "useAPI": true,
+        "useFilter": true,
+        "tagsExclude": [ 7 ],
+        "clearPercentageMin": 0.05,
+        "attemptsMin": 10,
+        "likePercentageMin": 0.8,
+        "levelInfoCacheTime": 1800
+    }
+}

@@ -6,28 +6,30 @@ namespace JerpDoesBots
 {
 	class userEntry
 	{
-		private bool	m_NeedsUpdate	= false;	// Whether we need to update this in the database
-		private long	m_LastUpdate		= 0;	// Last time we've updated this in the database
-		// private int		level			= 0;
-		private bool	m_Initialized = false;
-		private bool	m_InChannel = false;
-		private int		m_ViewerID;
-		private string	m_Nickname;					// ^[a-zA-Z0-9_]{4,25}$
-		public string	Nickname { get { return m_Nickname; } }
+		private bool m_NeedsUpdate = false; // Whether we need to update this in the database
+		private long m_LastUpdate = 0;  // Last time we've updated this in the database
+										// private int		level			= 0;
+		private bool m_Initialized = false;
+		private bool m_InChannel = false;
+		private int m_ViewerID;
+		private string m_Nickname;                  // ^[a-zA-Z0-9_]{4,25}$
+		public string Nickname { get { return m_Nickname; } }
 
-		private int		m_Loyalty					= 0;
-		private int		m_Points					= 0;
-		private bool	m_IsFollower				= false;
-		private bool	m_isVIP						= false;
-		private bool	m_isPartner					= false;
+		private int m_Loyalty = 0;
+		private int m_Points = 0;
+		private bool m_IsFollower = false;
+		private bool m_isVIP = false;
+		private bool m_isPartner = false;
 
-		private bool	m_IsSubscriber			= false;
-		private bool	m_IsTurbo					= false;
-		private bool	m_IsModerator				= false;
-		private bool	m_IsBroadcaster			= false;
-		private bool	m_IsHosting				= false;
-		private int		m_SessionMessageCount		= 0;
-		private int		m_SessionCommandCount		= 0;
+		private bool m_IsSubscriber = false;
+		private bool m_IsTurbo = false;
+		private bool m_IsModerator = false;
+		private bool m_IsBroadcaster = false;
+		private bool m_IsHosting = false;
+		private int m_SessionMessageCount = 0;
+		private int m_SessionCommandCount = 0;
+		private bool m_IsBrb = false;
+		private string m_TwitchUserID;
 
 		private SQLiteConnection botDatabase;
 
@@ -43,15 +45,23 @@ namespace JerpDoesBots
 			m_NeedsUpdate = true;
 		}
 
-		public bool inChannel		{ get { return m_InChannel; } set { m_InChannel = value; } }
-		public bool needsUpdate		{ get { return m_NeedsUpdate; } }
-		public bool isSubscriber	{ get { return m_IsSubscriber; } set { m_IsSubscriber = value; } }
-		public bool isFollower		{ get { return m_IsFollower; } }
-		public bool isVIP			{ get { return m_isVIP; } set { m_isVIP = value; } }
+		public bool inChannel { get { return m_InChannel; } set { m_InChannel = value; } }
+		public bool needsUpdate { get { return m_NeedsUpdate; } }
+		public bool isSubscriber { get { return m_IsSubscriber; } set { m_IsSubscriber = value; } }
+		public bool isFollower { get { return m_IsFollower; } set { m_IsFollower = value; } }
+		public bool isVIP { get { return m_isVIP; } set { m_isVIP = value; } }
 		public bool isPartner { get { return m_isPartner; } set { m_isPartner = value; } }
 
-		public bool isTurbo			{ get { return m_IsTurbo; } }
-		public bool isModerator		{ get { return m_IsModerator; } set { m_IsModerator = value; } }
+		public bool isTurbo { get { return m_IsTurbo; } }
+		public bool isModerator { get { return m_IsModerator; } set { m_IsModerator = value; } }
+
+		public bool isBrb { get { return m_IsBrb; } set { m_IsBrb = value; } }
+
+		public string twitchUserID { get { return m_TwitchUserID; } set { m_TwitchUserID = value; } }
+
+		private DateTime m_LastFollowCheckTime;
+		public DateTime lastFollowCheckTime { get; set; }
+ 
 		public bool isHosting		{
 			get { return m_IsHosting; }
 			set { m_IsHosting = value; }
@@ -61,8 +71,6 @@ namespace JerpDoesBots
 			get { return m_IsBroadcaster; }
 			set { m_IsBroadcaster = value; }
 		}
-
-		public int level			{ get { return calculateLevel(m_Loyalty, m_Nickname); } }
 
 		public void addPoints(int pointsToAdd)
 		{
@@ -84,31 +92,6 @@ namespace JerpDoesBots
 			updateRowCommand.ExecuteNonQuery();
 
 			m_LastUpdate = updateTime;
-		}
-
-		public static int calculateLevel(int aUserScore, string aUsername = "")
-		{
-			// TODO: decide on a formula for level
-
-			if (aUsername.ToLower() == "jerp")
-				return 9999;
-
-			if (aUserScore >= 2500)
-				return 5;
-
-			if (aUserScore >= 1750)
-				return 4;
-
-			if (aUserScore >= 1000)
-				return 3;
-
-			if (aUserScore >= 250)
-				return 2;
-
-			if (aUserScore >= 100)
-				return 1;
-
-			return 0;
 		}
 
 		private bool createUser(string aUsername)
@@ -145,19 +128,19 @@ namespace JerpDoesBots
 			return false;
 		}
 
-		public userEntry(string aUsername, SQLiteConnection aBotData)
+		public userEntry(string aNickname, SQLiteConnection aBotData)
 		{
-			if (!String.IsNullOrEmpty(aUsername))
+			if (!String.IsNullOrEmpty(aNickname))
 			{
 				botDatabase = aBotData;
 
-				if (loadUser(aUsername))
+				if (loadUser(aNickname))
 					m_Initialized = true;
-				else if (createUser(aUsername))
+				else if (createUser(aNickname))
 					m_Initialized = true;
 				
 				if (m_Initialized)
-					m_Nickname	= aUsername;
+					m_Nickname	= aNickname;
 			}
 		}
 	}
