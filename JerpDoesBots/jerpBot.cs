@@ -1099,6 +1099,10 @@ namespace JerpDoesBots
 
         public jerpBot(logger useLog, botConfig aConfig)
 		{
+            OperatingSystem osInfo = Environment.OSVersion;
+            Version win8version = new Version(6, 2, 9200, 0);
+            bool webSocketsSupported = (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version); // Websockets requires Win8+
+
             m_UserList = new Dictionary<string, userEntry>();
             m_Modules = new List<botModule>();
 			m_BotLog		= useLog;
@@ -1113,8 +1117,10 @@ namespace JerpDoesBots
             m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
             m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
 
-            m_TwitchClientBot = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
-            m_TwitchClientOwner = new TwitchClient(protocol: TwitchLib.Client.Enums.ClientProtocol.TCP);
+            TwitchLib.Client.Enums.ClientProtocol useClientProtocol = webSocketsSupported ? TwitchLib.Client.Enums.ClientProtocol.WebSocket : TwitchLib.Client.Enums.ClientProtocol.TCP;
+
+            m_TwitchClientBot = new TwitchClient(protocol: useClientProtocol);
+            m_TwitchClientOwner = new TwitchClient(protocol: useClientProtocol);
 
             m_TwitchClientBot.Initialize(m_TwitchCredentialsBot);
             m_TwitchClientOwner.Initialize(m_TwitchCredentialsOwner);
@@ -1164,11 +1170,7 @@ namespace JerpDoesBots
             m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
             m_TwitchPubSubBot.ListenToFollows(m_CoreConfig.configData.twitch_api.channel_id.ToString());
 
-            OperatingSystem osInfo = Environment.OSVersion;
-
-            Version win8version = new Version(6, 2, 9200, 0);
-
-            if (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version)    // Websockets requires Win8+
+            if (webSocketsSupported)
             {
                 m_TwitchPubSubBot.Connect();
             }
