@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SQLite;
+using System.Collections.Generic;
 
 namespace JerpDoesBots
 {
@@ -111,6 +112,28 @@ namespace JerpDoesBots
 			}
 		}
 
+		public void outputList(userEntry commandUser, string argumentString)
+        {
+			string getQuotesQuery = "SELECT * FROM quotes";
+
+			SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, m_BotBrain.storageDB);
+			SQLiteDataReader getQuotesReader = getQuotesCommand.ExecuteReader();
+
+			List<object> rowData = new List<object>();
+			
+			if (getQuotesReader.HasRows)
+            {
+				while (getQuotesReader.Read())
+                {
+					rowData.Add(new { id = Convert.ToString(getQuotesReader["quoteID"]), message = Convert.ToString(getQuotesReader["message"]), game = Convert.ToString(getQuotesReader["game"]) });
+                }
+            }
+
+			m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_quotes.json");
+
+			m_BotBrain.sendDefaultChannelMessage("Successfully wrote quotes list json to output directory.");
+		}
+
 		public void edit(userEntry commandUser, string argumentString)
 		{
 			string[] argumentList = argumentString.Split(new[] { ' ' }, 2);
@@ -172,6 +195,7 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("remove", remove, true, false));
 			tempDef.addSubCommand(new chatCommandDef("edit", edit, true, false));
 			tempDef.addSubCommand(new chatCommandDef("setgame", setGame, true, false));
+			tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
 			// TODO: Add command to return total number of quotes.
 			m_BotBrain.addChatCommand(tempDef);
 		}

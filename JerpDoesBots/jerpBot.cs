@@ -458,19 +458,24 @@ namespace JerpDoesBots
             sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoChattersFollowing"), chattersFollowing.ToString(), chattersTotal.ToString()));
         }
 
-        public void outputCommandList(userEntry commandUser, string argumentString)
+        public void genericSerializeToFile(object aInput, string aFilename)
         {
             JsonSerializerOptions jsonOptions = new JsonSerializerOptions();
             jsonOptions.WriteIndented = true;
-            string outputString = JsonSerializer.Serialize(m_CommandList, jsonOptions);
+            string outputString = JsonSerializer.Serialize(aInput, jsonOptions);
             string outputDirectory = System.IO.Path.Combine(jerpBot.storagePath, "output");
-            string outputPath = System.IO.Path.Combine(outputDirectory, "jerpdoesbots_commands.json");
+            string outputPath = System.IO.Path.Combine(outputDirectory, aFilename);
             if (!Directory.Exists(outputDirectory))
             {
                 Directory.CreateDirectory(outputDirectory);
             }
 
             File.WriteAllText(outputPath, outputString);
+        }
+
+        public void outputCommandList(userEntry commandUser, string argumentString)
+        {
+            genericSerializeToFile(m_CommandList, "jerpdoesbots_commands.json");
 
             sendDefaultChannelMessage("Successfully wrote command json to output directory.");
         }
