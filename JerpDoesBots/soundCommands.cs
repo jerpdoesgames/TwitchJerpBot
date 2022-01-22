@@ -103,7 +103,7 @@ namespace JerpDoesBots
                     m_lastSound = curSound;
 
                     if (isRandom)
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundPlayRandom"), curSound.name));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
                 }
             }
         }
@@ -152,13 +152,13 @@ namespace JerpDoesBots
                 if (deviceNumber >= -1 && deviceNumber < WaveOut.DeviceCount)
                 {
                     m_DeviceNumber = deviceNumber;
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
                     success = true;
                 }
             }
 
             if (!success)
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
         }
 
         public void getDeviceList(userEntry commandUser, string argumentString)
@@ -166,7 +166,7 @@ namespace JerpDoesBots
             for (int i=0; i < WaveOut.DeviceCount; i++)
             {
                 WaveOutCapabilities curDevice = WaveOut.GetCapabilities(i);
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
             }
         }
 
@@ -177,7 +177,7 @@ namespace JerpDoesBots
             {
                 newVolume = Math.Min(newVolume, 1.0f);
                 m_GlobalVolume = newVolume;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetGlobalVolume"), newVolume));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetGlobalVolume"), newVolume));
             }
         }
 
@@ -185,19 +185,19 @@ namespace JerpDoesBots
         {
             m_IsEnabled = true;
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundEnabled"));
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundEnabled"));
         }
 
         public void disable(userEntry commandUser, string argumentString)
         {
             m_IsEnabled = false;
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundDisabled"));
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundDisabled"));
         }
 
         public void getList(userEntry commandUser, string argumentString)
         {
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundList"));
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundList"));
         }
 
         private bool loadSounds()
@@ -229,9 +229,9 @@ namespace JerpDoesBots
         public void reloadSounds(userEntry commandUser, string argumentString)
         {
             if (loadSounds())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadSuccess"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadSuccess"));
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadFail"));
         }
 
         public void playRandom(userEntry commandUser, string argumentString)

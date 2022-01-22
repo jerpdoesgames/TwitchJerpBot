@@ -13,7 +13,7 @@ using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 using System.Threading.Tasks;
 using System.Linq;
-
+using System.Text.Json;
 namespace JerpDoesBots
 {
     class jerpBot
@@ -29,8 +29,8 @@ namespace JerpDoesBots
 
         public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
 
-        public string OwnerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
-        public string OwnerID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
+        public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
+        public string ownerID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
 
         private DateTime m_LiveStartTime;
         private SQLiteConnection m_StorageDB;
@@ -46,7 +46,7 @@ namespace JerpDoesBots
         private int m_SubsThisSession = 0;
         private long m_FollowerStaleCheckSeconds = 360;  // Amount of time that must pass before checking to see if someone's following
         private localizer m_Localizer;
-        public localizer Localizer { get { return m_Localizer; } }
+        public localizer localizer { get { return m_Localizer; } }
 
         public int subsThisSession { get { return m_SubsThisSession; } }
 
@@ -91,7 +91,7 @@ namespace JerpDoesBots
 
         public static string storagePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JerpBot");
 
-        private logger botLog;
+        private logger m_BotLog;
         private long m_UserUpdateLast = 0;
         private long m_UserUpdateThrottle = 5000;
 
@@ -115,7 +115,7 @@ namespace JerpDoesBots
         private long m_LineCount = 0;   // Total lines
         public long lineCount { get { return m_LineCount; } }
 
-        private List<chatCommandDef> chatCommandList;
+        private List<chatCommandDef> m_CommandList;
 
         public void setLive(bool newLive)
         {
@@ -127,18 +127,18 @@ namespace JerpDoesBots
             m_Modules.Add(aModule);
         }
 
-        private customCommand customCommandModule;
-        public customCommand CustomCommandModule { set { customCommandModule = value; } }
+        private customCommand m_CustomCommandModule;
+        public customCommand customCommandModule { set { m_CustomCommandModule = value; } }
 
-        private gameCommand gameCommandModule;
-        public gameCommand GameCommandModule { set { gameCommandModule = value; } }
+        private gameCommand m_GameCommandModule;
+        public gameCommand gameCommandModule { set { m_GameCommandModule = value; } }
 
-        private soundCommands soundCommandModule;
-        public soundCommands SoundCommandModule { set { soundCommandModule = value; } }
+        private soundCommands m_SoundCommandModule;
+        public soundCommands soundCommandModule { set { m_SoundCommandModule = value; } }
 
         private commandAlias m_AliasModule;
 
-        public commandAlias AliasModule { set { m_AliasModule = value; } }
+        public commandAlias aliasModule { set { m_AliasModule = value; } }
 
         private Dictionary<string, userEntry> m_UserList;
         public Dictionary<string, userEntry> userList { get { return m_UserList; } }
@@ -341,9 +341,9 @@ namespace JerpDoesBots
             string checkSubString;
             chatCommandDef checkSub;
 
-            if (!string.IsNullOrEmpty(checkCommandString) && currentCommand.Name == checkCommandString)
+            if (!string.IsNullOrEmpty(checkCommandString) && currentCommand.name == checkCommandString)
             {
-                for (int i = 0; i < currentCommand.SubCommands.Count; i++)
+                for (int i = 0; i < currentCommand.subCommands.Count; i++)
                 {
                     if (input.Length >= checkCommandString.Length + 1)
                     {
@@ -351,7 +351,7 @@ namespace JerpDoesBots
 
                         if (!string.IsNullOrEmpty(checkSubString))
                         {
-                            checkSub = findCommand(currentCommand.SubCommands[i], checkSubString, checkCommandString.Length + 1, ref commandLength);
+                            checkSub = findCommand(currentCommand.subCommands[i], checkSubString, checkCommandString.Length + 1, ref commandLength);
                             if (checkSub != null)
                             {
                                 return checkSub;
@@ -458,6 +458,23 @@ namespace JerpDoesBots
             sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoChattersFollowing"), chattersFollowing.ToString(), chattersTotal.ToString()));
         }
 
+        public void outputCommandList(userEntry commandUser, string argumentString)
+        {
+            JsonSerializerOptions jsonOptions = new JsonSerializerOptions();
+            jsonOptions.WriteIndented = true;
+            string outputString = JsonSerializer.Serialize(m_CommandList, jsonOptions);
+            string outputDirectory = System.IO.Path.Combine(jerpBot.storagePath, "output");
+            string outputPath = System.IO.Path.Combine(outputDirectory, "jerpdoesbots_commands.json");
+            if (!Directory.Exists(outputDirectory))
+            {
+                Directory.CreateDirectory(outputDirectory);
+            }
+
+            File.WriteAllText(outputPath, outputString);
+
+            sendDefaultChannelMessage("Successfully wrote command json to output directory.");
+        }
+
         public void getHelpString(userEntry commandUser, string argumentString)
         {
             sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
@@ -503,19 +520,19 @@ namespace JerpDoesBots
 
             int commandLength = 0;
             chatCommandDef commandDef = null;
-            for (int i = 0; i < chatCommandList.Count; i++)
+            for (int i = 0; i < m_CommandList.Count; i++)
             {
-                commandDef = findCommand(chatCommandList[i], message.Substring(1), 0, ref commandLength);
+                commandDef = findCommand(m_CommandList[i], message.Substring(1), 0, ref commandLength);
 
                 if (commandDef != null)
                     break;
             }
 
             if (commandDef == null)
-                commandDef = gameCommandModule.get(command);
+                commandDef = m_GameCommandModule.get(command);
 
             if (commandDef == null)
-                commandDef = customCommandModule.get(command);
+                commandDef = m_CustomCommandModule.get(command);
 
             if (commandDef == null)
             {
@@ -537,17 +554,17 @@ namespace JerpDoesBots
             if (commandDef != null && commandDef.Run != null && commandDef.canUse(commandUser, m_ActionTimer.ElapsedMilliseconds))
             {
                 argumentString = message.Substring(Math.Min(message.Length, commandLength + 1));
-                commandDef.TimeLast = m_ActionTimer.ElapsedMilliseconds;
+                commandDef.timeLast = m_ActionTimer.ElapsedMilliseconds;
                 commandDef.Run(commandUser, argumentString);
                 return;
             }
 
-            if (soundCommandModule.soundExists(command))
+            if (m_SoundCommandModule.soundExists(command))
                 processUserCommand(commandUser, "!sound " + command);
 
         }
 
-        public userEntry checkCreateUser(string aUsername, bool canCreate = true)
+        public userEntry checkCreateUser(string aUsername, bool aCanCreate = true)
         {
             userEntry userEntry;
             string keyName = aUsername.ToLower();
@@ -555,7 +572,7 @@ namespace JerpDoesBots
             {
                 userEntry = m_UserList[keyName];
             }
-            else if (canCreate)
+            else if (aCanCreate)
             {
                 userEntry = new userEntry(aUsername, m_StorageDB);
                 m_UserList[keyName] = userEntry;
@@ -578,7 +595,7 @@ namespace JerpDoesBots
                 {
                     try
                     {
-                        Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, OwnerID);
+                        Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, ownerID);
                         userFollowsTask.Wait();
 
                         if (userFollowsTask.Result != null)
@@ -734,7 +751,7 @@ namespace JerpDoesBots
 
         public void addChatCommand(chatCommandDef aNewCommand)
         {
-            chatCommandList.Add(aNewCommand);
+            m_CommandList.Add(aNewCommand);
         }
 
         public void checkSub(userEntry commandUser, string argumentString)
@@ -1079,7 +1096,7 @@ namespace JerpDoesBots
 		{
             m_UserList = new Dictionary<string, userEntry>();
             m_Modules = new List<botModule>();
-			botLog		= useLog;
+			m_BotLog		= useLog;
 			actionQueue = new Queue<connectionCommand>();
             m_CoreConfig = aConfig;
             m_Localizer = new localizer(this);
@@ -1158,23 +1175,24 @@ namespace JerpDoesBots
 
             m_ActionTimer = Stopwatch.StartNew();
 
-			chatCommandList = new List<chatCommandDef>();
-			chatCommandList.Add(new chatCommandDef("botquit", this.quitCommand, false, false));
-			chatCommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
-			chatCommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
-			chatCommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
-			chatCommandList.Add(new chatCommandDef("help", getHelpString, true, true));
-            chatCommandList.Add(new chatCommandDef("random", randomNumber, true, true));
-            chatCommandList.Add(new chatCommandDef("follower", checkFollower, true, true));
-            chatCommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
-            chatCommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
-            chatCommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
-            chatCommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
-            chatCommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
-            chatCommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
-            chatCommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
-            chatCommandList.Add(new chatCommandDef("back", setUserBack, true, true));
-            chatCommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
+			m_CommandList = new List<chatCommandDef>();
+			m_CommandList.Add(new chatCommandDef("botquit", this.quitCommand, false, false));
+			m_CommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
+			m_CommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
+			m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
+			m_CommandList.Add(new chatCommandDef("help", getHelpString, true, true));
+            m_CommandList.Add(new chatCommandDef("random", randomNumber, true, true));
+            m_CommandList.Add(new chatCommandDef("follower", checkFollower, true, true));
+            m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
+            m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
+            m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
+            m_CommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
+            m_CommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
+            m_CommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
+            m_CommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
+            m_CommandList.Add(new chatCommandDef("back", setUserBack, true, true));
+            m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
+            m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");

@@ -15,7 +15,7 @@
 		// TODO: variant that applies properties before creating table
 		public gameCommand(jerpBot botGeneral) : base(botGeneral)
 		{
-			formatHint = m_BotBrain.Localizer.getString("commandGameFormatHint");
+			formatHint = m_BotBrain.localizer.getString("commandGameFormatHint");
 			chatCommandDef tempDef = new chatCommandDef("gamecommand", null, false, false);
 			tempDef.addSubCommand(new chatCommandDef("add", add, true, false));
 			tempDef.addSubCommand(new chatCommandDef("remove", remove, true, false));

@@ -39,17 +39,17 @@ namespace JerpDoesBots
 		private string getJoinString()
         {
 			if (m_UsePointRedemption)
-				return " " + string.Format(m_BotBrain.Localizer.getString("raffleHintJoinReward"), m_config.rewardInfo.title);
+				return " " + string.Format(m_BotBrain.localizer.getString("raffleHintJoinReward"), m_config.rewardInfo.title);
 			else
-				return " " + m_BotBrain.Localizer.getString("raffleHintJoin");
+				return " " + m_BotBrain.localizer.getString("raffleHintJoin");
 		}
 
 		public void about(userEntry commandUser, string argumentString)
 		{
 			if (!string.IsNullOrEmpty(m_Description))
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleDescriptionAnnounce"), m_Description));
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleDescriptionAnnounce"), m_Description));
 			else
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleDescriptionEmpty"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleDescriptionEmpty"));
 		}
 
 		private void setUseRedemptions(bool aUseRedemptions, bool aAnnounceUpdate = true)
@@ -61,7 +61,7 @@ namespace JerpDoesBots
 				if (aUseRedemptions)
 				{
 					if (aAnnounceUpdate)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("rafflePointRedemptionEnabled"));
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionEnabled"));
 
 					if (m_IsActive)
                     {
@@ -75,7 +75,7 @@ namespace JerpDoesBots
 				else
 				{
 					if (aAnnounceUpdate)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("rafflePointRedemptionDisabled"));
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionDisabled"));
 
 					if (m_IsActive)
 						updateChannelPointRedemptionRewardEnabled(false);
@@ -92,7 +92,7 @@ namespace JerpDoesBots
         {
 			bAlreadyExists = false;
 
-			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.OwnerID);
+			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerID);
 			getRewardsTask.Wait();
 
 			if (getRewardsTask.Result != null)
@@ -117,12 +117,12 @@ namespace JerpDoesBots
 
 			try
 			{
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.OwnerID, createRewardRequest);
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.ownerID, createRewardRequest);
 				createRewardTask.Wait();
 
 				if (createRewardTask.Result == null)
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardCreateFail"));
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardCreateFail"));
 					return false;
 				}
 				else
@@ -132,7 +132,7 @@ namespace JerpDoesBots
 			}
 			catch (Exception e)
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardCreateFail"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardCreateFail"));
 				return false;
 			}
 		}
@@ -142,7 +142,7 @@ namespace JerpDoesBots
 			TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward raffleRedemptionReward = null;
 
 			// grab and store reward ID if it exists
-			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.OwnerID);
+			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerID);
 			getRewardsTask.Wait();
 
 			if (getRewardsTask.Result != null)
@@ -164,12 +164,12 @@ namespace JerpDoesBots
 
 				try
 				{
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardResponse> updateTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateCustomRewardAsync(m_BotBrain.OwnerID, raffleRedemptionReward.Id, updateRequest);
+					Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardResponse> updateTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateCustomRewardAsync(m_BotBrain.ownerID, raffleRedemptionReward.Id, updateRequest);
 					updateTask.Wait();
 
 					if (updateTask.Result == null)
 					{
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardUpdateEnabledFail"));
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardUpdateEnabledFail"));
 					}
 					else
                     {
@@ -178,7 +178,7 @@ namespace JerpDoesBots
 				}
 				catch (Exception e)
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleRewardUpdateEnabledFail"));
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardUpdateEnabledFail"));
 				}
 			}
 
@@ -192,7 +192,7 @@ namespace JerpDoesBots
 				m_Description = argumentString;
                 if (m_IsActive)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleDescriptionSet"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleDescriptionSet"));
                 }
 			}
 		}
@@ -214,7 +214,7 @@ namespace JerpDoesBots
 		{
 			if (m_UsePointRedemption)
             {
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleAddUserFailNeedRedemption"), commandUser.Nickname, m_config.rewardInfo.title));
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAddUserFailNeedRedemption"), commandUser.Nickname, m_config.rewardInfo.title));
             }
 			else
             {
@@ -231,7 +231,7 @@ namespace JerpDoesBots
 		public void reset(userEntry commandUser, string argumentString)
 		{
 			resetEntries();
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleCleared"));
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCleared"));
 		}
 
 		public void open(userEntry commandUser, string argumentString)
@@ -250,7 +250,7 @@ namespace JerpDoesBots
                 {
 					// TODO: Handle something like, if the reward exists but it's not required, disable the reward
 					resetEntries();
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleOpenedCleared") + getJoinString());
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
 
 					m_Throttler.trigger();
 
@@ -262,7 +262,7 @@ namespace JerpDoesBots
 		public void close(userEntry commandUser, string argumentString)
 		{
 			m_IsActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleClosed"));
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleClosed"));
 
 			if (m_UsePointRedemption)
 				updateChannelPointRedemptionRewardEnabled(false);
@@ -272,9 +272,9 @@ namespace JerpDoesBots
 		{
 			int userCount = userList.Count();
 			if (m_IsActive)
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleUserCount"), userCount) + getJoinString());
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserCount"), userCount) + getJoinString());
 			else
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleUserCount"), userCount));
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserCount"), userCount));
 		}
 
 		public void draw(userEntry commandUser, string argumentString)
@@ -294,14 +294,14 @@ namespace JerpDoesBots
 				if (usersAddedRecently.Count == 0)
 					userAddedRecently = false;
 
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleUserSelected"), chosenUser.Nickname));
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserSelected"), chosenUser.Nickname));
 			}
 			else
 			{
 				if (m_IsActive)
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleCountEmpty") + getJoinString());
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCountEmpty") + getJoinString());
 				else
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleCountEmpty") + "  " + m_BotBrain.Localizer.getString("raffleHintOpen"));
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCountEmpty") + "  " + m_BotBrain.localizer.getString("raffleHintOpen"));
 			}
 
 		}
@@ -317,7 +317,7 @@ namespace JerpDoesBots
 
 			try
 			{
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateRedemptionStatus.UpdateRedemptionStatusResponse> refundRedemptionTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateRedemptionStatusAsync(m_BotBrain.OwnerID, aRewardID, redemptionIDs, updateRequest);
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateRedemptionStatus.UpdateRedemptionStatusResponse> refundRedemptionTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateRedemptionStatusAsync(m_BotBrain.ownerID, aRewardID, redemptionIDs, updateRequest);
 				refundRedemptionTask.Wait();
 
 				if (refundRedemptionTask.Result != null)
@@ -356,33 +356,33 @@ namespace JerpDoesBots
 								if (updateRaffleRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.FULFILLED))
 									addUserInternal(aMessageUser);
 								else
-									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleRewardRedeemStatusFulfilledFail"), aMessageUser.Nickname));
+									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusFulfilledFail"), aMessageUser.Nickname));
 							}
 							else
 							{
 
-								failReason = m_BotBrain.Localizer.getString("raffleRewardRedeemFailUserExists");
+								failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailUserExists");
 								needRefund = true;
 							}
 						}
 						else
 						{
-							failReason = m_BotBrain.Localizer.getString("raffleRewardRedeemFailInactive");
+							failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailInactive");
 							needRefund = true;
 						}
 					}
 					else
 					{
-						failReason = m_BotBrain.Localizer.getString("raffleRewardRedeemFailNoRewardRequired");
+						failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailNoRewardRequired");
 						needRefund = true;
 					}
 
 					if (needRefund)
 					{
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleRewardRefund"),aMessageUser.Nickname , failReason));
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRefund"),aMessageUser.Nickname , failReason));
 
 						if (!updateRaffleRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.CANCELED))
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
 					}
 				}
 			}
@@ -416,12 +416,12 @@ namespace JerpDoesBots
 					{
 						if (userAddedRecently)
 						{
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + getJoinString());
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + getJoinString());
 							usersAddedRecently.Clear();
 							userAddedRecently = false;
 						}
 						else
-							m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("raffleAnnounceOpen") + getJoinString());
+							m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleAnnounceOpen") + getJoinString());
 
 						m_Throttler.trigger();
 					}
@@ -450,7 +450,7 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("describe", describe, true, false));
 			tempDef.addSubCommand(new chatCommandDef("about", about, true, true));
 			tempDef.addSubCommand(new chatCommandDef("useredemptions", toggleUseRedemptions, false, false));
-			tempDef.UseGlobalCooldown = false;
+			tempDef.useGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 
 		}

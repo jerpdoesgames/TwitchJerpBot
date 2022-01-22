@@ -291,7 +291,7 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				m_Game = argumentString;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterGameSet"), argumentString));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameSet"), argumentString));
             }
 		}
 
@@ -300,7 +300,7 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(m_Game))
 			{
 				m_Game = null;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterGameClear"), getGameString()));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameClear"), getGameString()));
             }
 		}
 
@@ -314,7 +314,7 @@ namespace JerpDoesBots
             {
                 if (argCount == 1)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterValueSetEmpty"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterValueSetEmpty"));
                 }
 
                 counterEntry curCounter = checkCreateEntry(countName);
@@ -322,16 +322,16 @@ namespace JerpDoesBots
                 if (curCounter.Owner == null || curCounter.Owner.ToLower() == commandUser.Nickname.ToLower())
                 {
                     if (curCounter.set(countValue))
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterValueSet"), curCounter.Name, curCounter.Count, curCounter.Game));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterValueSet"), curCounter.Name, curCounter.Count, curCounter.Game));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterValueSetFailOwner"), commandName, curCounter.Owner, curCounter.Name));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterValueSetFailOwner"), commandName, curCounter.Owner, curCounter.Name));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
         }
 
@@ -359,7 +359,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
         }
 
@@ -382,7 +382,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -397,16 +397,16 @@ namespace JerpDoesBots
 
                 if (curCount != null)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterDisplay"), curCount.Name, curCount.Count, curCount.Game));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDisplay"), curCount.Name, curCount.Count, curCount.Game));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterDisplayFailNotFound"), curCount.Name));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDisplayFailNotFound"), curCount.Name));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -434,18 +434,18 @@ namespace JerpDoesBots
 
                     if (curCounter.delete())
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterRemoveSuccess"), name, game));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterRemoveSuccess"), name, game));
                         m_Entries[game].Remove(name);
                     }
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterFailNotFound"), countName));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterFailNotFound"), countName));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -462,16 +462,16 @@ namespace JerpDoesBots
                     counterEntry curCount = checkCreateEntry(counterName);
 
                     if (curCount.describe(argument))
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterDescriptionUpdateSuccess"), curCount.Name));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionUpdateSuccess"), curCount.Name));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterDescriptionUpdateFailEmpty"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterDescriptionUpdateFailEmpty"));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -487,18 +487,18 @@ namespace JerpDoesBots
                 if (curCount != null)
                 {
                     if (!string.IsNullOrEmpty(curCount.Description))
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterDescriptionDisplay"), curCount.Name, curCount.Description));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionDisplay"), curCount.Name, curCount.Description));
                     else
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterDescriptionUpdateFailEmpty"), curCount.Name));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionUpdateFailEmpty"), curCount.Name));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterFailNotFound"), counterName));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterFailNotFound"), counterName));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -515,16 +515,16 @@ namespace JerpDoesBots
                     counterEntry curCount = checkCreateEntry(counterName);
 
                     curCount.Owner = argument;
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterOwnerSetSuccess"), curCount.Name, argument));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerSetSuccess"), curCount.Name, argument));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterOwnerSetFailEmpty"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOwnerSetFailEmpty"));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -539,11 +539,11 @@ namespace JerpDoesBots
                 counterEntry curCount = checkCreateEntry(argumentString, false);
 
                 curCount.Owner = null;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("counterOwnerClear"), curCount.Name));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerClear"), curCount.Name));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("counterNotSpecified"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
             }
 		}
 

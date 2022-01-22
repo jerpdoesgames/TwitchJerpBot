@@ -26,9 +26,9 @@ namespace JerpDoesBots
         public void reloadMessages(userEntry commandUser, string argumentString)
         {
             if (loadConfig())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("hostMessageLoadSuccess"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadSuccess"));
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("hostMessageLoadFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadFail"));
         }
 
         public override void onHost(string aHostName, int aViewerCount)

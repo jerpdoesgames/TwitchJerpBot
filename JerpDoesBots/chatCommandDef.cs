@@ -1,116 +1,122 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace JerpDoesBots
 {
     class chatCommandDef
 	{
-		private string name;
-		private List<chatCommandDef> subCommands;
-		public List<chatCommandDef> SubCommands { get { return subCommands; } }
+		private string m_Name;
+		public string name { get { return m_Name; } }
 
-		public delegate void commandActionDelegate(userEntry commandUser, string argumentString);
-		private commandActionDelegate commandAction;
+		public delegate void commandActionDelegate(userEntry aUser, string aArgumentString);
+		private commandActionDelegate m_CommandAction;
 
-		public commandActionDelegate Run { get { return commandAction; } }
+		[JsonIgnore]
+		public commandActionDelegate Run { get { return m_CommandAction; } }
 
-		private chatCommandDef parentCommand;
-		public chatCommandDef ParentCommand {
-			get { return parentCommand; }
-			set { parentCommand = value; }
+		private chatCommandDef m_ParentCommand;
+		[JsonIgnore]
+		public chatCommandDef parentCommand {
+			get { return m_ParentCommand; }
+			set { m_ParentCommand = value; }
 		}
 
-		private bool allowModerator		= false;
-		private bool allowNormal		= false;
+		public bool allowModerator { get { return m_AllowModerator; } }
+		private bool m_AllowModerator		= false;
+		public bool allowNormal { get { return m_AllowNormal; } }
+		private bool m_AllowNormal		= false;
 
-		private long globalCooldown		= 5000;
-        private long userCooldown       = 15000;
-		private bool useGlobalCooldown	= true;
-		private long timeLast			= 0;    // For global cooldowns
+		private long m_GlobalCooldown		= 5000;
+        private long m_UserCooldown       = 15000;
+		private bool m_UseCooldown	= true;
+		private long m_TimeLast			= 0;    // For global cooldowns
 
         private Dictionary<string, long> lastUsedTimes;
 
-        public bool UseGlobalCooldown {
-			get { return useGlobalCooldown; }
-			set { useGlobalCooldown = value; }
+        public bool useGlobalCooldown {
+			get { return m_UseCooldown; }
+			set { m_UseCooldown = value; }
 		}
 
-		public long GlobalCooldown
+		public long globalCooldown
 		{
-			get { return globalCooldown; }
-			set { globalCooldown = value; }
+			get { return m_GlobalCooldown; }
+			set { m_GlobalCooldown = value; }
 		}
 
-        public long UserCooldown
+        public long userCooldown
         {
-            get { return userCooldown; }
-            set { userCooldown = value; }
+            get { return m_UserCooldown; }
+            set { m_UserCooldown = value; }
         }
 
-        private bool useUserCooldown = true;
+        private bool m_useUserCooldown = true;
 
-        public bool UseUserCooldown
+        public bool useUserCooldown
         {
-            get { return useUserCooldown; }
-            set { useUserCooldown = value; }
+            get { return m_useUserCooldown; }
+            set { m_useUserCooldown = value; }
         }
 
-        public void addSubCommand(chatCommandDef newSub)
+		private List<chatCommandDef> m_SubCommands;
+		public List<chatCommandDef> subCommands { get { return m_SubCommands; } }
+
+		public void addSubCommand(chatCommandDef newSub)
 		{
-			newSub.parentCommand = this;
-			subCommands.Add(newSub);
+			newSub.m_ParentCommand = this;
+			m_SubCommands.Add(newSub);
 		}
 
-		public string Name { get { return name; } }
 
-		public bool isOnCooldown(long timeNow, userEntry checkUser)
+		public bool isOnCooldown(long aTimeNow, userEntry aUser)
 		{
-            if (useGlobalCooldown && !(timeNow > timeLast + globalCooldown))
+            if (m_UseCooldown && !(aTimeNow > m_TimeLast + m_GlobalCooldown))
                 return true;
-            else if (getLastUsed(checkUser) + userCooldown > timeNow)
+            else if (getLastUsed(aUser) + m_UserCooldown > aTimeNow)
                 return true;
             else
                 return false;
 		}
-
-		public long TimeLast {
-			get { return timeLast; }
-			set { timeLast = value; }
+		[JsonIgnore]
+		public long timeLast {
+			get { return m_TimeLast; }
+			set { m_TimeLast = value; }
 		}
 
-        private long getLastUsed(userEntry checkUser)
+        private long getLastUsed(userEntry aUser)
         {
-            if (lastUsedTimes.ContainsKey(checkUser.Nickname))
-                return lastUsedTimes[checkUser.Nickname];
+            if (lastUsedTimes.ContainsKey(aUser.Nickname))
+                return lastUsedTimes[aUser.Nickname];
             else
-                lastUsedTimes[checkUser.Nickname] = -1;
+                lastUsedTimes[aUser.Nickname] = -1;
 
-            return lastUsedTimes[checkUser.Nickname];
+            return lastUsedTimes[aUser.Nickname];
         }
 
-		public bool canUse(userEntry commandUser, long timeNow)
+		public bool canUse(userEntry aUser, long aTimeNow)
 		{
-			if (commandUser.isBroadcaster)
+			if (aUser.isBroadcaster)
 				return true;
 
-			if (isOnCooldown(timeNow, commandUser))
+			if (isOnCooldown(aTimeNow, aUser))
 				return false;
 
-			if (allowModerator && commandUser.isModerator)
+			if (m_AllowModerator && aUser.isModerator)
 				return true;
-			else if (allowNormal)
+			else if (m_AllowNormal)
 				return true;
 			else
 				return false;
 		}
 
-		public chatCommandDef(string newName, commandActionDelegate newCommandAction, bool newAllowModerator = true, bool newAllowNormal = false)
+		public chatCommandDef(string aName, commandActionDelegate aCommandAction, bool aAllowModerator = true, bool aAllowNormal = false)
 		{
-			name			= newName;
-			allowModerator	= newAllowModerator;
-			allowNormal		= newAllowNormal;
-			commandAction	= newCommandAction;
+			m_Name			= aName;
+			m_AllowModerator	= aAllowModerator;
+			m_AllowNormal		= aAllowNormal;
+			m_CommandAction	= aCommandAction;
 
-			subCommands = new List<chatCommandDef>();
+			m_SubCommands = new List<chatCommandDef>();
             lastUsedTimes = new Dictionary<string, long>();
 		}
 	}

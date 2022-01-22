@@ -75,7 +75,7 @@ namespace JerpDoesBots
             triviaQuestion currentQuestion = getCurrentQuestion();
 
             if (currentQuestion != null)
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle()));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle()));
         }
 
         public void start(userEntry commandUser, string argumentString)
@@ -112,8 +112,8 @@ namespace JerpDoesBots
                     m_Scores = new Dictionary<userEntry, int>();
 
 
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaQuestionCurrent"), tagListString, m_Questions.Count));
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), tagListString, m_Questions.Count));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
 
                     m_Throttler.trigger();
                     m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
@@ -121,19 +121,19 @@ namespace JerpDoesBots
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaNoQuestionsFound"), tagListString));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaNoQuestionsFound"), tagListString));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("triviaStartNoTags"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStartNoTags"));
             }
 		}
 
 		public void stop(userEntry commandUser, string argumentString)
 		{
 			m_IsActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("triviaStopped"));
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStopped"));
 		}
 
         public void reload(userEntry commandUser, string argumentString)
@@ -142,9 +142,9 @@ namespace JerpDoesBots
             m_LoadSuccessful = load();
 
             if (m_LoadSuccessful)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("triviaStoppedReloaded"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedReloaded"));
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("triviaStoppedLoadFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedLoadFail"));
         }
 
         private bool isTagInQuestion(triviaQuestion aQuestion, string aTag)
@@ -225,7 +225,7 @@ namespace JerpDoesBots
         {
             string scoreString = getTopScoreString();
 
-            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaTopContestants"), scoreString));
+            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTopContestants"), scoreString));
         }
 
         public void setMaxQuestions(userEntry commandUser, string argumentString)
@@ -238,9 +238,9 @@ namespace JerpDoesBots
                 string nextString = "";
 
                 if (m_IsActive)
-                    nextString = "  " + m_BotBrain.Localizer.getString("triviaMaxQuestionsSetWhileActive");
+                    nextString = "  " + m_BotBrain.localizer.getString("triviaMaxQuestionsSetWhileActive");
 
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaMaxQuestionsSet"), m_TotalQuestions) + nextString);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaMaxQuestionsSet"), m_TotalQuestions) + nextString);
             }
         }
 
@@ -258,7 +258,7 @@ namespace JerpDoesBots
                 hasOne = true;
             }
 
-            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaTopics"), m_TotalQuestions) + topicString);
+            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTopics"), m_TotalQuestions) + topicString);
         }
 
         public override void onUserMessage(userEntry aUser, string aMessage)
@@ -279,7 +279,7 @@ namespace JerpDoesBots
                                 addendumString = "  " + currentQuestion.addendum;
                             }
 
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaAnswerSuccess"), aUser.Nickname, aMessage) + addendumString);
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaAnswerSuccess"), aUser.Nickname, aMessage) + addendumString);
 
                             checkCreateParticipant(aUser);
                             m_Scores[aUser]++;
@@ -297,7 +297,7 @@ namespace JerpDoesBots
 			{
                 if (m_BotBrain.actionTimer.ElapsedMilliseconds  > m_TimeSinceLastAnswer + m_TimeToAnswer)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("triviaTimeExpired"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired"));
                     advanceToNextQuestion(true);
                 }
                 else if (m_Throttler.isReady)
@@ -306,9 +306,9 @@ namespace JerpDoesBots
                     string questionString = "";
                     triviaQuestion currentQuestion = getCurrentQuestion();
                     if (currentQuestion != null)
-                        questionString = string.Format(m_BotBrain.Localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
+                        questionString = string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
 
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("triviaTimeExpired") + "  " + questionString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired") + "  " + questionString);
                 }
 			}
 		}
@@ -324,13 +324,13 @@ namespace JerpDoesBots
                 if (fromSuccessOrFail)
                 {
                     string scoreString = getTopScoreString();
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaQuestionCurrent"), scoreString));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), scoreString));
                 }
             }
             else
             {
                 m_Throttler.trigger();
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("triviaQuestionNext"), getCurrentQuestion().getFormattedTitle()));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionNext"), getCurrentQuestion().getFormattedTitle()));
             }
             m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
         }
@@ -390,7 +390,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("topics", topics, true, true));
             tempDef.addSubCommand(new chatCommandDef("setmax", setMaxQuestions, true, true));
             tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
-            tempDef.UseGlobalCooldown = false;
+            tempDef.useGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 		}
 

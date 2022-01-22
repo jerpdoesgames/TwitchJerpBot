@@ -42,10 +42,10 @@
 			gameCommandModule.initTable();
             aliasManager.initTable();
 
-			botGeneral.CustomCommandModule = customCommandModule;
-			botGeneral.GameCommandModule = gameCommandModule;
-            botGeneral.SoundCommandModule = soundManager;
-            botGeneral.AliasModule = aliasManager;
+			botGeneral.customCommandModule = customCommandModule;
+			botGeneral.gameCommandModule = gameCommandModule;
+            botGeneral.soundCommandModule = soundManager;
+            botGeneral.aliasModule = aliasManager;
 
             while (!botGeneral.isReadyToClose)
             {

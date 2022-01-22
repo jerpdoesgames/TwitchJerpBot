@@ -61,7 +61,7 @@ namespace JerpDoesBots
 						TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = m_BotBrain.getSingleChannelInfoByName(shoutUserEntry.Nickname);
 
 						if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.GameName))
-							lastGame = "  " + string.Format(m_BotBrain.Localizer.getString("shoutoutLastPlaying"), channelInfo.GameName);
+							lastGame = "  " + string.Format(m_BotBrain.localizer.getString("shoutoutLastPlaying"), channelInfo.GameName);
 
 						if (!string.IsNullOrEmpty(shoutEntry.shoutMessage))
 						{
@@ -73,13 +73,13 @@ namespace JerpDoesBots
 
 
                                 case autoShoutUserType.streamer:
-									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, shoutEntry.shoutMessage, channelInfo.BroadcasterName.ToLower()) + lastGame);
+									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, shoutEntry.shoutMessage, channelInfo.BroadcasterName.ToLower()) + lastGame);
 									break;
                             }
 						}
 						else
 						{
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
 						}
 						
 					}

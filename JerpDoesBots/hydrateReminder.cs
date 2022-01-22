@@ -39,10 +39,10 @@ namespace JerpDoesBots
                 int ozToDrink = (int)(m_OzPerHour * hoursPassed);
                 string mlToDrink = string.Format("{0:n0}", (int)(ozToDrink * OZ_TO_ML));
 
-                return string.Format(m_BotBrain.Localizer.getString("hydrateReminderAnnounce"), hoursPassed, (m_OzPerHour * hoursPassed), mlToDrink);
+                return string.Format(m_BotBrain.localizer.getString("hydrateReminderAnnounce"), hoursPassed, (m_OzPerHour * hoursPassed), mlToDrink);
             }
             
-            return m_BotBrain.Localizer.getString("hydrateReminderEmpty");
+            return m_BotBrain.localizer.getString("hydrateReminderEmpty");
         }
 
         public override void frame()
@@ -71,7 +71,7 @@ namespace JerpDoesBots
             if (Int32.TryParse(argumentString, out offsetVal))
             {
                 m_HoursPassedOffset = offsetVal;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("hydrateReminderHoursPassedOffset"), m_HoursPassedOffset));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("hydrateReminderHoursPassedOffset"), m_HoursPassedOffset));
             }
         }
 

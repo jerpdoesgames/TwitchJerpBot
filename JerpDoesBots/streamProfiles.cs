@@ -83,7 +83,7 @@ namespace JerpDoesBots
 				try
 				{
 					TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = getCreateRequest();
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(aBotBrain.OwnerID, createRewardRequest);
+					Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(aBotBrain.ownerID, createRewardRequest);
 					createRewardTask.Wait();
 
 					if (createRewardTask.Result == null)
@@ -114,7 +114,7 @@ namespace JerpDoesBots
         {
 			if (string.IsNullOrEmpty(rewardID))
             {
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = aBotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(aBotBrain.OwnerID);
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = aBotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(aBotBrain.ownerID);
 				getRewardsTask.Wait();
 
 				if (getRewardsTask.Result != null)
@@ -144,7 +144,7 @@ namespace JerpDoesBots
             {
 				try
 				{
-					Task removeRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(aBotBrain.OwnerID, rewardID);
+					Task removeRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(aBotBrain.ownerID, rewardID);
 					removeRewardTask.Wait();
 
 					aExisted = true;
@@ -206,7 +206,7 @@ namespace JerpDoesBots
 				}
 				else
                 {
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("modifyChannelInfoFailProfileNotFound"));
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("modifyChannelInfoFailProfileNotFound"));
                 }
 			}
 		}
@@ -242,7 +242,7 @@ namespace JerpDoesBots
                 }
 			}
 
-			m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("channelPointRewardsCreatedRemoved"), countAdded, countRemoved));
+			m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("channelPointRewardsCreatedRemoved"), countAdded, countRemoved));
         }
 
 		public void applyRewardGroup(userEntry commandUser, string argumentString)

@@ -137,13 +137,13 @@ namespace JerpDoesBots
                 switch (m_QueueType)
                 {
                     case QUEUE_TYPE_MARIOMAKER:
-                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintMarioMaker");
+                        return modeString() + m_BotBrain.localizer.getString("queueJoinHintMarioMaker");
                     case QUEUE_TYPE_MARIOMAKER2:
-                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintMarioMaker2");
+                        return modeString() + m_BotBrain.localizer.getString("queueJoinHintMarioMaker2");
                     case QUEUE_TYPE_GENERIC:
-                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintGeneric");
+                        return modeString() + m_BotBrain.localizer.getString("queueJoinHintGeneric");
                     default:
-                        return modeString() + m_BotBrain.Localizer.getString("queueJoinHintPlain");
+                        return modeString() + m_BotBrain.localizer.getString("queueJoinHintPlain");
                 }
             }
 
@@ -155,11 +155,11 @@ namespace JerpDoesBots
             switch (m_QueueMode)
             {
                 case QUEUE_MODE_SUBS:
-                    return m_BotBrain.Localizer.getString("queueModeSubOnly") + "  ";
+                    return m_BotBrain.localizer.getString("queueModeSubOnly") + "  ";
                 case QUEUE_MODE_FOLLOWERS:
-                    return m_BotBrain.Localizer.getString("queueModeFollowers") + "  ";
+                    return m_BotBrain.localizer.getString("queueModeFollowers") + "  ";
                 default:
-                    return m_BotBrain.Localizer.getString("queueModeAll") + "  ";
+                    return m_BotBrain.localizer.getString("queueModeAll") + "  ";
             }
         }
 
@@ -168,7 +168,7 @@ namespace JerpDoesBots
 			m_EntryList.Clear();
 			usersAddedRecently.Clear();
 			if (announce)
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReset"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReset"));
 		}
 
 		public void resetEntries(userEntry commandUser, string argumentString)
@@ -242,9 +242,9 @@ namespace JerpDoesBots
                 m_QueueMode = argumentString;
 
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueModeSet"), m_QueueMode) + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueModeSet"), m_QueueMode) + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueModeSet"), m_QueueMode));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueModeSet"), m_QueueMode));
             }
         }
 
@@ -274,18 +274,18 @@ namespace JerpDoesBots
 
 
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueTypeSet"), m_QueueType) + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueTypeSet"), m_QueueType) + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueTypeSet"), m_QueueType));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueTypeSet"), m_QueueType));
 			}
 		}
 
 		public void about(userEntry commandUser, string argumentString)
 		{
 			if (!string.IsNullOrEmpty(description))
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueDescriptionDisplay"), description));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueDescriptionDisplay"), description));
             else
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueDescriptionEmpty"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueDescriptionEmpty"));
 		}
 
 		public void describe(userEntry commandUser, string argumentString)
@@ -293,7 +293,7 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				description = argumentString;
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueDescriptionUpdated"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueDescriptionUpdated"));
 			}
 		}
 
@@ -302,9 +302,9 @@ namespace JerpDoesBots
 			int userCount = m_EntryList.Count();
 
             if (isActive)
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser) + "  " + joinString());
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser) + "  " + joinString());
 			else
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser));
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueCountAnnounce"), userCount, m_ListMax, m_MaxPerUser));
 		}
 
         private bool isValidFilterLevel(marioMakerLevelInfo aLevelInfo, out string reasonString)
@@ -327,20 +327,20 @@ namespace JerpDoesBots
 
                 if (foundInvalidTags.Count > 0)
                 {
-                    reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTag"), string.Join(", ", foundInvalidTags)));
+                    reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidTag"), string.Join(", ", foundInvalidTags)));
                     isValid = false;
                 }
             }
 
             if (m_config.marioMaker2.clearConditionRequirement == marioMakerClearConditionRequirement.forbidden && !string.IsNullOrEmpty(aLevelInfo.clear_condition_name))
             {
-                reasonList.Add(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearConditionExluded"));
+                reasonList.Add(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearConditionExluded"));
                 isValid = false;
             }
 
             if (m_config.marioMaker2.clearConditionRequirement == marioMakerClearConditionRequirement.mandatory && string.IsNullOrEmpty(aLevelInfo.clear_condition_name))
             {
-                reasonList.Add(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearConditionOnly"));
+                reasonList.Add(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearConditionOnly"));
                 isValid = false;
             }
 
@@ -359,7 +359,7 @@ namespace JerpDoesBots
 
                 if (!foundTagPair)
                 {
-                    reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTagCombinationAllow"), string.Join(", ", aLevelInfo.tags_name)));
+                    reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidTagCombinationAllow"), string.Join(", ", aLevelInfo.tags_name)));
                     isValid = false;
                 }
             }
@@ -370,7 +370,7 @@ namespace JerpDoesBots
                 {
                     if (aLevelInfo.hasAllTags(excludePair.tags))
                     {
-                        reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidTagCombinationExlude"), string.Join(", ", aLevelInfo.tags_name)));
+                        reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidTagCombinationExlude"), string.Join(", ", aLevelInfo.tags_name)));
                         isValid = false;
                         break;
                     }
@@ -386,17 +386,17 @@ namespace JerpDoesBots
                 )
             )
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTime"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearTime"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
                 isValid = false;
             }
             else if (m_config.marioMaker2.fastestTimeMin != -1 && aLevelInfo.fastestClearTime.TotalSeconds < m_config.marioMaker2.fastestTimeMin)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTimeMin"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearTimeMin"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMin)));
                 isValid = false;
             }
             else if (m_config.marioMaker2.fastestTimeMax != -1 && aLevelInfo.fastestClearTime.TotalSeconds > m_config.marioMaker2.fastestTimeMax)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearTimeMax"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearTimeMax"), marioMakerAPI.durationString(aLevelInfo.fastestClearTime), TimeSpan.FromSeconds(m_config.marioMaker2.fastestTimeMax)));
                 isValid = false;
             }
 
@@ -409,17 +409,17 @@ namespace JerpDoesBots
                 )
             )
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercent"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidLikePercent"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
                 isValid = false;
             }
             else if (m_config.marioMaker2.likePercentageMin != -1 && aLevelInfo.likePercentage < m_config.marioMaker2.likePercentageMin)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercentMin"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidLikePercentMin"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMin * 100, 2)));
                 isValid = false;
             }
             else if (m_config.marioMaker2.likePercentageMax != -1 && aLevelInfo.likePercentage > m_config.marioMaker2.likePercentageMax)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidLikePercentMax"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidLikePercentMax"), Math.Round(aLevelInfo.likePercentage * 100, 2), Math.Round(m_config.marioMaker2.likePercentageMax * 100, 2)));
                 isValid = false;
             }
 
@@ -432,17 +432,17 @@ namespace JerpDoesBots
                 )
             )
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercent"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearPercent"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
                 isValid = false;
             }
             else if (m_config.marioMaker2.clearPercentageMin != -1 && aLevelInfo.clearPercentage < m_config.marioMaker2.clearPercentageMin)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercentMin"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearPercentMin"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMin * 100, 2)));
                 isValid = false;
             }
             else if (m_config.marioMaker2.clearPercentageMax != -1 && aLevelInfo.clearPercentage > m_config.marioMaker2.clearPercentageMax)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearPercentMax"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearPercentMax"), Math.Round(aLevelInfo.clearPercentage * 100, 2), Math.Round(m_config.marioMaker2.clearPercentageMax * 100, 2)));
                 isValid = false;
             }
 
@@ -455,17 +455,17 @@ namespace JerpDoesBots
                 )
             )
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttempts"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin, m_config.marioMaker2.attemptsMax));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidAttempts"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin, m_config.marioMaker2.attemptsMax));
                 isValid = false;
             }
             else if (m_config.marioMaker2.attemptsMin != -1 && aLevelInfo.attempts < m_config.marioMaker2.attemptsMin)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttemptsMin"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidAttemptsMin"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMin));
                 isValid = false;
             }
             else if (m_config.marioMaker2.attemptsMax != -1 && aLevelInfo.attempts > m_config.marioMaker2.attemptsMax)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidAttemptsMax"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMax));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidAttemptsMax"), aLevelInfo.attempts, m_config.marioMaker2.attemptsMax));
                 isValid = false;
             }
 
@@ -478,17 +478,17 @@ namespace JerpDoesBots
                 )
             )
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlays"), aLevelInfo.plays, m_config.marioMaker2.playsMin, m_config.marioMaker2.playsMax));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidPlays"), aLevelInfo.plays, m_config.marioMaker2.playsMin, m_config.marioMaker2.playsMax));
                 isValid = false;
             }
             else if (m_config.marioMaker2.playsMin != -1 && aLevelInfo.plays < m_config.marioMaker2.playsMin)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlaysMin"), aLevelInfo.plays, m_config.marioMaker2.playsMin));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidPlaysMin"), aLevelInfo.plays, m_config.marioMaker2.playsMin));
                 isValid = false;
             }
             else if (m_config.marioMaker2.playsMax != -1 && aLevelInfo.plays > m_config.marioMaker2.playsMax)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidPlaysMax"), aLevelInfo.plays, m_config.marioMaker2.playsMax));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidPlaysMax"), aLevelInfo.plays, m_config.marioMaker2.playsMax));
                 isValid = false;
             }
 
@@ -501,17 +501,17 @@ namespace JerpDoesBots
                 )
             )
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClears"), aLevelInfo.clears, m_config.marioMaker2.clearsMin, m_config.marioMaker2.clearsMax));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClears"), aLevelInfo.clears, m_config.marioMaker2.clearsMin, m_config.marioMaker2.clearsMax));
                 isValid = false;
             }
             else if (m_config.marioMaker2.clearsMin != -1 && aLevelInfo.clears < m_config.marioMaker2.clearsMin)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearsMin"), aLevelInfo.clears, m_config.marioMaker2.clearsMin));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearsMin"), aLevelInfo.clears, m_config.marioMaker2.clearsMin));
                 isValid = false;
             }
             else if (m_config.marioMaker2.clearsMax != -1 && aLevelInfo.clears > m_config.marioMaker2.clearsMax)
             {
-                reasonList.Add(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalidClearsMax"), aLevelInfo.clears, m_config.marioMaker2.clearsMax));
+                reasonList.Add(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalidClearsMax"), aLevelInfo.clears, m_config.marioMaker2.clearsMax));
                 isValid = false;
             }
 
@@ -573,13 +573,13 @@ namespace JerpDoesBots
                                         if (!isValidFilterLevel(newLevelInfo, out filterFailReasons))
                                         {
                                             entryPassedFilter = false;
-                                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelInvalid"), commandUser.Nickname, filterFailReasons));
+                                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("marioMakerLevelInvalid"), commandUser.Nickname, filterFailReasons));
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerLevelNotFound"), commandUser.Nickname));
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("marioMakerLevelNotFound"), commandUser.Nickname));
                                     entryPassedFilter = false;
                                 }
                             }
@@ -593,19 +593,19 @@ namespace JerpDoesBots
 
                                 if (m_UpdateImmediately)
                                 {
-                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntrySuccess"), commandUser.Nickname, m_EntryList.Count));
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueEntrySuccess"), commandUser.Nickname, m_EntryList.Count));
                                 }
                             }
 						}
 					}
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntryFailMaxPerUser"), commandUser.Nickname, m_MaxPerUser));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueEntryFailMaxPerUser"), commandUser.Nickname, m_MaxPerUser));
                     }
 				}
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueEntryFailQueueFull"), commandUser.Nickname, m_EntryList.Count));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueEntryFailQueueFull"), commandUser.Nickname, m_EntryList.Count));
                 }
 			}
             else
@@ -644,16 +644,16 @@ namespace JerpDoesBots
             {
                 if (totalEntries > 1)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionSingle"), commandUser.Nickname, position, totalEntries));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queuePositionSingle"), commandUser.Nickname, position, totalEntries));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePositionMultiple"), commandUser.Nickname, position));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queuePositionMultiple"), commandUser.Nickname, position));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
             }
         }
 
@@ -673,17 +673,17 @@ namespace JerpDoesBots
 
                         if (totalEntries > 1)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccessMultiple"), commandUser.Nickname, position, totalEntries));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueReplaceSuccessMultiple"), commandUser.Nickname, position, totalEntries));
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueReplaceSuccess"), commandUser.Nickname, position));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueReplaceSuccess"), commandUser.Nickname, position));
                         }
                     } // TODO: Consider message for invalid entries.
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueFailUserNotFound"), commandUser.Nickname));
                 }
             }
         }
@@ -700,11 +700,11 @@ namespace JerpDoesBots
                 if (resetEntries)
                 {
                     reset(false);
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueOpenedReset") + "  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueOpenedReset") + "  " + newJoinString);
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueOpened") + "  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueOpened") + "  " + newJoinString);
                 }
 
                 m_Throttler.trigger();
@@ -716,7 +716,7 @@ namespace JerpDoesBots
 		public void close(userEntry commandUser, string argumentString)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueClosed"));
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueClosed"));
 		}
 
         public void setMaxCount(userEntry commandUser, string argumentString)
@@ -725,14 +725,14 @@ namespace JerpDoesBots
             if (Int32.TryParse(argumentString, out newListMax))
             {
                 m_ListMax = newListMax;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueMaxEntriesSet"), m_ListMax));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueMaxEntriesSet"), m_ListMax));
             }
         }
 
         private string closedMessage(userEntry commandUser)
         {
             
-            return string.Format(m_BotBrain.Localizer.getString("queueClosedReply"), commandUser.Nickname);
+            return string.Format(m_BotBrain.localizer.getString("queueClosedReply"), commandUser.Nickname);
         }
 
         private void outputGenericClosedMessage(userEntry commandUser)
@@ -776,11 +776,11 @@ namespace JerpDoesBots
                     listString += getEntryString(curEntry, curPos);
                 }
 
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueListDisplay"), listString));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueListDisplay"), listString));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + joinString());
             }
 
         }
@@ -798,15 +798,15 @@ namespace JerpDoesBots
             }
             if (removeCount == 1)
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveSingle"), commandUser.Nickname));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveSingle"), commandUser.Nickname));
             }
             else if (removeCount > 1)
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveMultiple"), commandUser.Nickname, removeCount));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveMultiple"), commandUser.Nickname, removeCount));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueLeaveNotFound"), commandUser.Nickname));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveNotFound"), commandUser.Nickname));
             }
         }
 
@@ -815,22 +815,22 @@ namespace JerpDoesBots
             if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
             {
                 if (m_CurEntry != null)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("marioMakerViewLevelDisplay"), m_CurEntry.data));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("marioMakerViewLevelDisplay"), m_CurEntry.data));
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueCurEntryDisplayEmpty"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("marioMakerViewLevelDisplayFailInvalidType"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("marioMakerViewLevelDisplayFailInvalidType"));
             }
         }
 
         public void reloadSettings(userEntry commandUser, string argumentString)
         {
             if (load())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReloadSuccess"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReloadSuccess"));
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueReloadFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReloadFail"));
         }
 
         public void current(userEntry commandUser, string argumentString)
@@ -840,7 +840,7 @@ namespace JerpDoesBots
                 switch (m_QueueType)
                 {
                     case QUEUE_TYPE_PLAIN:
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayPlain"), m_CurEntry.user.Nickname));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueCurEntryDisplayPlain"), m_CurEntry.user.Nickname));
                         break;
                     case QUEUE_TYPE_MARIOMAKER:
                     case QUEUE_TYPE_MARIOMAKER2:
@@ -849,30 +849,30 @@ namespace JerpDoesBots
                             marioMakerLevelInfo curLevel = marioMakerAPI.getLevelInfo(m_CurEntry.data);
                             if (curLevel != null)
                             {
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMakerAPI"), m_CurEntry.user.Nickname, m_CurEntry.data, m_CurEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueCurEntryDisplayMarioMakerAPI"), m_CurEntry.user.Nickname, m_CurEntry.data, m_CurEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
                             }
                             else
                             {
-                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("marioMakerLevelNotFound"));
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("marioMakerLevelNotFound"));
                             }
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueCurEntryDisplayMarioMaker"), m_CurEntry.user.Nickname, m_CurEntry.data));
                         }
 
                         break;
                     case QUEUE_TYPE_GENERIC:
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayGeneric"), m_CurEntry.user.Nickname, m_CurEntry.data));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueCurEntryDisplayGeneric"), m_CurEntry.user.Nickname, m_CurEntry.data));
                         break;
                 }
             }
             else
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty") + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueCurEntryDisplayEmpty") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueCurEntryDisplayEmpty") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueCurEntryDisplayEmpty") + "  " + m_BotBrain.localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -891,9 +891,9 @@ namespace JerpDoesBots
             else
 			{
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + m_BotBrain.localizer.getString("queueClosedOpenToEnter"));
             }
 		}
 
@@ -902,7 +902,7 @@ namespace JerpDoesBots
             switch (m_QueueType)
             {
                 case QUEUE_TYPE_PLAIN:
-                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectPlain"), aEntry.user.Nickname));
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.localizer.getString("queueSelectPlain"), aEntry.user.Nickname));
                     break;
                 case QUEUE_TYPE_MARIOMAKER:
                 case QUEUE_TYPE_MARIOMAKER2:
@@ -911,21 +911,21 @@ namespace JerpDoesBots
                         marioMakerLevelInfo curLevel = marioMakerAPI.getLevelInfo(aEntry.data);
                         if (curLevel != null)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueSelectMarioMakerAPI"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data, aEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueSelectMarioMakerAPI"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data, aEntry.levelInfo.name, Math.Round(curLevel.clearPercentage * 100, 2), marioMakerAPI.durationString(curLevel.fastestClearTime), string.Join(", ", curLevel.tags_name)));
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                            m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
                         }
                     }
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
+                        m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.localizer.getString("queueCurEntryDisplayMarioMaker"), aEntry.user.Nickname, aEntry.user.inChannel, aEntry.data));
                     }
                         
                     break;
                 case QUEUE_TYPE_GENERIC:
-                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.Localizer.getString("queueSelectGeneric"), aEntry.user.Nickname, aEntry.data));
+                    m_BotBrain.sendDefaultChannelMessage(aPrefix + string.Format(m_BotBrain.localizer.getString("queueSelectGeneric"), aEntry.user.Nickname, aEntry.data));
                     break;
             }
         }
@@ -943,15 +943,15 @@ namespace JerpDoesBots
 
                 m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteSub") + " ");
+                announceSelection(nextEntry, m_BotBrain.localizer.getString("queueSelectNoteSub") + " ");
             }
 
             if (!foundEntry)
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") +  "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntriesSub") +  "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.localizer.getString("queueClosedOpenToEnter"));
             }
 
         }
@@ -972,15 +972,15 @@ namespace JerpDoesBots
                 m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
 
-                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteSubRandom") + " ");
+                announceSelection(nextEntry, m_BotBrain.localizer.getString("queueSelectNoteSubRandom") + " ");
             }
 
             if (!foundEntry)
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntriesSub") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntriesSub") + "  " + m_BotBrain.localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -996,14 +996,14 @@ namespace JerpDoesBots
                 queueData nextEntry = entryList[selectID];
                 m_CurEntry = nextEntry;
                 m_EntryList.Remove(nextEntry);
-                announceSelection(nextEntry, m_BotBrain.Localizer.getString("queueSelectNoteRandom") + " ");
+                announceSelection(nextEntry, m_BotBrain.localizer.getString("queueSelectNoteRandom") + " ");
             }
             else
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + m_BotBrain.localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -1014,7 +1014,7 @@ namespace JerpDoesBots
                 userEntry newUser = m_BotBrain.checkCreateUser(argumentString);
                 m_PermitList.Add(newUser, DateTime.Now);
 
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
             }
         }
 
@@ -1094,14 +1094,14 @@ namespace JerpDoesBots
 
                 m_CurEntry = curEntry;
                 m_EntryList.Remove(curEntry);
-                announceSelection(curEntry, m_BotBrain.Localizer.getString("queueSelectNoteWeightedRandom"));
+                announceSelection(curEntry, m_BotBrain.localizer.getString("queueSelectNoteWeightedRandom"));
             }
             else
             {
                 if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + joinString());
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + joinString());
                 else
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueNoEntries") + "  " + m_BotBrain.Localizer.getString("queueClosedOpenToEnter"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueNoEntries") + "  " + m_BotBrain.localizer.getString("queueClosedOpenToEnter"));
             }
         }
 
@@ -1116,16 +1116,16 @@ namespace JerpDoesBots
                         string newJoinString = joinString();
                         if (!m_UpdateImmediately && userAddedRecently)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("queueAnnounceEntriesSinceUpdate"), usersAddedRecently.Count) + "  " + newJoinString);
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueAnnounceEntriesSinceUpdate"), usersAddedRecently.Count) + "  " + newJoinString);
                             usersAddedRecently.Clear();
                             userAddedRecently = false;
                         }
                         else
                         {
                             if (string.IsNullOrEmpty(description))
-                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + "  " + newJoinString);
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueAnnounceOpen") + "  " + newJoinString);
                             else
-                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("queueAnnounceOpen") + " (" + description + ")  " + newJoinString);
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueAnnounceOpen") + " (" + description + ")  " + newJoinString);
                         }
 
                         m_Throttler.trigger();
@@ -1189,7 +1189,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("permit", permitNoFilter, true, false));
             tempDef.addSubCommand(new chatCommandDef("viewlevel", viewLevel, true, false));
             tempDef.addSubCommand(new chatCommandDef("reload", reloadSettings, false, false));
-            tempDef.UseGlobalCooldown = false;
+            tempDef.useGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 		}
 	}
