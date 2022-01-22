@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SQLite;
+using System.Collections.Generic;
 
 namespace JerpDoesBots
 {
@@ -101,11 +102,34 @@ namespace JerpDoesBots
             
         }
 
+        public void outputList(userEntry commandUser, string argumentString)
+        {
+            string getQuotesQuery = "SELECT * FROM command_alias";
+
+            SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, m_BotBrain.storageDB);
+            SQLiteDataReader getQuotesReader = getQuotesCommand.ExecuteReader();
+
+            List<object> rowData = new List<object>();
+
+            if (getQuotesReader.HasRows)
+            {
+                while (getQuotesReader.Read())
+                {
+                    rowData.Add(new { name = Convert.ToString(getQuotesReader["command_name"]), message = Convert.ToString(getQuotesReader["message"]) });
+                }
+            }
+
+            m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
+
+            m_BotBrain.sendDefaultChannelMessage("Successfully wrote alias list json to output directory.");
+        }
+
         public commandAlias(jerpBot botGeneral) : base(botGeneral)
         {
             chatCommandDef tempDef = new chatCommandDef("alias", null, false, false);
             tempDef.addSubCommand(new chatCommandDef("add", add, false, false));
             tempDef.addSubCommand(new chatCommandDef("remove", remove, false, false));
+            tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
             m_BotBrain.addChatCommand(tempDef);
 
         }
