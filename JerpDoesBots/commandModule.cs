@@ -14,7 +14,10 @@ namespace JerpDoesBots
 		protected string createQuery = "CREATE TABLE IF NOT EXISTS commands_custom (commandID INTEGER PRIMARY KEY ASC, command_name TEXT UNIQUE, submitter TEXT, modifier TEXT, lastmod INTEGER, allow_normal INTEGER, message TEXT)";
 		protected string formatHint; // Filled out via localizer in constructor
 		protected string removeQuery = "DELETE FROM commands_custom WHERE command_name=@param1";
+		protected string selectAllQuery = "SELECT * FROM commands_custom";
 		protected string useGame = null;
+		protected string outputListFilename = "jerpdoesbots_commands_custom.json";
+		protected string outputListMessageSuccess;
 
 		private string getGameString()
 		{
@@ -226,6 +229,31 @@ namespace JerpDoesBots
 			string createCommandTableQuery = createQuery;
 			SQLiteCommand createCommandTableCommand = new SQLiteCommand(createCommandTableQuery, m_BotBrain.storageDB);
 			createCommandTableCommand.ExecuteNonQuery();
+		}
+
+		public virtual object getCurEntryJsonObject(SQLiteDataReader aEntryReader)
+        {
+			return new { name = Convert.ToString(aEntryReader["command_name"]), message = Convert.ToString(aEntryReader["message"]) };
+		}
+
+		public virtual void outputList(userEntry commandUser, string argumentString)
+		{
+			SQLiteCommand getEntriesCommand = new SQLiteCommand(selectAllQuery, m_BotBrain.storageDB);
+			SQLiteDataReader getEntriesReader = getEntriesCommand.ExecuteReader();
+
+			List<object> rowData = new List<object>();
+
+			if (getEntriesReader.HasRows)
+			{
+				while (getEntriesReader.Read())
+				{
+					rowData.Add(getCurEntryJsonObject(getEntriesReader));
+				}
+			}
+
+			m_BotBrain.genericSerializeToFile(rowData, outputListFilename);
+
+			m_BotBrain.sendDefaultChannelMessage(outputListMessageSuccess);
 		}
 
 		public commandModule(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
