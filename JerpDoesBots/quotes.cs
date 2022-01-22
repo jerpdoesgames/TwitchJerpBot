@@ -131,7 +131,7 @@ namespace JerpDoesBots
 
 			m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_quotes.json");
 
-			m_BotBrain.sendDefaultChannelMessage("Successfully wrote quotes list json to output directory.");
+			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteOutputListSuccess"));
 		}
 
 		public void edit(userEntry commandUser, string argumentString)

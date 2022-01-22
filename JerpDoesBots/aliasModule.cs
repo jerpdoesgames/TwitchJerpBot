@@ -121,7 +121,7 @@ namespace JerpDoesBots
 
             m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
 
-            m_BotBrain.sendDefaultChannelMessage("Successfully wrote alias list json to output directory.");
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasOutputListSuccess"));
         }
 
         public commandAlias(jerpBot botGeneral) : base(botGeneral)
