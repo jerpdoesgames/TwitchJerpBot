@@ -104,7 +104,7 @@ namespace JerpDoesBots
 
         public void outputList(userEntry commandUser, string argumentString)
         {
-            string getQuotesQuery = "SELECT * FROM command_alias";
+            string getQuotesQuery = "SELECT * FROM command_alias ORDER BY command_name ASC";
 
             SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, m_BotBrain.storageDB);
             SQLiteDataReader getQuotesReader = getQuotesCommand.ExecuteReader();

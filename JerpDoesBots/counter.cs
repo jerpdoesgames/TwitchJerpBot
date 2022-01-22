@@ -401,7 +401,7 @@ namespace JerpDoesBots
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDisplayFailNotFound"), curCount.Name));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterFailNotFound"), argumentString));
                 }
             }
             else
@@ -547,11 +547,33 @@ namespace JerpDoesBots
             }
 		}
 
-		public counter(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public void outputList(userEntry commandUser, string argumentString)
+        {
+            string getCountersQuery = "SELECT * FROM counters ORDER BY game ASC, name ASC";
+
+            SQLiteCommand getCountersCommand = new SQLiteCommand(getCountersQuery, m_BotBrain.storageDB);
+            SQLiteDataReader getCountersReader = getCountersCommand.ExecuteReader();
+
+            List<object> rowData = new List<object>();
+
+            if (getCountersReader.HasRows)
+            {
+                while (getCountersReader.Read())
+                {
+                    rowData.Add(new { game = Convert.ToString(getCountersReader["game"]), name = Convert.ToString(getCountersReader["name"]), count = Convert.ToString(getCountersReader["count"]) });
+                }
+            }
+
+            m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_counters.json");
+
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOutputListSuccess"));
+        }
+
+        public counter(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
-			string createQuoteTableQuery = "CREATE TABLE IF NOT EXISTS counters (counterID INTEGER PRIMARY KEY ASC, name TEXT, game TEXT, description TEXT, count INTEGER, UNIQUE(name, game))";
-			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, m_BotBrain.storageDB);
-			createQuoteTableCommand.ExecuteNonQuery();
+			string createCounterTableQuery = "CREATE TABLE IF NOT EXISTS counters (counterID INTEGER PRIMARY KEY ASC, name TEXT, game TEXT, description TEXT, count INTEGER, UNIQUE(name, game))";
+			SQLiteCommand createCounterTableCommand = new SQLiteCommand(createCounterTableQuery, m_BotBrain.storageDB);
+			createCounterTableCommand.ExecuteNonQuery();
 
 			m_Entries = new Dictionary<string, Dictionary<string, counterEntry>>();
             checkInitializeList(GAME_NOGAME);
@@ -569,7 +591,8 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("setowner", setOwner, false, false));
 			tempDef.addSubCommand(new chatCommandDef("clearowner", clearOwner, false, false));
 			tempDef.addSubCommand(new chatCommandDef("about", about, true, true));
-			m_BotBrain.addChatCommand(tempDef);
+            tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
+            m_BotBrain.addChatCommand(tempDef);
 		}
 	}
 }

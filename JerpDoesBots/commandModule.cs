@@ -14,7 +14,7 @@ namespace JerpDoesBots
 		protected string createQuery = "CREATE TABLE IF NOT EXISTS commands_custom (commandID INTEGER PRIMARY KEY ASC, command_name TEXT UNIQUE, submitter TEXT, modifier TEXT, lastmod INTEGER, allow_normal INTEGER, message TEXT)";
 		protected string formatHint; // Filled out via localizer in constructor
 		protected string removeQuery = "DELETE FROM commands_custom WHERE command_name=@param1";
-		protected string selectAllQuery = "SELECT * FROM commands_custom";
+		protected string selectAllQuery = "SELECT * FROM commands_custom ORDER BY command_name ASC";
 		protected string useGame = null;
 		protected string outputListFilename = "jerpdoesbots_commands_custom.json";
 		protected string outputListMessageSuccess;

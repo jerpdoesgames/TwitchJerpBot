@@ -263,6 +263,7 @@
           "commandOutputListSuccess": "Successfully wrote custom commands list json to output directory.",
           "commandGameOutputListSuccess": "Successfully wrote game commands list json to output directory.",
           "aliasOutputListSuccess": "Successfully wrote alias list json to output directory.",
-          "quoteOutputListSuccess": "Successfully wrote quotes list json to output directory."
+          "quoteOutputListSuccess": "Successfully wrote quotes list json to output directory.",
+          "counterOutputListSuccess": "Successfully wrote counter list json to output directory."
     }
 }

@@ -11,7 +11,7 @@ namespace JerpDoesBots
 			selectQuery = "SELECT * FROM commands_game WHERE command_name = @param1 AND game = @param2 LIMIT 1";
 			createQuery = "CREATE TABLE IF NOT EXISTS commands_game (commandID INTEGER PRIMARY KEY ASC, command_name TEXT, submitter TEXT, modifier TEXT, lastmod INTEGER, allow_normal INTEGER, game TEXT, message TEXT, UNIQUE(command_name, game))";
 			removeQuery = "DELETE FROM commands_game WHERE command_name=@param1 AND game=@param2";
-			selectAllQuery = "SELECT * FROM commands_game";
+			selectAllQuery = "SELECT * FROM commands_game ORDER BY game ASC, command_name ASC";
 			outputListFilename = "jerpdoesbots_commands_game.json";
 			outputListMessageSuccess = m_BotBrain.localizer.getString("commandGameOutputListSuccess");
 
