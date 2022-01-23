@@ -1009,7 +1009,7 @@ namespace JerpDoesBots
             leftUser.inChannel = false;
         }
 
-        private void Client_OnBeingHosted(object sender, OnBeingHostedArgs e)
+        private void Client_OnRaidNotification(object sender, OnRaidNotificationArgs e)
         {
             botModule tempModule;
             for (int i = 0; i < m_Modules.Count; i++)
@@ -1017,7 +1017,7 @@ namespace JerpDoesBots
                 tempModule = m_Modules[i];
 
                 if (isModuleValidForUserAction(tempModule))
-                    tempModule.onHost(e.BeingHostedNotification.HostedByChannel, e.BeingHostedNotification.Viewers);
+                    tempModule.onRaid(e.RaidNotification.MsgParamDisplayName, Int32.Parse(e.RaidNotification.MsgParamViewerCount));
             }
         }
 
@@ -1142,7 +1142,7 @@ namespace JerpDoesBots
 
             m_TwitchClientOwner.OnJoinedChannel += Client_OnJoinedChannelJerp;
             m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
-            m_TwitchClientOwner.OnBeingHosted += Client_OnBeingHosted;
+            m_TwitchClientOwner.OnRaidNotification += Client_OnRaidNotification;
 
             m_TwitchClientBot.OnJoinedChannel += Client_OnJoinedChannel;
 
