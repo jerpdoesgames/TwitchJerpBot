@@ -480,6 +480,66 @@ namespace JerpDoesBots
             sendDefaultChannelMessage("Successfully wrote command json to output directory.");
         }
 
+        // This is crude and could be replaced with something better
+        public string simpleDurationString(TimeSpan aDuration)
+        {
+            List<string> outputList = new List<string>();
+
+            double daysPassed = aDuration.Days;
+            double yearsPassed = Math.Floor(daysPassed / 365.25);
+            daysPassed -= yearsPassed * 365.25;
+            double monthsPassed = Math.Floor(daysPassed / 30.436875);
+            daysPassed = Math.Floor(daysPassed - (monthsPassed * 30.436875));
+
+            if (yearsPassed > 0)
+                outputList.Add(string.Format(localizer.getString("durationStringYears"), yearsPassed));
+
+            if (monthsPassed > 0)
+                outputList.Add(string.Format(localizer.getString("durationStringMonths"), monthsPassed));
+
+            if (daysPassed > 0)
+                outputList.Add(string.Format(localizer.getString("durationStringDays"), daysPassed));
+
+            if (aDuration.Hours > 0)
+                outputList.Add(string.Format(localizer.getString("durationStringHours"), aDuration.Hours));
+
+            if (aDuration.Minutes > 0)
+                outputList.Add(string.Format(localizer.getString("durationStringMinutes"), aDuration.Minutes));
+
+            return string.Join(", ", outputList);
+        }
+
+        public void followage(userEntry commandUser, string argumentString)
+        {
+            if (commandUser.isBroadcaster)
+            {
+                sendDefaultChannelMessage(string.Format(localizer.getString("followageIsBroadcaster"), commandUser.Nickname));
+            }
+            else
+            {
+                TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getFollowsResponse = getUserFollowsResult(commandUser);
+                if (getFollowsResponse != null && getFollowsResponse.Follows.Length > 0)
+                {
+                    commandUser.isFollower = (getFollowsResponse.TotalFollows > 0);
+                    commandUser.lastFollowCheckTime = DateTime.Now;
+
+                    if (commandUser.isFollower)
+                    {
+                        string followDurationString = simpleDurationString(DateTime.Now.Subtract(getFollowsResponse.Follows[0].FollowedAt));
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), commandUser.Nickname, followDurationString));
+                    }
+                    else
+                    {
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), commandUser.Nickname));
+                    }
+                }
+                else
+                {
+                    sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), commandUser.Nickname));
+                }
+            }
+        }
+
         public void getHelpString(userEntry commandUser, string argumentString)
         {
             sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
@@ -590,6 +650,13 @@ namespace JerpDoesBots
             return userEntry;
         }
 
+        private TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getUserFollowsResult(userEntry aUser)
+        {
+            Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, ownerID);
+            userFollowsTask.Wait();
+            return userFollowsTask.Result;
+        }
+
         public bool checkUpdateIsFollower(userEntry aUser)
         {
             if (!aUser.isBroadcaster)
@@ -600,12 +667,11 @@ namespace JerpDoesBots
                 {
                     try
                     {
-                        Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, ownerID);
-                        userFollowsTask.Wait();
+                        TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse userFollowsResponse = getUserFollowsResult(aUser);
 
-                        if (userFollowsTask.Result != null)
+                        if (userFollowsResponse != null)
                         {
-                            aUser.isFollower = (userFollowsTask.Result.TotalFollows > 0);
+                            aUser.isFollower = (userFollowsResponse.TotalFollows > 0);
                             aUser.lastFollowCheckTime = DateTime.Now;
                         }
                     }
@@ -1200,6 +1266,7 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("back", setUserBack, true, true));
             m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
             m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
+            m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");

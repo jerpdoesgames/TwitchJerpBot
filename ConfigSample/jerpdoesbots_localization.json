@@ -264,6 +264,14 @@
           "commandGameOutputListSuccess": "Successfully wrote game commands list json to output directory.",
           "aliasOutputListSuccess": "Successfully wrote alias list json to output directory.",
           "quoteOutputListSuccess": "Successfully wrote quotes list json to output directory.",
-          "counterOutputListSuccess": "Successfully wrote counter list json to output directory."
+          "counterOutputListSuccess": "Successfully wrote counter list json to output directory.",
+          "durationStringYears": "{0} years",
+          "durationStringMonths": "{0} months",
+          "durationStringDays": "{0} days",
+          "durationStringHours": "{0} hours",
+          "durationStringMinutes": "{0} minutes",
+          "followageIsBroadcaster": "{0} is the broadcaster and cannot follow themself!",
+          "followageDisplayTime": "{0} has been following for {1}.",
+          "followageNotFollowing": "{0} is not following the channel."
     }
 }
