@@ -73,7 +73,7 @@ namespace JerpDoesBots
 
 
                                 case autoShoutUserType.streamer:
-									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, shoutEntry.shoutMessage, channelInfo.BroadcasterName.ToLower()) + lastGame);
+									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("shoutoutMessageCustom"), channelInfo.BroadcasterName, shoutEntry.shoutMessage, channelInfo.BroadcasterName.ToLower()) + lastGame);
 									break;
                             }
 						}

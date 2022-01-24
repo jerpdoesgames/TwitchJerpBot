@@ -17,7 +17,7 @@
           "commandFormatHint":                   "Expected format: !command add [name] [allowNormalUsers (0/1)] [message]",
           "commandGameFormatHint":               "Expected format: !gamecommand add [name] [allowNormalUsers (0/1)] [message]",
           "shoutoutMessage":                     "Check out {0} and give 'em a follow! ( twitch.tv/{1} )",
-          "shoutoutMessageCustom":               "Check out {0}: {1} ( twitch.tv/{2}) )",
+          "shoutoutMessageCustom":               "Check out {0}: {1} ( twitch.tv/{2} )",
           "shoutoutLastPlaying":                 "They were last playing {0}",
           "infoCurrentGame":                     "Current game is {0}",
           "infoStreamTitle":                     "Stream title is \"{0}\"",
