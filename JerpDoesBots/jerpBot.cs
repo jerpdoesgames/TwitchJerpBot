@@ -509,6 +509,42 @@ namespace JerpDoesBots
             return string.Join(", ", outputList);
         }
 
+        public void marker(userEntry commandUser, string argumentString)
+        {
+            if (m_IsLive)
+            {
+                TwitchLib.Api.Helix.Models.Streams.CreateStreamMarker.CreateStreamMarkerRequest newMarkerRequest = new TwitchLib.Api.Helix.Models.Streams.CreateStreamMarker.CreateStreamMarkerRequest();
+                newMarkerRequest.UserId = ownerID;
+                if (!string.IsNullOrEmpty(argumentString))
+                    newMarkerRequest.Description = argumentString;
+
+                try
+                {
+                    Task<TwitchLib.Api.Helix.Models.Streams.CreateStreamMarker.CreateStreamMarkerResponse> createMarkerTask = m_TwitchAPI.Helix.Streams.CreateStreamMarkerAsync(newMarkerRequest);
+                    createMarkerTask.Wait();
+
+                    if (createMarkerTask.Result != null)
+                    {
+                        TimeSpan markerPos = TimeSpan.FromSeconds(createMarkerTask.Result.Data[0].PositionSeconds);
+                        sendDefaultChannelMessage(string.Format(localizer.getString("markerCreateSuccess"), simpleDurationString(markerPos)));
+                    }
+                    else
+                    {
+                        sendDefaultChannelMessage(localizer.getString("markerCreateFail"));
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to create stream marker - " + e.Message);
+                    sendDefaultChannelMessage(localizer.getString("markerCreateFail"));
+                }
+            }
+            else
+            {
+                sendDefaultChannelMessage(localizer.getString("markerCreateFailNotLive"));
+            }
+        }
+
         public void followage(userEntry commandUser, string argumentString)
         {
             if (commandUser.isBroadcaster)
@@ -1267,6 +1303,7 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
             m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
             m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
+            m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
 
             string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
 			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");

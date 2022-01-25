@@ -272,6 +272,9 @@
           "durationStringMinutes": "{0} minutes",
           "followageIsBroadcaster": "{0} is the broadcaster and cannot follow themself!",
           "followageDisplayTime": "{0} has been following for {1}.",
-          "followageNotFollowing": "{0} is not following the channel."
+          "followageNotFollowing": "{0} is not following the channel.",
+          "markerCreateFail": "Failed to create marker.",
+          "markerCreateFailNotLive": "Failed to create marker - stream isn't live!",
+          "markerCreateSuccess": "Marker created at {0}"
     }
 }
