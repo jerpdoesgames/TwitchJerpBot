@@ -105,7 +105,7 @@ namespace JerpDoesBots
                 m_MessageIndex = 0;
         }
 
-        public string getNextMessage()
+        public messageRollEntry getNextMessage()
         {
             messageRollEntry newMessage = null;
             int messagesChecked = 0;
@@ -122,7 +122,7 @@ namespace JerpDoesBots
 
             if (newMessage != null)
             {
-                return newMessage.text;
+                return newMessage;
             }
 
             return null;
@@ -153,22 +153,23 @@ namespace JerpDoesBots
 
         private void sendNextMessage()
         {
-            string messageToSend = getNextMessage();
+            messageRollEntry messageToSend = getNextMessage();
 
-            if (!String.IsNullOrEmpty(messageToSend))
+            if (!String.IsNullOrEmpty(messageToSend.text))
             {
-
-                if (messageToSend.IndexOf('!') == 0)
+                if (messageToSend.text.IndexOf('!') == 0)
                 {
                     userEntry jerpUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
 
-                    m_BotBrain.processUserCommand(jerpUser, messageToSend);
+                    m_BotBrain.processUserCommand(jerpUser, messageToSend.text);
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(messageToSend);
+                    if (messageToSend.isAnnounce)
+                        m_BotBrain.sendDefaultChannelAnnounce(messageToSend.text);
+                    else
+                        m_BotBrain.sendDefaultChannelMessage(messageToSend.text);
                 }
-
             }
 
             m_Throttler.trigger();

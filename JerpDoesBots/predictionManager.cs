@@ -11,7 +11,7 @@ namespace JerpDoesBots
 	{
 		public Prediction getLastPrediction()
 		{
-			Task<GetPredictionsResponse> lastPredictionTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.GetPredictionsAsync(m_BotBrain.ownerID, null, null, 1));
+			Task<GetPredictionsResponse> lastPredictionTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.GetPredictionsAsync(m_BotBrain.ownerUserID, null, null, 1));
 			lastPredictionTask.Wait();
 
 			if (lastPredictionTask.Result != null)
@@ -84,7 +84,7 @@ namespace JerpDoesBots
 				Prediction lastPrediction = getLastPrediction();
 				if (lastPrediction != null && (lastPrediction.Status == PredictionStatus.ACTIVE || lastPrediction.Status == PredictionStatus.LOCKED))
 				{
-					Task cancelTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerID, lastPrediction.Id, PredictionEndStatus.CANCELED));
+					Task cancelTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.CANCELED));
 					cancelTask.Wait();
 
 					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelSuccess"));
@@ -107,7 +107,7 @@ namespace JerpDoesBots
 				Prediction lastPrediction = getLastPrediction();
 				if (lastPrediction != null && lastPrediction.Status == PredictionStatus.ACTIVE)
 				{
-					Task closeTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerID, lastPrediction.Id, PredictionEndStatus.LOCKED));
+					Task closeTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.LOCKED));
 					closeTask.Wait();
 
 					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseSuccess"));
@@ -134,7 +134,7 @@ namespace JerpDoesBots
 
 					if  (Int32.TryParse(argumentString, out outcomeIndex) && (outcomeIndex == 1 || outcomeIndex == 2) && lastPrediction.Outcomes.Length == 2)
                     {
-						Task decideTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerID, lastPrediction.Id, PredictionEndStatus.RESOLVED, lastPrediction.Outcomes[outcomeIndex - 1].Id));
+						Task decideTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.RESOLVED, lastPrediction.Outcomes[outcomeIndex - 1].Id));
 						decideTask.Wait();
 
 						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDecideSuccess"), lastPrediction.Outcomes[outcomeIndex - 1].Title));
@@ -212,7 +212,7 @@ namespace JerpDoesBots
 
 						CreatePredictionRequest newPredictionRequest = new CreatePredictionRequest()
 						{
-							BroadcasterId = m_BotBrain.ownerID,
+							BroadcasterId = m_BotBrain.ownerUserID,
 							Title = title,
 							PredictionWindowSeconds = duration,
 							Outcomes = outcomeList

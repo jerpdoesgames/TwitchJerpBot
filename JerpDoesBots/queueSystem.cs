@@ -696,20 +696,19 @@ namespace JerpDoesBots
                 if (!string.IsNullOrEmpty(argumentString) && argumentString == "reset")
                     resetEntries = true;
 
+                isActive = true;
                 string newJoinString = joinString();
                 if (resetEntries)
                 {
                     reset(false);
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueOpenedReset") + "  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("queueOpenedReset") + "  " + newJoinString);
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueOpened") + "  " + newJoinString);
+                    m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("queueOpened") + "  " + newJoinString);
                 }
 
                 m_Throttler.trigger();
-
-                isActive = true;
             }
 		}
 

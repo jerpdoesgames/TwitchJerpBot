@@ -9,7 +9,8 @@
 			channelMessage,
 			joinChannel,
 			partChannel,
-			partAllChannels
+			partAllChannels,
+			channelAnnouncement
 		};
 
 		private types commandType;

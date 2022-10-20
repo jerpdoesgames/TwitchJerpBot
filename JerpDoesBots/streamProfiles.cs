@@ -83,7 +83,7 @@ namespace JerpDoesBots
 				try
 				{
 					TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = getCreateRequest();
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(aBotBrain.ownerID, createRewardRequest);
+					Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(aBotBrain.ownerUserID, createRewardRequest);
 					createRewardTask.Wait();
 
 					if (createRewardTask.Result == null)
@@ -114,7 +114,7 @@ namespace JerpDoesBots
         {
 			if (string.IsNullOrEmpty(rewardID))
             {
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = aBotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(aBotBrain.ownerID);
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = aBotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(aBotBrain.ownerUserID);
 				getRewardsTask.Wait();
 
 				if (getRewardsTask.Result != null)
@@ -144,7 +144,7 @@ namespace JerpDoesBots
             {
 				try
 				{
-					Task removeRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(aBotBrain.ownerID, rewardID);
+					Task removeRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(aBotBrain.ownerUserID, rewardID);
 					removeRewardTask.Wait();
 
 					aExisted = true;

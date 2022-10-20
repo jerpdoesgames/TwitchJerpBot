@@ -11,6 +11,7 @@ namespace JerpDoesBots
         public float followPercentMax { get; set; }
         public int viewersMin { get; set; }
         public int viewersMax { get; set; }
+        public bool isAnnounce { get; set; }
 
         public messageRollEntry ()
         {

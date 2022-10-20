@@ -30,7 +30,8 @@ namespace JerpDoesBots
         public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
 
         public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
-        public string ownerID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
+        public string ownerUserID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
+        public string botUserID { get { return m_CoreConfig.configData.connections[0].channel_id.ToString(); } }
 
         private DateTime m_LiveStartTime;
         private SQLiteConnection m_StorageDB;
@@ -240,6 +241,11 @@ namespace JerpDoesBots
                     isDone = true;
                     break;
 
+                case connectionCommand.types.channelAnnouncement:
+                    Task announceTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatAnnouncementAsync(commandToExecute.getTarget(), botUserID, commandToExecute.getMessage(), TwitchLib.Api.Helix.Models.Chat.AnnouncementColors.Blue, m_TwitchCredentialsBot.TwitchOAuth.Substring(6)));
+                    announceTask.Wait();
+                    break;
+
                 default:
                     Console.WriteLine("Unknown command type sent to executeAndLog");
                     break;
@@ -280,6 +286,28 @@ namespace JerpDoesBots
         public void sendDefaultChannelMessage(string messageToSend, bool doQueue = true)
         {
             sendChannelMessage(m_DefaultChannel, messageToSend, doQueue);
+        }
+
+        public void sendDefaultChannelAnnounce(string messageToSend, bool doQueue = true)
+        {
+            sendChannelAnnouncement(ownerUserID, messageToSend, doQueue);
+        }
+
+        public void sendChannelAnnouncement(string targetChannel, string messageToSend, bool doQueue = true)
+        {
+            connectionCommand newCommand = new connectionCommand(connectionCommand.types.channelAnnouncement);
+            newCommand.setTarget(targetChannel);
+            newCommand.setMessage(messageToSend);
+
+            if (doQueue)
+            {
+                queueAction(newCommand);
+            }
+            else
+            {
+                Task announceTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatAnnouncementAsync(targetChannel, targetChannel, messageToSend));
+                announceTask.Wait();
+            }
         }
 
         public void sendChannelMessage(string targetChannel, string messageToSend, bool doQueue = true)
@@ -514,7 +542,7 @@ namespace JerpDoesBots
             if (m_IsLive)
             {
                 TwitchLib.Api.Helix.Models.Streams.CreateStreamMarker.CreateStreamMarkerRequest newMarkerRequest = new TwitchLib.Api.Helix.Models.Streams.CreateStreamMarker.CreateStreamMarkerRequest();
-                newMarkerRequest.UserId = ownerID;
+                newMarkerRequest.UserId = ownerUserID;
                 if (!string.IsNullOrEmpty(argumentString))
                     newMarkerRequest.Description = argumentString;
 
@@ -688,7 +716,7 @@ namespace JerpDoesBots
 
         private TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getUserFollowsResult(userEntry aUser)
         {
-            Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, ownerID);
+            Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, ownerUserID);
             userFollowsTask.Wait();
             return userFollowsTask.Result;
         }

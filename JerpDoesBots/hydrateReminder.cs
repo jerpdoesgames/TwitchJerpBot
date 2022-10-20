@@ -54,7 +54,7 @@ namespace JerpDoesBots
                 if (curHoursPassed > m_LastHoursPassed)
                 {
                     m_LastHoursPassed = curHoursPassed;
-                    m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
+                    m_BotBrain.sendDefaultChannelAnnounce(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
                 }
             }
         }

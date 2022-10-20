@@ -92,7 +92,7 @@ namespace JerpDoesBots
         {
 			bAlreadyExists = false;
 
-			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerID);
+			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerUserID);
 			getRewardsTask.Wait();
 
 			if (getRewardsTask.Result != null)
@@ -117,7 +117,7 @@ namespace JerpDoesBots
 
 			try
 			{
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.ownerID, createRewardRequest);
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.ownerUserID, createRewardRequest);
 				createRewardTask.Wait();
 
 				if (createRewardTask.Result == null)
@@ -142,7 +142,7 @@ namespace JerpDoesBots
 			TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward raffleRedemptionReward = null;
 
 			// grab and store reward ID if it exists
-			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerID);
+			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerUserID);
 			getRewardsTask.Wait();
 
 			if (getRewardsTask.Result != null)
@@ -164,7 +164,7 @@ namespace JerpDoesBots
 
 				try
 				{
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardResponse> updateTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateCustomRewardAsync(m_BotBrain.ownerID, raffleRedemptionReward.Id, updateRequest);
+					Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardResponse> updateTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateCustomRewardAsync(m_BotBrain.ownerUserID, raffleRedemptionReward.Id, updateRequest);
 					updateTask.Wait();
 
 					if (updateTask.Result == null)
@@ -250,7 +250,7 @@ namespace JerpDoesBots
                 {
 					// TODO: Handle something like, if the reward exists but it's not required, disable the reward
 					resetEntries();
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
+					m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
 
 					m_Throttler.trigger();
 
@@ -317,7 +317,7 @@ namespace JerpDoesBots
 
 			try
 			{
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateRedemptionStatus.UpdateRedemptionStatusResponse> refundRedemptionTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateRedemptionStatusAsync(m_BotBrain.ownerID, aRewardID, redemptionIDs, updateRequest);
+				Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateRedemptionStatus.UpdateRedemptionStatusResponse> refundRedemptionTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateRedemptionStatusAsync(m_BotBrain.ownerUserID, aRewardID, redemptionIDs, updateRequest);
 				refundRedemptionTask.Wait();
 
 				if (refundRedemptionTask.Result != null)

@@ -68,18 +68,18 @@ namespace JerpDoesBots
                             switch(shoutEntry.type)
                             {
                                 case autoShoutUserType.messageOnly:
-                                    m_BotBrain.sendDefaultChannelMessage(shoutEntry.shoutMessage);
+                                    m_BotBrain.sendDefaultChannelAnnounce(shoutEntry.shoutMessage);
                                 break;
 
 
                                 case autoShoutUserType.streamer:
-									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("shoutoutMessageCustom"), channelInfo.BroadcasterName, shoutEntry.shoutMessage, channelInfo.BroadcasterName.ToLower()) + lastGame);
+									m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("shoutoutMessageCustom"), channelInfo.BroadcasterName, shoutEntry.shoutMessage, channelInfo.BroadcasterName.ToLower()) + lastGame);
 									break;
                             }
 						}
 						else
 						{
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
+							m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
 						}
 						
 					}

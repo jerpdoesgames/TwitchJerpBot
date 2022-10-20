@@ -112,7 +112,7 @@ namespace JerpDoesBots
                     m_Scores = new Dictionary<userEntry, int>();
 
 
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), tagListString, m_Questions.Count));
+                    m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("triviaStart"), tagListString, m_Questions.Count));
                     m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
 
                     m_Throttler.trigger();

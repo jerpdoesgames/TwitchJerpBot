@@ -142,7 +142,7 @@ namespace JerpDoesBots
                             descString = " (" + description + ")";
                         }
 
-                        m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("pollOpenSuccess") + descString + "  " + string.Format(m_BotBrain.localizer.getString("pollChoiceList"), getChoiceString()) + "  " + m_BotBrain.localizer.getString("pollVoteHint"));
+                        m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("pollOpenSuccess") + descString + "  " + string.Format(m_BotBrain.localizer.getString("pollChoiceList"), getChoiceString()) + "  " + m_BotBrain.localizer.getString("pollVoteHint"));
 						m_Throttler.trigger();
                     }
                     else
