@@ -326,13 +326,13 @@ namespace JerpDoesBots
 				}
                 else
                 {
-					Console.WriteLine("Failed channel point redemption refund request (API)");
+					m_BotBrain.logWarningsErrors.writeAndLog("Failed channel point redemption refund request (API)");
 					return false;
 				}
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine("Failed channel point redemption refund request (exception): " + e.Message);
+				m_BotBrain.logWarningsErrors.writeAndLog("Failed channel point redemption refund request (exception): " + e.Message);
 			}
 
 			return false;

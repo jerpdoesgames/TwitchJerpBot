@@ -27,6 +27,18 @@ namespace JerpDoesBots
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
 
+        private logger m_LogGeneral;            // Internal housekeeping to keep track of.
+        private logger m_LogEvents;             // Subs, raids, follows, etc.
+        private logger m_LogChat;               // Chat from Twitch users.
+        private logger m_LogWarningsErrors;     // Warnings and errors, of course.
+        private logger m_LogConnection;         // General connection output
+
+        public logger logGeneral { get { return m_LogGeneral; } }
+        public logger logEvents { get { return m_LogEvents; } }
+        public logger logChat { get { return m_LogChat; } }
+        public logger logWarningsErrors { get { return m_LogWarningsErrors; } }
+        public logger logConnection { get { return m_LogConnection; } }
+
         public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
 
         public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
@@ -92,7 +104,6 @@ namespace JerpDoesBots
 
         public static string storagePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JerpBot");
 
-        private logger m_BotLog;
         private long m_UserUpdateLast = 0;
         private long m_UserUpdateThrottle = 5000;
 
@@ -202,6 +213,7 @@ namespace JerpDoesBots
                 case connectionCommand.types.channelMessage:
                     if (isValidPrivMsg(commandToExecute))
                     {
+                        m_LogGeneral.writeAndLog($"Channel Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
                         m_TwitchClientBot.SendMessage(commandToExecute.getTarget(), commandToExecute.getMessage());
                     }
                     break;
@@ -230,6 +242,7 @@ namespace JerpDoesBots
                 case connectionCommand.types.privateMessage:
                     if (isValidPrivMsg(commandToExecute))
                     {
+                        m_LogGeneral.writeAndLog($"Private Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
                         m_TwitchClientBot.SendWhisper(commandToExecute.getTarget(), commandToExecute.getMessage());
                     }
                     break;
@@ -242,12 +255,13 @@ namespace JerpDoesBots
                     break;
 
                 case connectionCommand.types.channelAnnouncement:
+                    m_LogGeneral.writeAndLog($"Channel Announcement | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
                     Task announceTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatAnnouncementAsync(commandToExecute.getTarget(), botUserID, commandToExecute.getMessage(), TwitchLib.Api.Helix.Models.Chat.AnnouncementColors.Blue, m_TwitchCredentialsBot.TwitchOAuth.Substring(6)));
                     announceTask.Wait();
                     break;
 
                 default:
-                    Console.WriteLine("Unknown command type sent to executeAndLog");
+                    m_LogWarningsErrors.writeAndLog("Unknown command type sent to executeAndLog");
                     break;
             }
         }
@@ -319,7 +333,7 @@ namespace JerpDoesBots
             if (doQueue)
                 queueAction(newCommand);
             else
-                m_TwitchClientBot.SendMessage(m_DefaultChannel, messageToSend);
+                executeAndLog(newCommand);
         }
 
         public void processUserUpdates(bool forceUpdate = false)    // For any users who needs anything written to DB
@@ -420,7 +434,7 @@ namespace JerpDoesBots
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to update channel info/tags: " + e.Message);
+                m_LogWarningsErrors.writeAndLog("Failed to update channel info/tags: " + e.Message);
                 sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoFailRequestFail"));
             }
         }
@@ -441,7 +455,7 @@ namespace JerpDoesBots
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed to update stream title: " + e.Message);   // TODO: I'm now realizing I totally trashed logging a while back and never really updated it.
+                    m_LogWarningsErrors.writeAndLog("Failed to update stream title: " + e.Message);
                     sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoTitleFail"));
                 }
             }
@@ -563,7 +577,7 @@ namespace JerpDoesBots
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed to create stream marker - " + e.Message);
+                    m_LogWarningsErrors.writeAndLog("Failed to create stream marker - " + e.Message);
                     sendDefaultChannelMessage(localizer.getString("markerCreateFail"));
                 }
             }
@@ -741,7 +755,7 @@ namespace JerpDoesBots
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Failed to check following status for: " + aUser.Nickname);
+                        m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname);
                     }
                 }
             }
@@ -764,6 +778,8 @@ namespace JerpDoesBots
             userEntry messageUser = checkCreateUser(aNickname);
 
             m_LineCount++;
+
+            m_LogChat.writeAndLog("Chat | " + aNickname + " | " + aMessage);
 
             if (aMessage[0] == '!')  // Try to assume this is a command
             {
@@ -1026,17 +1042,18 @@ namespace JerpDoesBots
         {
             m_HasJoinedChannel = true;
             m_TwitchClientBot.SendMessage(e.Channel, m_Localizer.getString("announceChannelJoin"));
+            m_LogConnection.writeAndLog($"Bot account joined channel {e.Channel}");
         }
 
         private void Client_OnJoinedChannelJerp(object sender, OnJoinedChannelArgs e)
         {
-            // blah
+            m_LogConnection.writeAndLog($"Owner account joined channel {e.Channel}");
         }
 
         private void Client_OnConnected(object sender, OnConnectedArgs e)
         {
             m_HasChatConnection = true;
-            Console.WriteLine($"Connected to {e.AutoJoinChannel}");
+            m_LogConnection.writeAndLog($"Connected to {e.AutoJoinChannel}");
             requestChannelInfo();
             m_TwitchClientBot.JoinChannel(m_DefaultChannel);
             
@@ -1044,7 +1061,7 @@ namespace JerpDoesBots
 
         private void Client_OnConnectedOwner(object sender, OnConnectedArgs e)
         {
-            Console.WriteLine($"jerpBot owner account connected to {e.AutoJoinChannel}");
+            m_LogConnection.writeAndLog($"jerpBot owner account connected to {e.AutoJoinChannel}");
             m_TwitchClientOwner.JoinChannel(m_DefaultChannel);
         }
 
@@ -1069,31 +1086,36 @@ namespace JerpDoesBots
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
             m_SubsThisSession++;
+            m_LogEvents.writeAndLog("User Subscribed - " + e.Subscriber.DisplayName);
         }
 
         private void Client_OnCommunitySubscription(object sender, OnCommunitySubscriptionArgs e)
         {
             m_SubsThisSession++;
+            // Need to figure out what these params actually are
+            m_LogEvents.writeAndLog("Community Subscription - " + e.GiftedSubscription.DisplayName + " | MsgParamSenderCount: " + e.GiftedSubscription.MsgParamSenderCount + " | MsgParamMassGiftCount: " + e.GiftedSubscription.MsgParamMassGiftCount);
         }
 
         private void Client_OnReSubscribe(object sender, OnReSubscriberArgs e)
         {
             m_SubsThisSession++;
+            m_LogEvents.writeAndLog("User Resubscribed - " + e.ReSubscriber.DisplayName);
         }
 
         private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
         {
             m_SubsThisSession++;
+            m_LogEvents.writeAndLog("User Gifted a Subscription - " + e.GiftedSubscription.DisplayName + " gifted to " + e.GiftedSubscription.MsgParamRecipientDisplayName);
         }
 
         private void Client_OnLog(object sender, TwitchLib.Client.Events.OnLogArgs e)
         {
-            Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
+            m_LogConnection.writeAndLog($"{e.BotUsername} - {e.Data}");
         }
 
         private void Client_OnConnectionError(object sender, OnConnectionErrorArgs e)
         {
-            Console.WriteLine($"{e.BotUsername} - {e.Error}");
+            m_LogWarningsErrors.writeAndLog($"{e.BotUsername} - {e.Error}");
         }
 
         private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
@@ -1119,7 +1141,7 @@ namespace JerpDoesBots
                 }
                 catch (Exception exceptionInfo)
                 {
-                    Console.Write("Could not grab user ID for user " + e.Username + ": " + exceptionInfo.Message);
+                    m_LogWarningsErrors.writeAndLog("Client_OnUserJoined - Could not grab user ID for user " + e.Username + ": " + exceptionInfo.Message);
                 }
             }
 
@@ -1141,6 +1163,8 @@ namespace JerpDoesBots
 
         private void Client_OnRaidNotification(object sender, OnRaidNotificationArgs e)
         {
+            m_LogEvents.writeAndLog("Raid from " + e.RaidNotification.MsgParamDisplayName + " with " + e.RaidNotification.MsgParamViewerCount + " viewers.");
+
             botModule tempModule;
             for (int i = 0; i < m_Modules.Count; i++)
             {
@@ -1203,7 +1227,7 @@ namespace JerpDoesBots
 
         private void PubSub_OnServiceConnected(object sender, EventArgs e)
         {
-            Console.WriteLine("Connected to PubSub service, sending topics...");
+            m_LogConnection.writeAndLog("Connected to PubSub service, sending topics...");
             m_TwitchPubSubBot.SendTopics(m_CoreConfig.configData.pubsub.oauth);
         }
 
@@ -1227,17 +1251,24 @@ namespace JerpDoesBots
 
         // ==========================================================
 
-        public jerpBot(logger useLog, botConfig aConfig)
+        public jerpBot(botConfig aConfig)
 		{
             OperatingSystem osInfo = Environment.OSVersion;
             Version win8version = new Version(6, 2, 9200, 0);
             bool webSocketsSupported = (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version); // Websockets requires Win8+
 
+            m_CoreConfig = aConfig;
+
             m_UserList = new Dictionary<string, userEntry>();
             m_Modules = new List<botModule>();
-			m_BotLog		= useLog;
 			actionQueue = new Queue<connectionCommand>();
-            m_CoreConfig = aConfig;
+
+            m_LogGeneral = new logger("log_general");
+            m_LogEvents = new logger("log_events");
+            m_LogChat = new logger("log_chat");
+            m_LogWarningsErrors = new logger("log_warnings_errors");
+            m_LogConnection = new logger("log_connection");
+
             m_Localizer = new localizer(this);
 
             m_FollowerStaleCheckSeconds = m_CoreConfig.configData.followerStaleCheckSeconds;
@@ -1306,9 +1337,8 @@ namespace JerpDoesBots
             }
             else
             {
-                Console.WriteLine("Unable to check for followers/channel point redemptions, etc. via websockets -- requires Win8+");
-            }
-            
+                m_LogWarningsErrors.writeAndLog("Unable to check for followers/channel point redemptions, etc. via websockets -- requires Win8+");
+            }            
 
             m_ActionTimer = Stopwatch.StartNew();
 

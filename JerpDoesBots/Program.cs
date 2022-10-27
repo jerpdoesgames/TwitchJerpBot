@@ -7,8 +7,6 @@
 			jerpBot.checkCreateBotStorage();
 			jerpBot.checkCreateBotDatabase();
 
-			logger logGeneral		= new logger("log_general.txt");
-
 			botConfig tempConfig = new botConfig();
 			botConnection connConfig;
 
@@ -17,7 +15,7 @@
 			else
 				return;
 
-			jerpBot botGeneral					= new jerpBot(logGeneral, tempConfig);
+			jerpBot botGeneral					= new jerpBot(tempConfig);
 
 			raffle raffleModule						  = new raffle(botGeneral);
 			quotes quoteModule						  = new quotes(botGeneral);

@@ -15,13 +15,29 @@ namespace JerpDoesBots
 
 		public void writeAndLog(string toWrite)
 		{
+			toWrite = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") + " | " + toWrite;
+
 			write(toWrite);
 			Console.WriteLine(toWrite);
 		}
 
-		public logger(string filename)
+		public logger(string aName, bool aFilenameDateSuffix = true, bool aIncludeDayInFilename = false)
 		{
-			string logFilePath =  System.IO.Path.Combine(jerpBot.storagePath, filename);
+			string filenameSuffix = "";
+
+			DateTime curDateTime = DateTime.Now;
+
+			if (aFilenameDateSuffix)
+            {
+				filenameSuffix += "_" + curDateTime.ToString("yyyy'-'MM");
+
+				if (aIncludeDayInFilename)
+                {
+					filenameSuffix += curDateTime.ToString("'-'dd");
+                }
+            }
+
+			string logFilePath =  System.IO.Path.Combine(jerpBot.storagePath, "logs", aName + filenameSuffix + ".txt");
 			if (!File.Exists(logFilePath))
 			{
 				logFile = File.CreateText(logFilePath);
@@ -30,20 +46,10 @@ namespace JerpDoesBots
 			{
 				logFile = File.AppendText(logFilePath);
 			}
-			this.write("");
-			this.write("============ Initializing Log for " + DateTime.Now.ToString() + " ============");
-			this.write("");
-		}
 
-		public void flush()	// In case we need the log while things are running.
-		{
-			logFile.Flush();
-		}
-
-		~logger()
-		{
-			// logFile.Flush();
-			// logFile.Close();
+			this.write("");
+			this.write("============ Initializing Log at " + DateTime.Now.ToString() + " : " + aName + " ============");
+			this.write("");
 		}
 	}
 }

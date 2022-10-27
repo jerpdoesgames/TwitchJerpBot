@@ -88,7 +88,7 @@ namespace JerpDoesBots
 
 					if (createRewardTask.Result == null)
 					{
-						Console.WriteLine("Failed to create channel point reward named: " + title);
+						aBotBrain.logWarningsErrors.writeAndLog("Failed to create channel point reward named: " + title);
 						return false;
 					}
 					else
@@ -99,7 +99,7 @@ namespace JerpDoesBots
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine(string.Format("Exception when trying to create channel point reward named: \"{0}\": {1}", title, e.Message));
+					aBotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to create channel point reward named: \"{0}\": {1}", title, e.Message));
 					return false;
 				}
 			}
@@ -153,11 +153,11 @@ namespace JerpDoesBots
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine(string.Format("Exception when trying to remove channel point reward named: \"{0}\": {1}", title, e.Message));
+					aBotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to remove channel point reward named: \"{0}\": {1}", title, e.Message));
 					return false;
 				}
 			}
-			Console.WriteLine("Unable to find ID for and thus remove reward named: " + title);
+			aBotBrain.logWarningsErrors.writeAndLog("Unable to find ID for and thus remove reward named: " + title);
 			return false;
 		}
 	}
