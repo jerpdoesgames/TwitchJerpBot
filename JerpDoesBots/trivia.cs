@@ -324,7 +324,7 @@ namespace JerpDoesBots
                 if (fromSuccessOrFail)
                 {
                     string scoreString = getTopScoreString();
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), scoreString));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaComplete"), scoreString));
                 }
             }
             else
