@@ -33,6 +33,7 @@ namespace JerpDoesBots
         private throttler m_Throttler;
         private readonly object messageLastLock = new object();
         private List<triviaCategory> m_Categories { get; set; }
+        private Dictionary<string, triviaCategory> m_CategoriesByTag;
         private Dictionary<userEntry, int> m_Scores;
         private long m_TimeToAnswer = 450000;
         private long m_TimeSinceLastAnswer = 0;
@@ -40,6 +41,7 @@ namespace JerpDoesBots
 
 		private bool m_IsActive = false;
         private int m_TotalQuestions = 15;
+        private List<string> m_TagList;
         private List<triviaQuestion> m_Questions;
         private int m_CurrentQuestionIndex = 0;
 
@@ -79,27 +81,47 @@ namespace JerpDoesBots
                 m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle()));
         }
 
+        public string getTopicString()
+        {
+            string output = "";
+
+            foreach (string curTag in m_TagList)
+            {
+                if (m_CategoriesByTag.ContainsKey(curTag))
+                {
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        output += ", ";
+                    }
+
+                    output += m_CategoriesByTag[curTag].name;
+                }
+            }
+
+            return output;
+        }
+
         public void start(userEntry commandUser, string argumentString)
 		{
             if (!string.IsNullOrEmpty(argumentString))
             {
-                List<string> tagList = new List<string>();
+                m_TagList = new List<string>();
 
                 if (argumentString == "all")
                 {
                     foreach (triviaCategory curCategory in m_Categories)
                     {
-                        tagList.Add(curCategory.code);
+                        m_TagList.Add(curCategory.code);
                     }
                 }
                 else
                 {
-                    tagList = argumentString.Split(' ').ToList();
+                    m_TagList = argumentString.Split(' ').ToList();
                 }
                 
 
-                List<triviaQuestion> newQuestions = getQuestionsForTags(tagList);
-                string tagListString = string.Join(", ", tagList.ToArray());
+                List<triviaQuestion> newQuestions = getQuestionsForTags(m_TagList);
+                string tagListString = string.Join(", ", m_TagList.ToArray());
 
                 if (newQuestions.Count > 0)
                 {
@@ -115,7 +137,7 @@ namespace JerpDoesBots
                         m_Scores = new Dictionary<userEntry, int>();
 
 
-                        m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("triviaStart"), tagListString, m_Questions.Count));
+                        m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("triviaStart"), getTopicString(), m_Questions.Count));
                         m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
 
                         m_Throttler.trigger();
@@ -359,7 +381,9 @@ namespace JerpDoesBots
                             string triviaFileString = File.ReadAllText(filePath);
                             if (!string.IsNullOrEmpty(triviaFileString))
                             {
-                                m_Categories.Add(new JavaScriptSerializer().Deserialize<triviaCategory>(triviaFileString));
+                                triviaCategory newCategory = new JavaScriptSerializer().Deserialize<triviaCategory>(triviaFileString);
+                                m_Categories.Add(newCategory);
+                                m_CategoriesByTag[newCategory.code] = newCategory;
                             }
                         }
                     }
@@ -386,9 +410,11 @@ namespace JerpDoesBots
             m_Throttler.lineCountReductionMax = 15;
             m_Throttler.lineCountReduction = 4000;
 
-            m_LoadSuccessful = load();
             m_Scores = new Dictionary<userEntry, int>();
             m_Questions = new List<triviaQuestion>();
+            m_CategoriesByTag = new Dictionary<string, triviaCategory>();
+
+            m_LoadSuccessful = load();
 
             chatCommandDef tempDef = new chatCommandDef("trivia", null, true, true);
 			tempDef.addSubCommand(new chatCommandDef("start", start, false, false));
@@ -397,9 +423,9 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("topics", topics, true, true));
             tempDef.addSubCommand(new chatCommandDef("setmax", setMaxQuestions, true, true));
             tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
+            tempDef.addSubCommand(new chatCommandDef("question", question, true, true));
             tempDef.useGlobalCooldown = false;
 			m_BotBrain.addChatCommand(tempDef);
 		}
-
 	}
 }
