@@ -31,6 +31,7 @@ namespace JerpDoesBots
     class trivia : botModule
 	{
         private throttler m_Throttler;
+        private readonly object messageLastLock = new object();
         private List<triviaCategory> m_Categories { get; set; }
         private Dictionary<userEntry, int> m_Scores;
         private long m_TimeToAnswer = 450000;
@@ -102,22 +103,25 @@ namespace JerpDoesBots
 
                 if (newQuestions.Count > 0)
                 {
-                    newQuestions.Sort(delegate (triviaQuestion a, triviaQuestion b)
+                    lock (messageLastLock)
                     {
-                        return m_BotBrain.randomizer.Next() - m_BotBrain.randomizer.Next();
-                    });
+                        newQuestions.Sort(delegate (triviaQuestion a, triviaQuestion b)
+                        {
+                            return m_BotBrain.randomizer.Next() - m_BotBrain.randomizer.Next();
+                        });
 
-                    m_Questions = newQuestions.GetRange(0, Math.Min(m_TotalQuestions, newQuestions.Count));
-                    m_CurrentQuestionIndex = 0;
-                    m_Scores = new Dictionary<userEntry, int>();
+                        m_Questions = newQuestions.GetRange(0, Math.Min(m_TotalQuestions, newQuestions.Count));
+                        m_CurrentQuestionIndex = 0;
+                        m_Scores = new Dictionary<userEntry, int>();
 
 
-                    m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("triviaStart"), tagListString, m_Questions.Count));
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
+                        m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("triviaStart"), tagListString, m_Questions.Count));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
 
-                    m_Throttler.trigger();
-                    m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
-                    m_IsActive = true;
+                        m_Throttler.trigger();
+                        m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                        m_IsActive = true;
+                    }
                 }
                 else
                 {
@@ -295,20 +299,23 @@ namespace JerpDoesBots
 		{
 			if (m_IsActive)
 			{
-                if (m_BotBrain.actionTimer.ElapsedMilliseconds  > m_TimeSinceLastAnswer + m_TimeToAnswer)
+                lock (messageLastLock)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired"));
-                    advanceToNextQuestion(true);
-                }
-                else if (m_Throttler.isReady)
-                {
-                    m_Throttler.trigger();
-                    string questionString = "";
-                    triviaQuestion currentQuestion = getCurrentQuestion();
-                    if (currentQuestion != null)
-                        questionString = string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
+                    if (m_BotBrain.actionTimer.ElapsedMilliseconds > m_TimeSinceLastAnswer + m_TimeToAnswer)
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired"));
+                        advanceToNextQuestion(true);
+                    }
+                    else if (m_Throttler.isReady)
+                    {
+                        m_Throttler.trigger();
+                        string questionString = "";
+                        triviaQuestion currentQuestion = getCurrentQuestion();
+                        if (currentQuestion != null)
+                            questionString = string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
 
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired") + "  " + questionString);
+                        m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired") + "  " + questionString);
+                    }
                 }
 			}
 		}
