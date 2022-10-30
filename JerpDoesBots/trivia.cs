@@ -296,7 +296,9 @@ namespace JerpDoesBots
                 {
                     foreach (string curAnswer in currentQuestion.answers)
                     {
-                        if (m_BotBrain.stripPunctuation(curAnswer.ToLower(), true) == m_BotBrain.stripPunctuation(aMessage.ToLower(), true))
+                        string correctAnswer = m_BotBrain.stripPunctuation(curAnswer.ToLower(), true);
+                        string userAttempt = m_BotBrain.stripPunctuation(aMessage.ToLower(), true);
+                        if (userAttempt.Contains(correctAnswer))
                         {
                             string addendumString = "";
 
@@ -305,7 +307,7 @@ namespace JerpDoesBots
                                 addendumString = "  " + currentQuestion.addendum;
                             }
 
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaAnswerSuccess"), aUser.Nickname, aMessage) + addendumString);
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaAnswerSuccess"), aUser.Nickname, curAnswer) + addendumString);
 
                             checkCreateParticipant(aUser);
                             m_Scores[aUser]++;
@@ -335,8 +337,6 @@ namespace JerpDoesBots
                         triviaQuestion currentQuestion = getCurrentQuestion();
                         if (currentQuestion != null)
                             questionString = string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
-
-                        m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired") + "  " + questionString);
                     }
                 }
 			}
