@@ -46,6 +46,8 @@
           "triviaStopped":                       "Trivia stopped.",
           "triviaTopics":                        "Available Topics are: ",
           "triviaTimeExpired":                   "Time's up!  No-one successfully answered!",
+          "triviaTimeExpiredAnswer":             "The correct answer is: {0}",
+          "triviaTimeExpiredAnswerMultiple":     "The correct answers are: {0}",
           "triviaAnswerSuccess":                 "{0} has answered correctly with \"{1}\".",
           "triviaTopContestants":                "Top 3 Trivia Contestants: {0}",
           "triviaStoppedReloaded":               "Trivia stopped and reloaded.",

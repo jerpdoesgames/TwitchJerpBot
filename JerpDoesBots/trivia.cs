@@ -41,6 +41,7 @@ namespace JerpDoesBots
 
 		private bool m_IsActive = false;
         private int m_TotalQuestions = 15;
+        private bool m_AnswerOnTimeout = true;
         private List<string> m_TagList;
         private List<triviaQuestion> m_Questions;
         private int m_CurrentQuestionIndex = 0;
@@ -328,6 +329,21 @@ namespace JerpDoesBots
                     if (m_BotBrain.actionTimer.ElapsedMilliseconds > m_TimeSinceLastAnswer + m_TimeToAnswer)
                     {
                         m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired"));
+                        if (m_AnswerOnTimeout)
+                        {
+                            triviaQuestion currentQuestion = getCurrentQuestion();
+                            if (currentQuestion.answers.Count > 1)
+                            {
+                                string answerString = string.Join(", ", currentQuestion.answers);
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTimeExpiredAnswerMultiple"), answerString));
+                            }
+                            else if (currentQuestion.answers.Count == 1)
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTimeExpiredAnswer"), currentQuestion.answers[0]));
+                                
+                                string.Format(m_BotBrain.localizer.getString("triviaTimeExpiredAnswer"), getCurrentQuestion().getFormattedTitle());
+                            }
+                        }
                         advanceToNextQuestion(true);
                     }
                     else if (m_Throttler.isReady)
