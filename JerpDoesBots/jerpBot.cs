@@ -973,19 +973,25 @@ namespace JerpDoesBots
         {
             numChattersTotal = 0;
             int totalFollowers = 0;
-            foreach (string curKey in userList.Keys)
+
+
+            lock (userList.Keys)
             {
-                if (
-                    userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[0].nickname.ToLower() && // Skip bot
-                    userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[1].nickname.ToLower() && // Skip owner
-                    userList[curKey].inChannel)
+                foreach (string curKey in userList.Keys)
                 {
-                    numChattersTotal++;
-                    if (checkUpdateIsFollower(userList[curKey]))
-                        totalFollowers++;
+                    if (
+                        userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[0].nickname.ToLower() && // Skip bot
+                        userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[1].nickname.ToLower() && // Skip owner
+                        userList[curKey].inChannel)
+                    {
+                        numChattersTotal++;
+                        if (checkUpdateIsFollower(userList[curKey]))
+                            totalFollowers++;
+                    }
                 }
+                return totalFollowers;
             }
-            return totalFollowers;
+
         }
 
         public void randomNumber(userEntry commandUser, string argumentString)
