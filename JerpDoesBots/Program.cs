@@ -35,6 +35,7 @@
 			hostMessages hostMessageModule			  = new hostMessages(botGeneral);
 			streamProfiles streamProfileManager		  = new streamProfiles(botGeneral);
 			predictionManager streamPredictionManager = new predictionManager(botGeneral);
+			mediaPlayerMonitor mediaMonitor           = new mediaPlayerMonitor(botGeneral);
 
 			customCommandModule.initTable();
 			gameCommandModule.initTable();
