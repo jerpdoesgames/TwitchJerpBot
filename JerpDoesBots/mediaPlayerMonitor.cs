@@ -55,7 +55,10 @@ namespace JerpDoesBots
                                 {
                                     string curTitle = curProcess.MainWindowTitle.Replace(" - " + m_Config.suffix, "");  // Remove suffix
                                     curTitle = curTitle.Substring(0, curTitle.LastIndexOf("."));    // Remove filename
-                                    curTitle = curTitle.Substring(0, curTitle.LastIndexOf("["));    // Removes track IDs left by YT-DLP
+                                    int bracketIndex = curTitle.LastIndexOf("[");
+
+                                    if (bracketIndex >= 0)
+                                        curTitle = curTitle.Substring(0, bracketIndex);    // Removes track IDs left by YT-DLP
 
                                     if (curTitle != m_LastTrackTitle)
                                     {
