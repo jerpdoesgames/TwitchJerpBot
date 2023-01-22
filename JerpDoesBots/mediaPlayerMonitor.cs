@@ -35,6 +35,14 @@ namespace JerpDoesBots
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("mediaMonitorLoadFail"));
         }
 
+        public void currentSong(userEntry commandUser, string argumentString)
+        {
+            if (!string.IsNullOrEmpty(m_LastTrackTitle))
+            {
+                m_BotBrain.sendDefaultChannelMessage("The current track is: " + m_LastTrackTitle);
+            }
+        }
+
         public override void frame()
         {
             if (m_IsLoaded && m_Config.enabled)
@@ -62,7 +70,7 @@ namespace JerpDoesBots
 
                                     if (curTitle != m_LastTrackTitle)
                                     {
-                                        m_BotBrain.sendDefaultChannelAnnounce("Now Playing: " + curTitle);
+                                        // m_BotBrain.sendDefaultChannelAnnounce("Now Playing: " + curTitle);
                                         m_BotBrain.logGeneral.writeAndLog("Playing Media: " + curTitle);
                                         m_LastTrackTitle = curTitle;
                                     }
@@ -93,6 +101,9 @@ namespace JerpDoesBots
                 chatCommandDef tempDef = new chatCommandDef("mediamonitor", null, true, true);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
 
+                m_BotBrain.addChatCommand(tempDef);
+
+                tempDef = new chatCommandDef("song", currentSong, true, true);
                 m_BotBrain.addChatCommand(tempDef);
             }
         }
