@@ -36,6 +36,7 @@
 			streamProfiles streamProfileManager		  = new streamProfiles(botGeneral);
 			predictionManager streamPredictionManager = new predictionManager(botGeneral);
 			mediaPlayerMonitor mediaMonitor           = new mediaPlayerMonitor(botGeneral);
+			dataLookup dataLookupManager              = new dataLookup(botGeneral);
 
 			customCommandModule.initTable();
 			gameCommandModule.initTable();

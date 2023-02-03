@@ -387,10 +387,10 @@ namespace JerpDoesBots
 
             if (Directory.Exists(dirPath))
             {
-                string[] soundFiles = Directory.GetFiles(dirPath);
-                if (soundFiles.Length > 0)
+                string[] triviaFiles = Directory.GetFiles(dirPath);
+                if (triviaFiles.Length > 0)
                 {
-                    foreach (string filePath in soundFiles)
+                    foreach (string filePath in triviaFiles)
                     {
                         if (File.Exists(filePath))
                         {

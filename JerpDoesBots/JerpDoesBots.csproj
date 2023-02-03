@@ -175,10 +175,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="delaySender.cs" />
+    <Compile Include="dataLookup.cs" />
     <Compile Include="mediaPlayerMonitor.cs" />
     <Compile Include="hostMessages.cs" />
     <Compile Include="hostMessagesConfig.cs" />
     <Compile Include="localizer.cs" />
+    <Compile Include="dataLookupConfig.cs" />
     <Compile Include="mediaPlayerMonitorConfig.cs" />
     <Compile Include="predictionManager.cs" />
     <Compile Include="streamProfiles.cs" />
