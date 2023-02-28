@@ -300,8 +300,10 @@ namespace JerpDoesBots
             for (int i=0; i < WaveOut.DeviceCount; i++)
             {
                 WaveOutCapabilities curDevice = WaveOut.GetCapabilities(i);
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
+
+                Console.WriteLine(string.Format(m_BotBrain.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
             }
+            m_BotBrain.sendDefaultChannelMessage("Device list sent to console.");
         }
 
         public void setVolume(userEntry commandUser, string argumentString)

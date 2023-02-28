@@ -483,13 +483,13 @@ namespace JerpDoesBots
 
         public void setUserBrb(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetAway"), m_SubsThisSession.ToString()));
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetAway"), commandUser.Nickname));
             commandUser.isBrb = true;
         }
 
         public void setUserBack(userEntry commandUser, string argumentString)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetBack"), m_SubsThisSession.ToString()));
+            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetBack"), commandUser.Nickname));
             commandUser.isBrb = false;
         }
 
