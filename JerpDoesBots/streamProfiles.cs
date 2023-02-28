@@ -173,7 +173,7 @@ namespace JerpDoesBots
 	{
 		private streamProfilesConfig configData;
 		public bool loaded = false;
-		public const int TAGS_MAX = 5;
+		public const int TAGS_MAX = 10;
 
 		public void applyProfile(userEntry commandUser, string argumentString)
 		{
@@ -184,19 +184,20 @@ namespace JerpDoesBots
                 {
 					useProfile = configData.entries[argumentString];
 
-					TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest()
+                    List<string> newTags = useProfile.tags.GetRange(0, Math.Min(useProfile.tags.Count, TAGS_MAX));
+                    int tagsCommonCount = TAGS_MAX - newTags.Count;
+
+                    for (int i = 0; i < Math.Min(configData.tagsCommon.Count, tagsCommonCount); i++)
+                    {
+                        newTags.Add(configData.tagsCommon[i]);
+                    }
+
+                    TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest()
 					{
 						Title = useProfile.title,
-						GameId = useProfile.category
+						GameId = useProfile.category,
+						Tags = newTags.ToArray()
 					};
-					
-					List<string> newTags = useProfile.tags.GetRange(0, Math.Min(useProfile.tags.Count, TAGS_MAX));
-					int tagsCommonCount = TAGS_MAX - newTags.Count;
-
-					for (int i = 0; i < tagsCommonCount; i++)
-                    {
-						newTags.Add(configData.tagsCommon[i]);
-                    }
 
 					m_BotBrain.updateChannelInfo(newChannelInfoRequest, newTags);
 					if (!string.IsNullOrEmpty(useProfile.rewardGroup))

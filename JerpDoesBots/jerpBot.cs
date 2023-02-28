@@ -121,8 +121,8 @@ namespace JerpDoesBots
         private string m_Game = "";
         public string game { get { return m_Game; } }
 
-        private TwitchLib.Api.Helix.Models.Common.Tag[] m_Tags;
-        public TwitchLib.Api.Helix.Models.Common.Tag[] tags { get { return m_Tags; } }
+        private string[] m_Tags;
+        public string[] tags { get { return m_Tags; } }
 
         private long m_LineCount = 0;   // Total lines
         public long lineCount { get { return m_LineCount; } }
@@ -181,20 +181,16 @@ namespace JerpDoesBots
         {
             return (!string.IsNullOrEmpty(commandToExecute.getMessage()) && !string.IsNullOrEmpty(commandToExecute.getTarget()));
         }
-        public bool tagInList(string aTag, TwitchLib.Api.Helix.Models.Common.Tag[] aTagList)
+        public bool tagInList(string aTag, String[] aTagList)
         {
             if (aTagList != null)
             {
                 for (int i = 0; i < aTagList.Length; i++)
                 {
-                    TwitchLib.Api.Helix.Models.Common.Tag curTag = aTagList[i];
+                    string curTag = aTagList[i];
 
-                    // Rather than require a language to be specified, just check every language for a match.  Probably not a performance concern since this is running locally and Twitch is giving you every language by default.
-                    foreach (KeyValuePair<string, string> curLocale in aTagList[i].LocalizationNames)
-                    {
-                        if (aTag.ToLower() == curLocale.Value.ToLower())
-                            return true;
-                    }
+                    if (aTag.ToLower() == curTag.ToLower())
+                        return true;
                 }
             }
 
@@ -423,12 +419,6 @@ namespace JerpDoesBots
                 modifyChannelInfoTask.Wait();
 
                 requestChannelInfo();   // TODO: I mean, this is kind of the lazy way to do it
-
-                if (newTags != null)
-                {
-                    Task replaceTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.ReplaceStreamTagsAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newTags));
-                    replaceTagsTask.Wait();
-                }
 
                 sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoSuccess"));
             }
@@ -1188,11 +1178,8 @@ namespace JerpDoesBots
             TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(m_TwitchCredentialsOwner.TwitchUsername);
             m_Game = channelInfo.GameName;
             m_Title = channelInfo.Title;
-
-            Task<TwitchLib.Api.Helix.Models.Streams.GetStreamTags.GetStreamTagsResponse> getStreamTagsTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamTagsAsync(channelInfo.BroadcasterId));
-            getStreamTagsTask.Wait();
-
-            m_Tags = getStreamTagsTask.Result.Data;
+            m_Tags = channelInfo.Tags;
+            
         }
 
         private void ParseStreamData(TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream aStream)
