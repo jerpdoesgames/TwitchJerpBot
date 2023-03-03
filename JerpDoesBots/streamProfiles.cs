@@ -177,22 +177,22 @@ namespace JerpDoesBots
 
 		public void applyProfile(userEntry commandUser, string argumentString)
 		{
-			if (!string.IsNullOrEmpty(argumentString))
-            {
+			if (loaded && !string.IsNullOrEmpty(argumentString))
+			{
 				streamProfileEntry useProfile;
 				if (configData.entries.ContainsKey(argumentString))
-                {
+				{
 					useProfile = configData.entries[argumentString];
 
-                    List<string> newTags = useProfile.tags.GetRange(0, Math.Min(useProfile.tags.Count, TAGS_MAX));
-                    int tagsCommonCount = TAGS_MAX - newTags.Count;
+					List<string> newTags = useProfile.tags.GetRange(0, Math.Min(useProfile.tags.Count, TAGS_MAX));
+					int tagsCommonCount = TAGS_MAX - newTags.Count;
 
-                    for (int i = 0; i < Math.Min(configData.tagsCommon.Count, tagsCommonCount); i++)
-                    {
-                        newTags.Add(configData.tagsCommon[i]);
-                    }
+					for (int i = 0; i < Math.Min(configData.tagsCommon.Count, tagsCommonCount); i++)
+					{
+						newTags.Add(configData.tagsCommon[i]);
+					}
 
-                    TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest()
+					TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest()
 					{
 						Title = useProfile.title,
 						GameId = useProfile.category,
@@ -201,14 +201,14 @@ namespace JerpDoesBots
 
 					m_BotBrain.updateChannelInfo(newChannelInfoRequest, newTags);
 					if (!string.IsNullOrEmpty(useProfile.rewardGroup))
-                    {
+					{
 						applyRewardGroupInternal(useProfile.rewardGroup);
-                    }
+					}
 				}
 				else
-                {
+				{
 					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("modifyChannelInfoFailProfileNotFound"));
-                }
+				}
 			}
 		}
 
@@ -248,14 +248,15 @@ namespace JerpDoesBots
 
 		public void applyRewardGroup(userEntry commandUser, string argumentString)
         {
-			if (!string.IsNullOrEmpty(argumentString))
+			if (loaded && !string.IsNullOrEmpty(argumentString))
             {
 				applyRewardGroupInternal(argumentString);
             }
         }
 
-		public streamProfiles(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
-		{
+		private void load()
+        {
+			loaded = false;
 			string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_streamprofiles.json");
 			if (File.Exists(configPath))
 			{
@@ -266,10 +267,30 @@ namespace JerpDoesBots
 					loaded = true;
 				}
 			}
+		}
+
+		public void reload(userEntry commandUser, string argumentString)
+        {
+			load();
+
+			if (loaded)
+            {
+				m_BotBrain.sendDefaultChannelMessage("Stream Profiles reloaded");
+            }
+			else
+            {
+				m_BotBrain.sendDefaultChannelMessage("Stream Profiles reload failed");
+			}
+        }
+
+		public streamProfiles(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+		{
+			load();
 
 			if (loaded)
 			{
 				chatCommandDef tempDef = new chatCommandDef("profile", null, false, false);
+				tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
 				tempDef.addSubCommand(new chatCommandDef("apply", applyProfile, false, false));
 				tempDef.addSubCommand(new chatCommandDef("setrewards", applyRewardGroup, false, false));
 
