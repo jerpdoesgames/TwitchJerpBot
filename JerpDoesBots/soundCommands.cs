@@ -16,6 +16,7 @@ namespace JerpDoesBots
         public long lastUsed;
         public float volume { get; set; }
         public bool isValidForPointReward { get; set; }
+        public int pointRewardCost { get; set; }
         public bool isMandatoryReward { get; set; }
         public bool existsOnTwitch { get; set; }
         public string rewardID { get; set; }
@@ -68,7 +69,11 @@ namespace JerpDoesBots
         {
             TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest newRewardRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest();
             newRewardRequest.Title = "Play Sound - " + aCurDef.name;
-            newRewardRequest.Cost = m_Config.pointRewardCostDefault;
+
+            if (aCurDef.pointRewardCost > 0)
+                newRewardRequest.Cost = m_Config.pointRewardCostDefault;
+            else
+                newRewardRequest.Cost = aCurDef.pointRewardCost;
 
             if (!string.IsNullOrEmpty(aCurDef.description))
             {

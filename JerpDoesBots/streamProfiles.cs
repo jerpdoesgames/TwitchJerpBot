@@ -21,7 +21,7 @@ namespace JerpDoesBots
 		public int cost { get; set; }
 		public int maxPerStream { get; set; }
 		public string backgroundColor { get; set; }
-		public int globalCooldown { get; set; }
+		public int globalCooldownSeconds { get; set; }
 		public int maxPerUserPerStream { get; set; }
 		public bool requireUserInput { get; set; }
 		public bool autoFulfill { get; set; }
@@ -32,7 +32,7 @@ namespace JerpDoesBots
         {
 			cost = 1;
 			maxPerStream = -1;
-			globalCooldown = -1;
+			globalCooldownSeconds = -1;
 			maxPerUserPerStream = -1;
 			enabled = true;
         }
@@ -61,9 +61,9 @@ namespace JerpDoesBots
 				newRewardRequest.IsMaxPerStreamEnabled = true;
             }
 			
-			if (globalCooldown >= 1)
+			if (globalCooldownSeconds >= 1)
             {
-				newRewardRequest.GlobalCooldownSeconds = globalCooldown;
+				newRewardRequest.GlobalCooldownSeconds = globalCooldownSeconds;
 				newRewardRequest.IsGlobalCooldownEnabled = true;
             }
 
