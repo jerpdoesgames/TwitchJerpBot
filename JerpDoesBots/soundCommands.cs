@@ -24,7 +24,10 @@ namespace JerpDoesBots
         public string character { get; set; }
         public string description { get; set; }
         // public Dictionary<string, long> userLastUsed;
-
+        public soundCommandDef()
+        {
+            pointRewardCost = 0;
+        }
     }
 
     public class soundCommandConfig
@@ -71,9 +74,9 @@ namespace JerpDoesBots
             newRewardRequest.Title = "Play Sound - " + aCurDef.name;
 
             if (aCurDef.pointRewardCost > 0)
-                newRewardRequest.Cost = m_Config.pointRewardCostDefault;
-            else
                 newRewardRequest.Cost = aCurDef.pointRewardCost;
+            else
+                newRewardRequest.Cost = m_Config.pointRewardCostDefault;
 
             if (!string.IsNullOrEmpty(aCurDef.description))
             {
