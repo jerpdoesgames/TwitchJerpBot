@@ -35,6 +35,7 @@ namespace JerpDoesBots
 			globalCooldownSeconds = -1;
 			maxPerUserPerStream = -1;
 			enabled = true;
+			autoFulfill = false;
         }
 
 		public TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest getCreateRequest()

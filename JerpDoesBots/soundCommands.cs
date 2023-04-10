@@ -183,15 +183,11 @@ namespace JerpDoesBots
                             //Error state since I couldn't mark fulfilled
                         }
                     }
+                    else
+                    {
+                        needRefund = true;
+                    }
                 }
-                else
-                {
-                    needRefund = true;
-                }
-            }
-            else
-            {
-                needRefund = true;
             }
 
             if (needRefund)
@@ -204,47 +200,63 @@ namespace JerpDoesBots
             }
         }
 
-        private bool playSoundInternal(userEntry commandUser, soundCommandDef curSound, bool isRandom = false)
+        private bool playSoundInternal(userEntry commandUser, soundCommandDef curSound, bool isRandom = false, bool aOutputErrors = false)
         {
             int pathCount = curSound.paths.Count;
-            if (pathCount > 0 && !onCooldown(curSound, commandUser))
+            if (pathCount > 0)
             {
-                string baseSoundPath;
-                if (pathCount > 1)
+                if (!onCooldown(curSound, commandUser))
                 {
-                    int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
+                    string baseSoundPath;
+                    if (pathCount > 1)
+                    {
+                        int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
 
-                    baseSoundPath = curSound.paths[soundIndex];
+                        baseSoundPath = curSound.paths[soundIndex];
+                    }
+                    else
+                    {
+                        baseSoundPath = curSound.paths[0];
+                    }
+
+                    string soundPath = System.IO.Path.Combine(jerpBot.storagePath, "sounds\\" + baseSoundPath);
+
+                    if (File.Exists(soundPath))
+                    {
+
+                        AudioFileReader audioFile = new AudioFileReader(soundPath);
+                        m_OutputEvent.DeviceNumber = m_DeviceNumber;
+                        m_OutputEvent.Init(audioFile);
+
+                        float soundVolume = m_GlobalVolume;
+                        if (curSound.volume > 0)
+                            soundVolume *= curSound.volume;
+
+                        m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
+                        m_OutputEvent.Play();
+
+                        curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                        m_lastSound = curSound;
+
+                        if (isRandom)
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
+
+                        return true;
+                    }
                 }
                 else
                 {
-                    baseSoundPath = curSound.paths[0];
-                }
-
-                string soundPath = System.IO.Path.Combine(jerpBot.storagePath, "sounds\\" + baseSoundPath);
-
-                if (File.Exists(soundPath))
-                {
+                    if (aOutputErrors)
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorOnCooldown"), curSound.name));
+                    }
                     
-                    AudioFileReader audioFile = new AudioFileReader(soundPath);
-                    m_OutputEvent.DeviceNumber = m_DeviceNumber;
-                    m_OutputEvent.Init(audioFile);
-
-                    float soundVolume = m_GlobalVolume;
-                    if (curSound.volume > 0)
-                        soundVolume *= curSound.volume;
-
-                    m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
-                    m_OutputEvent.Play();
-
-                    curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
-                    m_lastSound = curSound;
-
-                    if (isRandom)
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
-
-                    return true;
                 }
+
+            }
+            else
+            {
+                // No sound paths defined (no error here?)
             }
 
             return false;
