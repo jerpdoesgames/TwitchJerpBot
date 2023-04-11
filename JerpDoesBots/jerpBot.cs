@@ -181,6 +181,14 @@ namespace JerpDoesBots
         {
             return (!string.IsNullOrEmpty(commandToExecute.getMessage()) && !string.IsNullOrEmpty(commandToExecute.getTarget()));
         }
+
+        // TODO: Move to some generic location and provide a better name.
+        /// <summary>
+        /// Generic "string in string, but convert to lowercase" comparison.
+        /// </summary>
+        /// <param name="aTag">Tag to search for.</param>
+        /// <param name="aTagList">String array to search through.</param>
+        /// <returns>Whether the tag is in the array.</returns>
         public bool tagInList(string aTag, String[] aTagList)
         {
             if (aTagList != null)
@@ -1050,9 +1058,7 @@ namespace JerpDoesBots
         {
             m_HasChatConnection = true;
             m_LogConnection.writeAndLog($"Connected to {e.AutoJoinChannel}");
-            requestChannelInfo();
             m_TwitchClientBot.JoinChannel(m_DefaultChannel);
-            
         }
 
         private void Client_OnConnectedOwner(object sender, OnConnectedArgs e)
@@ -1251,10 +1257,19 @@ namespace JerpDoesBots
             bool webSocketsSupported = (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version); // Websockets requires Win8+
 
             m_CoreConfig = aConfig;
+            m_Tags = new string[0];
 
             m_UserList = new Dictionary<string, userEntry>();
             m_Modules = new List<botModule>();
 			actionQueue = new Queue<connectionCommand>();
+
+            string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
+            m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
+            m_StorageDB.Open();
+
+            string createViewerTableQuery = "CREATE TABLE IF NOT EXISTS viewers (viewerID INTEGER PRIMARY KEY ASC, name varchar(25) UNIQUE, loyalty INTEGER, points INTEGER)";
+            SQLiteCommand createViewerTableCommand = new SQLiteCommand(createViewerTableQuery, m_StorageDB);
+            createViewerTableCommand.ExecuteNonQuery();
 
             m_LogGeneral = new logger("log_general");
             m_LogEvents = new logger("log_events");
@@ -1356,13 +1371,7 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
             m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
 
-            string databasePath = System.IO.Path.Combine(storagePath, "jerpbot.sqlite");
-			m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
-			m_StorageDB.Open();
-
-			string createViewerTableQuery = "CREATE TABLE IF NOT EXISTS viewers (viewerID INTEGER PRIMARY KEY ASC, name varchar(25) UNIQUE, loyalty INTEGER, points INTEGER)";
-			SQLiteCommand createViewerTableCommand = new SQLiteCommand(createViewerTableQuery, m_StorageDB);
-			createViewerTableCommand.ExecuteNonQuery();
-		}
+            requestChannelInfo();
+        }
 	}
 }

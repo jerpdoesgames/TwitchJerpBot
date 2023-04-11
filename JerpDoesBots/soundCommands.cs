@@ -23,6 +23,10 @@ namespace JerpDoesBots
         public string source { get; set; }
         public string character { get; set; }
         public string description { get; set; }
+        public List<string> requiredTags { get; set; }
+        public List<string> disallowedTags { get; set; }
+        public List<string> allowedGames { get; set; }
+        public List<string> disallowedGames { get; set; }
         // public Dictionary<string, long> userLastUsed;
         public soundCommandDef()
         {
@@ -105,6 +109,73 @@ namespace JerpDoesBots
             newRewardRequest.IsEnabled = true;
 
             return newRewardRequest;
+        }
+
+        private bool isValidTags(soundCommandDef aSound)
+        {
+            if (aSound.requiredTags != null && aSound.requiredTags.Count > 0)
+            {
+                bool missingTag = false;
+                foreach (string curTag in aSound.requiredTags)
+                {
+                    if (!m_BotBrain.tagInList(curTag, m_BotBrain.tags))
+                    {
+                        missingTag = true;
+                        break;
+                    }
+                }
+
+                if (missingTag)
+                {
+                    return false;
+                }
+            }
+
+            if (aSound.disallowedTags != null && aSound.disallowedTags.Count > 0)
+            {
+                foreach (string curTag in m_BotBrain.tags)
+                {
+                    if (m_BotBrain.tagInList(curTag, aSound.disallowedTags.ToArray()))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private bool isValidGame(soundCommandDef aSound)
+        {
+            if (aSound.allowedGames != null && aSound.allowedGames.Count > 0)
+            {
+                bool isAllowedGame = false;
+                foreach (string allowedGame in aSound.allowedGames)
+                {
+                    if (m_BotBrain.game.ToLower() == allowedGame.ToLower())
+                    {
+                        isAllowedGame = true;
+                        break;
+                    }
+                }
+                if (!isAllowedGame)
+                {
+                    return false;
+                }
+            }
+
+            if (aSound.disallowedGames != null && aSound.disallowedGames.Count > 0)
+            {
+                foreach (string disallowedGame in aSound.disallowedGames)
+                {
+                    if (m_BotBrain.game.ToLower() == disallowedGame.ToLower())
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         private bool onCooldown(soundCommandDef aSound, userEntry commandUser)
@@ -200,59 +271,74 @@ namespace JerpDoesBots
             }
         }
 
-        private bool playSoundInternal(userEntry commandUser, soundCommandDef curSound, bool isRandom = false, bool aOutputErrors = false)
+        private bool playSoundInternal(userEntry aUser, soundCommandDef curSound, bool aIsRandom = false, bool aOutputErrors = false)
         {
             int pathCount = curSound.paths.Count;
             if (pathCount > 0)
             {
-                if (!onCooldown(curSound, commandUser))
+                if (isValidGame(curSound))
                 {
-                    string baseSoundPath;
-                    if (pathCount > 1)
+                    if (isValidTags(curSound))
                     {
-                        int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
+                        if (!onCooldown(curSound, aUser))
+                        {
+                            string baseSoundPath;
+                            if (pathCount > 1)
+                            {
+                                int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
 
-                        baseSoundPath = curSound.paths[soundIndex];
+                                baseSoundPath = curSound.paths[soundIndex];
+                            }
+                            else
+                            {
+                                baseSoundPath = curSound.paths[0];
+                            }
+
+                            string soundPath = System.IO.Path.Combine(jerpBot.storagePath, "sounds\\" + baseSoundPath);
+
+                            if (File.Exists(soundPath))
+                            {
+                                AudioFileReader audioFile = new AudioFileReader(soundPath);
+                                m_OutputEvent.DeviceNumber = m_DeviceNumber;
+                                m_OutputEvent.Init(audioFile);
+
+                                float soundVolume = m_GlobalVolume;
+                                if (curSound.volume > 0)
+                                    soundVolume *= curSound.volume;
+
+                                m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
+                                m_OutputEvent.Play();
+
+                                curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                                m_lastSound = curSound;
+
+                                if (aIsRandom)
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
+
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            if (aOutputErrors)
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorOnCooldown"), curSound.name));
+                            }
+                        }
                     }
                     else
                     {
-                        baseSoundPath = curSound.paths[0];
-                    }
-
-                    string soundPath = System.IO.Path.Combine(jerpBot.storagePath, "sounds\\" + baseSoundPath);
-
-                    if (File.Exists(soundPath))
-                    {
-
-                        AudioFileReader audioFile = new AudioFileReader(soundPath);
-                        m_OutputEvent.DeviceNumber = m_DeviceNumber;
-                        m_OutputEvent.Init(audioFile);
-
-                        float soundVolume = m_GlobalVolume;
-                        if (curSound.volume > 0)
-                            soundVolume *= curSound.volume;
-
-                        m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
-                        m_OutputEvent.Play();
-
-                        curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
-                        m_lastSound = curSound;
-
-                        if (isRandom)
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
-
-                        return true;
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorInvalidTags"), curSound.name));
                     }
                 }
                 else
                 {
                     if (aOutputErrors)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorOnCooldown"), curSound.name));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorInvalidGame"), curSound.name, m_BotBrain.game));
                     }
                     
                 }
-
             }
             else
             {
@@ -290,7 +376,7 @@ namespace JerpDoesBots
                 curSound = m_Config.soundList[i];
                 if (curSound.name == argumentString)
                 {
-                    playSoundInternal(commandUser, curSound);
+                    playSoundInternal(commandUser, curSound, false, true);
                     break;
                 }
             }
@@ -400,7 +486,7 @@ namespace JerpDoesBots
                     int curSoundRewardCount = 0;
                     foreach (soundCommandDef curSound in m_Config.soundList)    // Collect mandatory sounds first
                     {
-                        if (curSound.isMandatoryReward && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
+                        if (curSound.isMandatoryReward && isValidGame(curSound) && isValidTags(curSound) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
                         {
                             pointRewardAddQueue.Add(curSound);
                             curSoundRewardCount++;
@@ -415,7 +501,7 @@ namespace JerpDoesBots
 
                     foreach (soundCommandDef curSound in m_Config.soundList)    // Collect a set of non-mandatory sounds
                     {
-                        if (curSound.isValidForPointReward && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
+                        if (curSound.isValidForPointReward && isValidGame(curSound) && isValidTags(curSound) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
                         {
                             pointRewardAddQueue.Add(curSound);
                             curSoundRewardCount++;
