@@ -9,29 +9,31 @@ namespace JerpDoesBots
         public string client_id { get; set; }
         public int channel_id { get; set; }
 
-		// Required Scopes:
-		// channel:manage:redemptions		Channel Point rewards
-		// channel:edit:commercial			Start a commercial
-		// channel:manage:broadcast			Change title, game, language, etc. (also stream markers)
-		// channel:read:predictions			Read predictions
-		// channel:manage:predictions		Manage predictions
-		// moderator:manage:announcements
+        // Required Scopes:
+        // channel:manage:redemptions		Channel Point rewards
+        // channel:edit:commercial			Start a commercial
+        // channel:manage:broadcast			Change title, game, language, etc. (also stream markers)
+        // channel:read:predictions			Read predictions
+        // channel:manage:predictions		Manage predictions
+        // moderator:manage:announcements
+        // moderator:manage:shoutouts
 
 
-		// https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions+moderator:manage:announcements
+        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions+moderator:manage:announcements+moderator:manage:shoutouts
 
-		// Eventually?:
-		// channel:read:polls				Read polls
-		// channel:manage:polls				Create/end polls
+        // Eventually?:
+        // channel:read:polls				Read polls
+        // channel:manage:polls				Create/end polls
 
-		// Chat Bot requires:
+        // Chat Bot requires:
 
-		// chat_login
-		// moderator:manage:announcements
+        // chat_login
+        // moderator:manage:announcements
+        // moderator:manage:shoutouts
 
-		// https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=chat_login+moderator:manage:announcements
+        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=chat_login+moderator:manage:announcements+moderator:manage:shoutouts
 
-		public string oauth { get; set; }
+        public string oauth { get; set; }
 	}
 
 	public class botConnection

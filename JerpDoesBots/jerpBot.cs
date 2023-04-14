@@ -882,22 +882,6 @@ namespace JerpDoesBots
             }
         }
 
-        public void shoutout(userEntry commandUser, string argumentString)
-        {
-            string nickname = getFirstTokenString(argumentString);
-            if (!string.IsNullOrEmpty(nickname))
-            {
-                string lastGame = "";
-
-                TwitchLib.Api.Helix.Models.Channels.GetChannelInformation.ChannelInformation channelInfo = getSingleChannelInfoByName(nickname);
-
-                if (channelInfo != null && !string.IsNullOrEmpty(channelInfo.GameName))
-                    lastGame = "  " + string.Format(m_Localizer.getString("shoutoutLastPlaying"), channelInfo.GameName);
-
-                sendDefaultChannelMessage(string.Format(m_Localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
-            }
-        }
-
         public void addChatCommand(chatCommandDef aNewCommand)
         {
             m_CommandList.Add(aNewCommand);
@@ -1361,7 +1345,6 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
             m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
             m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
-            m_CommandList.Add(new chatCommandDef("shoutout", shoutout, true, false));
             m_CommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
             m_CommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
             m_CommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));

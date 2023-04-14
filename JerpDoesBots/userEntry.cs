@@ -30,8 +30,11 @@ namespace JerpDoesBots
 		private int m_SessionCommandCount = 0;
 		private bool m_IsBrb = false;
 		private string m_TwitchUserID;
+		private long m_LastShoutoutTimeMS = -1;
 
 		private SQLiteConnection botDatabase;
+
+		public long lastShoutoutTimeMS { get { return m_LastShoutoutTimeMS; } set { m_LastShoutoutTimeMS = value; } }
 
 		public void incrementMessageCount()
 		{
