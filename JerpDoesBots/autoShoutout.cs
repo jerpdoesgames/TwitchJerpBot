@@ -51,9 +51,9 @@ namespace JerpDoesBots
 			{
 				userEntry userToShout = m_BotBrain.checkCreateUser(aChannelName);
 
-                if (userToShout.lastShoutoutTimeMS != -1 || m_BotBrain.actionTimer.ElapsedMilliseconds > (userToShout.lastShoutoutTimeMS + m_ShoutThrottleMS))	// On global cooldown?
+                if (userToShout.lastShoutoutTimeMS == -1 || m_BotBrain.actionTimer.ElapsedMilliseconds > (userToShout.lastShoutoutTimeMS + m_ShoutThrottleMS))	// On global cooldown?
 				{
-					bool onAPICooldown = (
+					bool apiShoutAvailable = (
                         (
                             m_APILastShoutMS == -1 ||
                             m_BotBrain.actionTimer.ElapsedMilliseconds > m_APILastShoutMS + m_APIShoutThrottleMS
@@ -73,7 +73,7 @@ namespace JerpDoesBots
 
 					bool didAPIShoutout = false;
 
-                    if (m_APIShoutEnabled && !onAPICooldown && channelInfo != null && (shoutUser == null || shoutUser.type != autoShoutUserType.messageOnly))
+                    if (m_APIShoutEnabled && apiShoutAvailable && channelInfo != null && (shoutUser == null || shoutUser.type != autoShoutUserType.messageOnly))
 					{
 						try
 						{
