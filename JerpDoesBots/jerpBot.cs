@@ -1232,6 +1232,11 @@ namespace JerpDoesBots
             }
         }
 
+        private void PubSub_OnCommercialResponse(object sender, OnCommercialArgs e)
+        {
+            logEvents.writeAndLog("Commercial started with length " + e.Length);
+        }
+
         // ==========================================================
 
         public jerpBot(botConfig aConfig)
@@ -1319,9 +1324,11 @@ namespace JerpDoesBots
             m_TwitchPubSubBot.OnPubSubServiceConnected += PubSub_OnServiceConnected;
             m_TwitchPubSubBot.OnListenResponse += PubSub_OnListenResponse;
             m_TwitchPubSubBot.OnFollow += PubSub_OnFollowResponse;
+            m_TwitchPubSubBot.OnCommercial += PubSub_OnCommercialResponse;
 
             m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
             m_TwitchPubSubBot.ListenToFollows(m_CoreConfig.configData.twitch_api.channel_id.ToString());
+            m_TwitchPubSubBot.ListenToVideoPlayback(m_CoreConfig.configData.twitch_api.channel_id.ToString());
 
             if (webSocketsSupported)
             {
