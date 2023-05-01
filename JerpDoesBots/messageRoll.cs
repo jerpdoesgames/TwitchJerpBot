@@ -159,9 +159,8 @@ namespace JerpDoesBots
             {
                 if (messageToSend.text.IndexOf('!') == 0)
                 {
-                    userEntry jerpUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
-
-                    m_BotBrain.processUserCommand(jerpUser, messageToSend.text);
+                    userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
+                    m_BotBrain.processUserCommand(ownerUser, messageToSend.text);
                 }
                 else
                 {

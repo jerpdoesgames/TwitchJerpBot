@@ -1,4 +1,6 @@
-﻿namespace JerpDoesBots
+﻿using TwitchLib.PubSub.Events;
+
+namespace JerpDoesBots
 {
     class botModule
 	{
@@ -7,6 +9,7 @@
         public virtual void onUserJoin(userEntry aUser) {}
         public virtual void onPrivateMessage(userEntry aUser, string aMessage) {}
 		public virtual void onChannelPointRedemption(userEntry aUser, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID) { }
+		public virtual void onCommercialStart(OnCommercialArgs aCommercialArgs) { }
 		
 		public virtual void onRaid(string aHostName, int aViewerCount) { }
 

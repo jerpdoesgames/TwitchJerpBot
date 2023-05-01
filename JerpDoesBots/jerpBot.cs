@@ -1234,7 +1234,16 @@ namespace JerpDoesBots
 
         private void PubSub_OnCommercialResponse(object sender, OnCommercialArgs e)
         {
-            logEvents.writeAndLog("Commercial started with length " + e.Length);
+            m_LogEvents.writeAndLog("Commercial Started with Length:" + e.Length + " seconds.");
+
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
+            {
+                tempModule = m_Modules[i];
+
+                if (isModuleValidForUserAction(tempModule))
+                    tempModule.onCommercialStart(e);
+            }
         }
 
         // ==========================================================
