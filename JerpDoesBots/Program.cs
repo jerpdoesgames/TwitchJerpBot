@@ -48,6 +48,8 @@
             botGeneral.soundCommandModule = soundManager;
             botGeneral.aliasModule = aliasManager;
 
+			botGeneral.setLoadComplete();
+
             while (!botGeneral.isReadyToClose)
             {
                 botGeneral.frame();

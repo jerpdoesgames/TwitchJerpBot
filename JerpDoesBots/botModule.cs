@@ -5,7 +5,9 @@ namespace JerpDoesBots
     class botModule
 	{
 		public virtual void frame() {}
-		public virtual void onUserMessage(userEntry aUser, string aMessage) {}
+        public virtual void onBotFullyLoaded() { }
+		public virtual void onCategoryIDChanged() { }
+        public virtual void onUserMessage(userEntry aUser, string aMessage) {}
         public virtual void onUserJoin(userEntry aUser) {}
         public virtual void onPrivateMessage(userEntry aUser, string aMessage) {}
 		public virtual void onChannelPointRedemption(userEntry aUser, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID) { }

@@ -54,6 +54,10 @@ namespace JerpDoesBots
         private static uint MESSAGE_VOTE_MAX_LENGTH = 20;
         private bool m_HasJoinedChannel = false;
         private bool m_HasChatConnection = false;
+        private bool m_IsFullyLoaded = false;
+        private bool m_HasExecutedLoadEvent = false;
+        private bool m_HasReceivedChannelInfo = false;
+
         private string m_DefaultChannel;
         private bool m_IsReadyToClose = false; // Ready to completely end the program
         private int m_SubsThisSession = 0;
@@ -62,6 +66,12 @@ namespace JerpDoesBots
         public localizer localizer { get { return m_Localizer; } }
 
         public int subsThisSession { get { return m_SubsThisSession; } }
+
+
+        public void setLoadComplete()
+        {
+            m_IsFullyLoaded = true;
+        }
 
         public TimeSpan timeSinceLive {
             get {
@@ -113,7 +123,27 @@ namespace JerpDoesBots
         private bool m_IsLive = false;
         public bool IsLive { get { return m_IsLive; } set { m_IsLive = value; } }
         private string m_Title = "";
-        public string Title { get { return m_Title; } set { m_Title = value; } }
+        public string Title { get { return m_Title; } }
+
+        private string m_CategoryID = "";
+        public string CategoryID { get { return m_CategoryID; } }
+        private void setCategoryID(string aCategoryID)
+        {
+            if (aCategoryID != m_CategoryID)
+            {
+                m_CategoryID = aCategoryID;
+
+                if (m_HasExecutedLoadEvent && m_HasReceivedChannelInfo) // Probably only need m_HasExecutedLoadEvent but will do both for safety
+                {
+                    foreach (botModule curModule in m_Modules)
+                    {
+                        if (isModuleValidForUserAction(curModule))
+                            curModule.onCategoryIDChanged();
+                    }
+                }
+            }
+        }
+
         private int m_ViewersLast = 0;
 
         public int viewersLast { get { return m_ViewersLast; } }
@@ -272,7 +302,7 @@ namespace JerpDoesBots
 
         private void processActionQueue()
         {
-            if (actionQueue.Count > 0)
+            if (m_HasJoinedChannel && actionQueue.Count > 0)
             {
                 if (m_ActionTimer.ElapsedMilliseconds > m_SendTimeLast + getCurrentThrottle())
                 {
@@ -334,7 +364,7 @@ namespace JerpDoesBots
             newCommand.setTarget(targetChannel);
             newCommand.setMessage(messageToSend);
 
-            if (doQueue)
+            if (!m_HasJoinedChannel || doQueue)
                 queueAction(newCommand);
             else
                 executeAndLog(newCommand);
@@ -419,16 +449,31 @@ namespace JerpDoesBots
             sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoCurrentGame"), m_Game));
         }
 
-        public void updateChannelInfo(TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfo, List<string> newTags = null)
+        public void updateChannelInfo(TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfo, List<string> newTags = null, bool aSilentMode = false)
         {
             try
             {
                 Task modifyChannelInfoTask = Task.Run(() => m_TwitchAPI.Helix.Channels.ModifyChannelInformationAsync(m_CoreConfig.configData.twitch_api.channel_id.ToString(), newChannelInfo));
                 modifyChannelInfoTask.Wait();
 
-                requestChannelInfo();   // TODO: I mean, this is kind of the lazy way to do it
+                if (!string.IsNullOrEmpty(newChannelInfo.GameId))
+                {
+                    requestChannelInfo();   // TODO: Swap to a request for just the game name from ID
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(newChannelInfo.Title))
+                        m_Title = newChannelInfo.Title;
 
-                sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoSuccess"));
+                    if (!string.IsNullOrEmpty(newChannelInfo.GameId))
+                        setCategoryID(newChannelInfo.GameId);
+
+                    if (newChannelInfo.Tags != null)
+                        m_Tags = newChannelInfo.Tags;
+                }
+
+                if (!aSilentMode)
+                    sendDefaultChannelMessage(m_Localizer.getString("modifyChannelInfoSuccess"));
             }
             catch (Exception e)
             {
@@ -753,7 +798,7 @@ namespace JerpDoesBots
                     }
                     catch (Exception e)
                     {
-                        m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname);
+                        m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname + "| Error: " + e.Message);
                     }
                 }
             }
@@ -818,6 +863,7 @@ namespace JerpDoesBots
         private bool isModuleValidForUserAction(botModule aModule)
         {
             if (
+                m_IsFullyLoaded &&
                 (!aModule.requiresConnection || m_HasChatConnection) &&
                 (!aModule.requiresChannel || m_HasJoinedChannel) &&
                 (!aModule.requiresPM || true)    // TODO: Eventually actually check the PM connection!
@@ -832,14 +878,20 @@ namespace JerpDoesBots
         {
             if (m_TwitchClientBot.IsConnected)
             {
-
-                botModule tempModule;
-                for (int i = 0; i < m_Modules.Count; i++)
+                if (m_IsFullyLoaded && m_HasReceivedChannelInfo && !m_HasExecutedLoadEvent)
                 {
-                    tempModule = m_Modules[i];
+                    foreach(botModule curModule in m_Modules)
+                    {
+                        if (isModuleValidForUserAction(curModule))
+                            curModule.onBotFullyLoaded();
+                    }
+                    m_HasExecutedLoadEvent = true;
+                }
 
-                    if (isModuleValidForUserAction(tempModule))
-                        tempModule.frame();
+                foreach (botModule curModule in m_Modules)
+                {
+                    if (isModuleValidForUserAction(curModule))
+                        curModule.frame();
                 }
 
                 processActionQueue();
@@ -1169,17 +1221,22 @@ namespace JerpDoesBots
             m_Game = channelInfo.GameName;
             m_Title = channelInfo.Title;
             m_Tags = channelInfo.Tags;
-            
+            setCategoryID(channelInfo.GameId);
+            m_HasReceivedChannelInfo = true;
         }
 
         private void ParseStreamData(TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream aStream)
         {
-            requestChannelInfo();
             if (aStream != null)
             {
                 m_IsLive = true;
                 m_ViewersLast = aStream.ViewerCount;
                 m_LiveStartTime = aStream.StartedAt;
+                m_Game = aStream.GameName;
+                m_Title = aStream.Title;
+                m_Tags = aStream.Tags;
+                setCategoryID(aStream.GameId);
+                m_HasReceivedChannelInfo = true;
             }
         }
 
