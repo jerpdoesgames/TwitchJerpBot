@@ -54,7 +54,7 @@ namespace JerpDoesBots
         {
             int totalChatters;
             int totalFollowers = m_BotBrain.getNumChattersFollowing(out totalChatters);
-            float followPercent = (totalFollowers / totalChatters);
+            float followPercent = totalChatters > 0 && totalFollowers > 0 ? (totalFollowers / totalChatters) : 0f;
 
             if (aFollowerPercentMin >= 0 && aFollowerPercentMax >= 0)
             {
