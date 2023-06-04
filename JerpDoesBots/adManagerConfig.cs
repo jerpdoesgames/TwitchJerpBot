@@ -13,6 +13,14 @@ namespace JerpDoesBots
         public int viewersMax { get; set; }
         public int adTimeSecondsMin { get; set; }
         public int adTimeSecondsMax { get; set; }
+
+        public adManagerConfigCommandEntry()
+        {
+            allowedGames = new List<string>();
+            barredGames = new List<string>();
+            requiredTags = new List<string>();
+            barredTags = new List<string>();
+        }
     }
 
     internal class adManagerConfig
