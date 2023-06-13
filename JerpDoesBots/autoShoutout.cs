@@ -164,26 +164,48 @@ namespace JerpDoesBots
             m_APIShoutEnabled = false;
             m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("shoutoutAPIDisabled"));
         }
+        private bool load()
+        {
+            string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_shoutouts.json");
+            if (File.Exists(configPath))
+            {
+                string configFileString = File.ReadAllText(configPath);
+                if (!string.IsNullOrEmpty(configFileString))
+                {
+                    configData = new JavaScriptSerializer().Deserialize<autoShoutoutConfig>(configFileString);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void reload(userEntry commandUser, string argumentString)
+        {
+            loaded = load();
+            if (loaded)
+            {
+                m_BotBrain.sendDefaultChannelMessage("Reloaded shoutouts config");
+            }
+            else
+            {
+                m_BotBrain.sendDefaultChannelMessage("Failed to reload shoutouts config");
+            }
+        }
 
         public autoShoutout(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
-			string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_shoutouts.json");
-			if (File.Exists(configPath))
-			{
-				string configFileString = File.ReadAllText(configPath);
-				if (!string.IsNullOrEmpty(configFileString))
-				{
-					configData = new JavaScriptSerializer().Deserialize<autoShoutoutConfig>(configFileString);
-					loaded = true;
+            loaded = load();
 
-                    chatCommandDef tempDef = new chatCommandDef("shoutout", shoutout, true, false);
-                    tempDef.addSubCommand(new chatCommandDef("enableapi", enableAPI, true, false));
-                    tempDef.addSubCommand(new chatCommandDef("disableapi", disableAPI, true, false));
+            if (loaded)
+            {
+                chatCommandDef tempDef = new chatCommandDef("shoutout", shoutout, true, false);
+                tempDef.addSubCommand(new chatCommandDef("enableapi", enableAPI, true, false));
+                tempDef.addSubCommand(new chatCommandDef("disableapi", disableAPI, true, false));
+                tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
 
-                    m_BotBrain.addChatCommand(tempDef);
-
-                }
-			}
-		}
+                m_BotBrain.addChatCommand(tempDef);
+            }
+        }
 	}
 }
