@@ -183,6 +183,19 @@ namespace JerpDoesBots
                 sendNextMessage();
         }
 
+        public void reload(userEntry commandUser, string argumentString)
+        {
+            m_Loaded = loadConfig();
+            if (m_Loaded)
+            {
+                m_MessageIndex = -1;
+                m_BotBrain.sendDefaultChannelMessage("Successfully reloaded automated messages.");
+            }
+            else
+                m_BotBrain.sendDefaultChannelMessage("Failed to reload automated messages.");
+
+        }
+
         public messageRoll(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
             if (loadConfig())
@@ -196,6 +209,7 @@ namespace JerpDoesBots
 
                 chatCommandDef tempDef = new chatCommandDef("message", null, false, false);
                 tempDef.addSubCommand(new chatCommandDef("next", forceNext, false, false));
+                tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
 
                 m_BotBrain.addChatCommand(tempDef);
 
