@@ -98,30 +98,33 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void nextMessageIndex()
+        public void nextValidMessageIndex()
         {
-            m_MessageIndex++;
-            if (m_MessageIndex >= m_Config.messageList.Count)
-                m_MessageIndex = 0;
+            bool looped = false;
+            int originalMessageIndex = m_MessageIndex;
+            bool validMessageIndex = false;
+            do
+            {
+                m_MessageIndex++;
+                if (m_MessageIndex >= m_Config.messageList.Count)
+                    m_MessageIndex = 0;
+
+                if (m_MessageIndex == originalMessageIndex)
+                    looped = true;
+
+                if (isValidMessage(m_MessageIndex))
+                    validMessageIndex = true;
+
+            } while (!looped && !validMessageIndex);
         }
 
         public messageRollEntry getNextMessage()
         {
-            messageRollEntry newMessage = null;
-            int messagesChecked = 0;
-            while (messagesChecked < m_Config.messageList.Count)
-            {
-                nextMessageIndex();
-                if (isValidMessage(m_MessageIndex))
-                {
-                    newMessage = m_Config.messageList[m_MessageIndex];
-                    break;
-                }
-                messagesChecked++;
-            }
+            nextValidMessageIndex();
 
-            if (newMessage != null)
+            if (isValidMessage(m_MessageIndex))
             {
+                messageRollEntry newMessage = m_Config.messageList[m_MessageIndex];
                 return newMessage;
             }
 
@@ -155,7 +158,7 @@ namespace JerpDoesBots
         {
             messageRollEntry messageToSend = getNextMessage();
 
-            if (!String.IsNullOrEmpty(messageToSend.text))
+            if (messageToSend != null && !String.IsNullOrEmpty(messageToSend.text))
             {
                 if (messageToSend.text.IndexOf('!') == 0)
                 {
