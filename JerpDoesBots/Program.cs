@@ -16,6 +16,7 @@
 				return;
 
 			jerpBot botGeneral					= new jerpBot(tempConfig);
+			jerpBot.instance = botGeneral;
 
 			raffle raffleModule						  = new raffle(botGeneral);
 			quotes quoteModule						  = new quotes(botGeneral);

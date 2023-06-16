@@ -8,10 +8,9 @@ using System.Threading.Tasks;
 namespace JerpDoesBots
 {
 
-    public class soundCommandDef
+    internal class soundCommandDef
     {
         public string name { get; set; }
-        // public string path { get; set; }
         public List<string> paths { get; set; }
         public long lastUsed;
         public float volume { get; set; }
@@ -23,10 +22,7 @@ namespace JerpDoesBots
         public string source { get; set; }
         public string character { get; set; }
         public string description { get; set; }
-        public List<string> requiredTags { get; set; }
-        public List<string> disallowedTags { get; set; }
-        public List<string> allowedGames { get; set; }
-        public List<string> disallowedGames { get; set; }
+        public channelCondition requirements { get; set; }
         // public Dictionary<string, long> userLastUsed;
         public soundCommandDef()
         {
@@ -34,7 +30,7 @@ namespace JerpDoesBots
         }
     }
 
-    public class soundCommandConfig
+    internal class soundCommandConfig
     {
         public List<soundCommandDef> soundList { get; set; }
         public bool enabled { get; set; }
@@ -109,73 +105,6 @@ namespace JerpDoesBots
             newRewardRequest.IsEnabled = true;
 
             return newRewardRequest;
-        }
-
-        private bool isValidTags(soundCommandDef aSound)
-        {
-            if (aSound.requiredTags != null && aSound.requiredTags.Count > 0)
-            {
-                bool missingTag = false;
-                foreach (string curTag in aSound.requiredTags)
-                {
-                    if (!m_BotBrain.tagInList(curTag, m_BotBrain.tags))
-                    {
-                        missingTag = true;
-                        break;
-                    }
-                }
-
-                if (missingTag)
-                {
-                    return false;
-                }
-            }
-
-            if (aSound.disallowedTags != null && aSound.disallowedTags.Count > 0)
-            {
-                foreach (string curTag in m_BotBrain.tags)
-                {
-                    if (m_BotBrain.tagInList(curTag, aSound.disallowedTags.ToArray()))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private bool isValidGame(soundCommandDef aSound)
-        {
-            if (aSound.allowedGames != null && aSound.allowedGames.Count > 0)
-            {
-                bool isAllowedGame = false;
-                foreach (string allowedGame in aSound.allowedGames)
-                {
-                    if (m_BotBrain.game.ToLower() == allowedGame.ToLower())
-                    {
-                        isAllowedGame = true;
-                        break;
-                    }
-                }
-                if (!isAllowedGame)
-                {
-                    return false;
-                }
-            }
-
-            if (aSound.disallowedGames != null && aSound.disallowedGames.Count > 0)
-            {
-                foreach (string disallowedGame in aSound.disallowedGames)
-                {
-                    if (m_BotBrain.game.ToLower() == disallowedGame.ToLower())
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         private bool onCooldown(soundCommandDef aSound, userEntry commandUser)
@@ -276,9 +205,9 @@ namespace JerpDoesBots
             int pathCount = curSound.paths.Count;
             if (pathCount > 0)
             {
-                if (isValidGame(curSound))
+                if (curSound.requirements == null || curSound.requirements.validGame())
                 {
-                    if (isValidTags(curSound))
+                    if (curSound.requirements == null || curSound.requirements.validTags())
                     {
                         if (!onCooldown(curSound, aUser))
                         {
@@ -486,7 +415,7 @@ namespace JerpDoesBots
                     int curSoundRewardCount = 0;
                     foreach (soundCommandDef curSound in m_Config.soundList)    // Collect mandatory sounds first
                     {
-                        if (curSound.isMandatoryReward && isValidGame(curSound) && isValidTags(curSound) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
+                        if (curSound.isMandatoryReward && (curSound.requirements == null || curSound.requirements.isMet()) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
                         {
                             pointRewardAddQueue.Add(curSound);
                             curSoundRewardCount++;
@@ -501,7 +430,7 @@ namespace JerpDoesBots
 
                     foreach (soundCommandDef curSound in m_Config.soundList)    // Collect a set of non-mandatory sounds
                     {
-                        if (curSound.isValidForPointReward && isValidGame(curSound) && isValidTags(curSound) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
+                        if (curSound.isValidForPointReward && (curSound.requirements == null || curSound.requirements.isMet()) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
                         {
                             pointRewardAddQueue.Add(curSound);
                             curSoundRewardCount++;

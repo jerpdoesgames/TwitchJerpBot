@@ -9,75 +9,7 @@ namespace JerpDoesBots
         private messageRollConfig m_Config;
         private bool m_Loaded = false;
         private int m_MessageIndex = -1;
-
         private throttler m_Throttler;
-
-        private bool isValidTags(messageRollEntry aMessage)
-        {
-            if (m_Config.messageList[m_MessageIndex].tags == null) // No tags to worry about
-            {
-                return true;
-            }
-            else
-            {
-                for (int i = 0; i < aMessage.tags.Count; i++)
-                {
-                    if (!m_BotBrain.tagInList(aMessage.tags[i], m_BotBrain.tags))
-                        return false;
-                }
-            }
-
-            return true;
-        }
-
-        private bool isValidViewerCount(int viewersMin = -1, int viewersMax = -1)
-        {
-            if (viewersMin >= 0 && viewersMax >= 0)
-            {
-                return m_BotBrain.viewersLast <= viewersMax && m_BotBrain.viewersLast >= viewersMin;
-            }
-            else if (viewersMin >= 0)
-            {
-                return m_BotBrain.viewersLast >= viewersMin;
-            }
-            else if (viewersMax >= 0)
-            {
-                return m_BotBrain.viewersLast <= viewersMax;
-            }
-            else
-            {
-                return true;
-            }
-        }
-
-        private bool isValidFollowPercentage(float aFollowerPercentMin = -1, float aFollowerPercentMax = -1)
-        {
-            int totalChatters;
-            int totalFollowers = m_BotBrain.getNumChattersFollowing(out totalChatters);
-            float followPercent = totalChatters > 0 && totalFollowers > 0 ? (totalFollowers / totalChatters) : 0f;
-
-            if (aFollowerPercentMin >= 0 && aFollowerPercentMax >= 0)
-            {
-                return followPercent <= aFollowerPercentMax && followPercent >= aFollowerPercentMin;
-            }
-            else if (aFollowerPercentMin >= 0)
-            {
-                return followPercent >= aFollowerPercentMin;
-            }
-            else if (aFollowerPercentMax >= 0)
-            {
-                return followPercent <= aFollowerPercentMax;
-            }
-            else
-            {
-                return true;
-            }
-        }
-
-        private bool isValidGame(messageRollEntry aMessage)
-        {
-            return aMessage.games == null || aMessage.games.Contains(m_BotBrain.game);
-        }
 
         private bool isValidMessage(int aIndex)
         {
@@ -86,10 +18,7 @@ namespace JerpDoesBots
                 messageRollEntry curMessage = m_Config.messageList[m_MessageIndex];
                 if (
                     curMessage != null &&
-                    isValidGame(curMessage) &&
-                    isValidTags(curMessage) &&
-                    isValidFollowPercentage(curMessage.followPercentMin, curMessage.followPercentMax) &&
-                    isValidViewerCount(curMessage.viewersMin, curMessage.viewersMax)
+                    (curMessage.requirements == null || curMessage.requirements.isMet())
                 )
                 {
                     return true;

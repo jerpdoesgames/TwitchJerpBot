@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Web.Script.Serialization;
-using TwitchLib.Api.Helix.Models.Charity;
 using TwitchLib.PubSub.Events;
 
 namespace JerpDoesBots
@@ -67,75 +66,7 @@ namespace JerpDoesBots
 
         private bool isValidCommand(adManagerConfigCommandEntry aCommand)
         {
-            if (aCommand.allowedGames.Count > 0)
-            {
-                bool foundGame = false;
-                foreach (string curGame in aCommand.allowedGames)
-                {
-                    if (curGame == m_CommercialStartGame)
-                    {
-                        foundGame = true;
-                        break;
-                    }
-                }
-
-                if (!foundGame)
-                {
-                    return false;
-                }
-            }
-
-            if (aCommand.barredGames.Count > 0)
-            {
-                foreach (string curGame in aCommand.barredGames)
-                {
-                    if (m_CommercialStartGame == curGame)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            if ((aCommand.viewersMax > 0 && m_CommercialStartViewerCount > aCommand.viewersMax) || (aCommand.viewersMin > 0 && m_CommercialStartViewerCount < aCommand.viewersMin))
-            {
-                return false;
-            }
-
-            if ((aCommand.adTimeSecondsMax > 0 && m_CommercialLengthSeconds > aCommand.adTimeSecondsMax) || (aCommand.adTimeSecondsMin > 0 && m_CommercialLengthSeconds < aCommand.adTimeSecondsMin))
-            {
-                return false;
-            }
-
-            if (aCommand.requiredTags != null && aCommand.requiredTags.Count > 0)
-            {
-                bool missingTag = false;
-                foreach (string curTag in aCommand.requiredTags)
-                {
-                    if (!m_BotBrain.tagInList(curTag, m_CommercialStartTags))
-                    {
-                        missingTag = true;
-                        break;
-                    }
-                }
-
-                if (missingTag)
-                {
-                    return false;
-                }
-            }
-
-            if (aCommand.barredTags != null && aCommand.barredTags.Count > 0)
-            {
-                foreach (string curTag in m_CommercialStartTags)
-                {
-                    if (m_BotBrain.tagInList(curTag, aCommand.barredTags.ToArray()))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return aCommand.requirements == null || aCommand.requirements.isMet(m_CommercialStartGame, m_CommercialStartTags, m_CommercialStartViewerCount, m_CommercialLengthSeconds);
         }
 
         public override void frame()

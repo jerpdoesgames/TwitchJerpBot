@@ -18,6 +18,24 @@ namespace JerpDoesBots
 {
     class jerpBot
     {
+        private static jerpBot _instance;   // TODO: Less half-assed singleton, update more of the bot to use this
+
+        public static jerpBot instance
+        {
+            get { return _instance; }
+            set
+            {
+                if (_instance != null)
+                {
+                    throw new InvalidOperationException("JerpBot instance already set!");
+                }
+                else
+                {
+                    _instance = value;
+                }
+            }
+        }
+
         ConnectionCredentials m_TwitchCredentialsBot;
         ConnectionCredentials m_TwitchCredentialsOwner;
         botConfig m_CoreConfig;
@@ -302,7 +320,7 @@ namespace JerpDoesBots
 
         private void processActionQueue()
         {
-            if (m_HasJoinedChannel && actionQueue.Count > 0)
+            if (m_IsFullyLoaded && m_HasJoinedChannel && actionQueue.Count > 0)
             {
                 if (m_ActionTimer.ElapsedMilliseconds > m_SendTimeLast + getCurrentThrottle())
                 {
@@ -364,7 +382,7 @@ namespace JerpDoesBots
             newCommand.setTarget(targetChannel);
             newCommand.setMessage(messageToSend);
 
-            if (!m_HasJoinedChannel || doQueue)
+            if (!m_IsFullyLoaded || !m_HasJoinedChannel || doQueue)
                 queueAction(newCommand);
             else
                 executeAndLog(newCommand);
@@ -683,7 +701,7 @@ namespace JerpDoesBots
 
         public void processUserCommand(userEntry commandUser, string message)
         {
-            if (m_IsDone)
+            if (!m_IsFullyLoaded || m_IsDone)
             {
                 return;
             }
@@ -1006,6 +1024,32 @@ namespace JerpDoesBots
             }
         }
 
+        public int getNumChattersSubscribed(out int numChattersTotal)
+        {
+            numChattersTotal = 0;
+            int totalSubs = 0;
+
+            lock (userList)
+            {
+                lock (userList.Keys)
+                {
+                    foreach (string curKey in userList.Keys)
+                    {
+                        if (
+                            userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[0].nickname.ToLower() && // Skip bot
+                            userList[curKey].Nickname.ToLower() != m_CoreConfig.configData.connections[1].nickname.ToLower() && // Skip owner
+                            userList[curKey].inChannel)
+                        {
+                            numChattersTotal++;
+                            if (userList[curKey].isSubscriber)
+                                totalSubs++;
+                        }
+                    }
+                    return totalSubs;
+                }
+            }
+        }
+
         public int getNumChattersFollowing(out int numChattersTotal)
         {
             numChattersTotal = 0;
@@ -1087,7 +1131,7 @@ namespace JerpDoesBots
         private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             m_HasJoinedChannel = true;
-            m_TwitchClientBot.SendMessage(e.Channel, m_Localizer.getString("announceChannelJoin"));
+            sendChannelMessage(e.Channel, m_Localizer.getString("announceChannelJoin"));
             m_LogConnection.writeAndLog($"Bot account joined channel {e.Channel}");
         }
 

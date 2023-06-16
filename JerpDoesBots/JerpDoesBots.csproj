@@ -196,6 +196,7 @@
   <ItemGroup>
     <Compile Include="adManager.cs" />
     <Compile Include="adManagerConfig.cs" />
+    <Compile Include="channelCondition.cs" />
     <Compile Include="delaySender.cs" />
     <Compile Include="dataLookup.cs" />
     <Compile Include="mediaPlayerMonitor.cs" />
