@@ -43,11 +43,11 @@ namespace JerpDoesBots
                         }
                         else if (delayMS < MIN_DELAY_TIME)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("delayTimeShort"), MIN_DELAY_TIME));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayTimeShort"), MIN_DELAY_TIME));
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("delayTimeLong"), MAX_DELAY_TIME));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayTimeLong"), MAX_DELAY_TIME));
                         }
                         
                     }
@@ -55,7 +55,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("delayQueueMax"), m_Entries.Count));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayQueueMax"), m_Entries.Count));
             }
         }
 
@@ -66,18 +66,18 @@ namespace JerpDoesBots
 
             if (prevEntryCount > 0)
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("delayQueueClearSuccess"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("delayQueueClearSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("delayQueueClearFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("delayQueueClearFail"));
             }
 
         }
         
         public void getCount(userEntry commandUser, string argumentString)
         {
-            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("delayQueueCount"), m_Entries.Count));
+            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayQueueCount"), m_Entries.Count));
         }
 
         public override void frame()
@@ -94,7 +94,7 @@ namespace JerpDoesBots
 
                         if (messageToSend.IndexOf('!') == 0)
                         {
-                            userEntry botOwnerUser = m_BotBrain.checkCreateUser(m_BotBrain.OwnerUsername);
+                            userEntry botOwnerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
 
                             m_BotBrain.processUserCommand(botOwnerUser, messageToSend);
                         }
@@ -121,7 +121,7 @@ namespace JerpDoesBots
             chatCommandDef tempDef = new chatCommandDef("delay", addEntry, true, false);
             tempDef.addSubCommand(new chatCommandDef("purge", purgeEntries, false, false));
             tempDef.addSubCommand(new chatCommandDef("count", getCount, false, false));
-            tempDef.UseGlobalCooldown = false;
+            tempDef.useGlobalCooldown = false;
             m_BotBrain.addChatCommand(tempDef);
         }
 

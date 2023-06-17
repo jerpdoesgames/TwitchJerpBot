@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SQLite;
+using System.Collections.Generic;
 
 namespace JerpDoesBots
 {
@@ -70,7 +71,7 @@ namespace JerpDoesBots
 
                     if (getCommandReader.HasRows)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("aliasAddFailExists"), commandName));
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddFailExists"), commandName));
                     }
                     else
                     {
@@ -85,9 +86,9 @@ namespace JerpDoesBots
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param5", argumentList[1]));          // Message
 
                         if (addCommandCommand.ExecuteNonQuery() > 0)
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("aliasAddSuccess"), argumentList[0]));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddSuccess"), argumentList[0]));
                         else
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("aliasAddFail"), argumentList[0]));
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddFail"), argumentList[0]));
                     }
                 }
                 else
@@ -96,9 +97,31 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("aliasAddFailLoop"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasAddFailLoop"));
             }
             
+        }
+
+        public void outputList(userEntry commandUser, string argumentString)
+        {
+            string getQuotesQuery = "SELECT * FROM command_alias ORDER BY command_name ASC";
+
+            SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, m_BotBrain.storageDB);
+            SQLiteDataReader getQuotesReader = getQuotesCommand.ExecuteReader();
+
+            List<object> rowData = new List<object>();
+
+            if (getQuotesReader.HasRows)
+            {
+                while (getQuotesReader.Read())
+                {
+                    rowData.Add(new { name = Convert.ToString(getQuotesReader["command_name"]), message = Convert.ToString(getQuotesReader["message"]) });
+                }
+            }
+
+            m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
+
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasOutputListSuccess"));
         }
 
         public commandAlias(jerpBot botGeneral) : base(botGeneral)
@@ -106,6 +129,7 @@ namespace JerpDoesBots
             chatCommandDef tempDef = new chatCommandDef("alias", null, false, false);
             tempDef.addSubCommand(new chatCommandDef("add", add, false, false));
             tempDef.addSubCommand(new chatCommandDef("remove", remove, false, false));
+            tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
             m_BotBrain.addChatCommand(tempDef);
 
         }

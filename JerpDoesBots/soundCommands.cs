@@ -3,31 +3,48 @@ using System.Collections.Generic;
 using System.IO;
 using System.Web.Script.Serialization;
 using NAudio.Wave;
+using System.Threading.Tasks;
 
 namespace JerpDoesBots
 {
 
-    public class soundCommandDef
+    internal class soundCommandDef
     {
         public string name { get; set; }
-        // public string path { get; set; }
         public List<string> paths { get; set; }
         public long lastUsed;
         public float volume { get; set; }
+        public bool isValidForPointReward { get; set; }
+        public int pointRewardCost { get; set; }
+        public bool isMandatoryReward { get; set; }
+        public bool existsOnTwitch { get; set; }
+        public string rewardID { get; set; }
+        public string source { get; set; }
+        public string character { get; set; }
+        public string description { get; set; }
+        public channelCondition requirements { get; set; }
         // public Dictionary<string, long> userLastUsed;
+        public soundCommandDef()
+        {
+            pointRewardCost = 0;
+        }
     }
 
-    public class soundCommandConfig
+    internal class soundCommandConfig
     {
         public List<soundCommandDef> soundList { get; set; }
         public bool enabled { get; set; }
         public int useDevice { get; set; }
         public float globalVolume { get; set; }
+        public int pointRewardCountMax { get; set; } // Maximum amount of reward slots to allocate for sounds.  Selects mandatory first and then fills with a random selection from the rest.
+        public int pointRewardCostDefault { get; set; }
 
         public soundCommandConfig()
         {
             useDevice = -1;
             globalVolume = 1.0f;
+            pointRewardCountMax = 0;
+            pointRewardCostDefault = 50;
         }
     }
 
@@ -36,6 +53,7 @@ namespace JerpDoesBots
         public const long COOLDOWN_GLOBAL_ALL       = 7500; // Entire system
         public const long COOLDOWN_GLOBAL_PERSOUND  = 17500; // Force some sound variety by allowing other sounds to be played
         public const long COOLDOWN_PERUSER          = 30000;
+        private const int CUSTOM_REWARDS_MAX        = 50; // TODO: Move elsehwere
 
         private soundCommandConfig m_Config;
         private soundCommandDef m_lastSound;
@@ -45,7 +63,49 @@ namespace JerpDoesBots
         private float m_GlobalVolume = 1.0f;
         private bool m_IsEnabled = false;
 
+        private List<soundCommandDef> currentPointRewards;
+
         public bool isEnabled { get { return m_IsEnabled; } set { m_IsEnabled = value; } }
+
+
+        public TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest getCreateRewardRequest(soundCommandDef aCurDef)
+        {
+            TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest newRewardRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest();
+            newRewardRequest.Title = "Play Sound - " + aCurDef.name;
+
+            if (aCurDef.pointRewardCost > 0)
+                newRewardRequest.Cost = aCurDef.pointRewardCost;
+            else
+                newRewardRequest.Cost = m_Config.pointRewardCostDefault;
+
+            if (!string.IsNullOrEmpty(aCurDef.description))
+            {
+                if (!string.IsNullOrEmpty(aCurDef.source))
+                {
+                    newRewardRequest.Prompt = "From "+aCurDef.source+":\n"+aCurDef.description;
+                }
+                else
+                {
+                    newRewardRequest.Prompt = aCurDef.description;
+                }
+            }
+            else
+            {
+                newRewardRequest.Prompt = "Play a sound!";
+            }
+
+            newRewardRequest.BackgroundColor = "#222222";
+
+            newRewardRequest.GlobalCooldownSeconds = (int)Math.Ceiling((double)(COOLDOWN_GLOBAL_ALL / 1000));
+            newRewardRequest.IsGlobalCooldownEnabled = true;
+
+            newRewardRequest.ShouldRedemptionsSkipRequestQueue = false;
+            newRewardRequest.IsUserInputRequired = false;
+
+            newRewardRequest.IsEnabled = true;
+
+            return newRewardRequest;
+        }
 
         private bool onCooldown(soundCommandDef aSound, userEntry commandUser)
         {
@@ -66,46 +126,155 @@ namespace JerpDoesBots
             return true;
         }
 
-        private void playSoundInternal(userEntry commandUser, soundCommandDef curSound, bool isRandom = false)
+        private bool updateSoundRewardRedemptionStatus(string aRewardID, string aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus aStatus)
         {
-            int pathCount = curSound.paths.Count;
-            if (pathCount > 0 && !onCooldown(curSound, commandUser))
-            {
-                string baseSoundPath;
-                if (pathCount > 1)
-                {
-                    int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
 
-                    baseSoundPath = curSound.paths[soundIndex];
+            List<string> redemptionIDs = new List<string>();
+            redemptionIDs.Add(aRedemptionID);
+
+            TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomRewardRedemptionStatus.UpdateCustomRewardRedemptionStatusRequest updateRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomRewardRedemptionStatus.UpdateCustomRewardRedemptionStatusRequest();
+            updateRequest.Status = aStatus;
+
+            try
+            {
+                Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateRedemptionStatus.UpdateRedemptionStatusResponse> refundRedemptionTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateRedemptionStatusAsync(m_BotBrain.ownerUserID, aRewardID, redemptionIDs, updateRequest);
+                refundRedemptionTask.Wait();
+
+                if (refundRedemptionTask.Result != null)
+                {
+                    return true;
                 }
                 else
                 {
-                    baseSoundPath = curSound.paths[0];
-                }
-
-                string soundPath = System.IO.Path.Combine(jerpBot.storagePath, "sounds\\" + baseSoundPath);
-
-                if (File.Exists(soundPath))
-                {
-                    
-                    AudioFileReader audioFile = new AudioFileReader(soundPath);
-                    m_OutputEvent.DeviceNumber = m_DeviceNumber;
-                    m_OutputEvent.Init(audioFile);
-
-                    float soundVolume = m_GlobalVolume;
-                    if (curSound.volume > 0)
-                        soundVolume *= curSound.volume;
-
-                    m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
-                    m_OutputEvent.Play();
-
-                    curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
-                    m_lastSound = curSound;
-
-                    if (isRandom)
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundPlayRandom"), curSound.name));
+                    m_BotBrain.logWarningsErrors.writeAndLog("Failed channel point redemption refund request (API)");
+                    return false;
                 }
             }
+            catch (Exception e)
+            {
+                m_BotBrain.logWarningsErrors.writeAndLog("Failed channel point redemption refund request (exception): " + e.Message);
+            }
+
+            return false;
+        }
+
+        public override void onChannelPointRedemption(userEntry aMessageUser, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
+        {
+            bool needRefund = false;
+            if (isEnabled)
+            {
+                soundCommandDef foundSound = null;
+                foreach (soundCommandDef curSound in m_Config.soundList)
+                {
+                    if (curSound.existsOnTwitch && curSound.rewardID == aRewardID)
+                    {
+                        foundSound = curSound;
+                        break;
+                    }
+                }
+
+                if (foundSound != null)
+                {
+                    if (playSoundInternal(aMessageUser, foundSound))
+                    {
+                        m_BotBrain.logGeneral.writeAndLog("Sound reward redemption by " + aMessageUser.Nickname + " - " + foundSound.name);
+                        if (!updateSoundRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.FULFILLED))
+                        {
+                            //Error state since I couldn't mark fulfilled
+                        }
+                    }
+                    else
+                    {
+                        needRefund = true;
+                    }
+                }
+            }
+
+            if (needRefund)
+            {
+                // TODO: Fail reason/output (see raffle)
+                if (!updateSoundRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.CANCELED))
+                {
+                    // m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
+                }
+            }
+        }
+
+        private bool playSoundInternal(userEntry aUser, soundCommandDef curSound, bool aIsRandom = false, bool aOutputErrors = false)
+        {
+            int pathCount = curSound.paths.Count;
+            if (pathCount > 0)
+            {
+                if (curSound.requirements == null || curSound.requirements.validGame())
+                {
+                    if (curSound.requirements == null || curSound.requirements.validTags())
+                    {
+                        if (!onCooldown(curSound, aUser))
+                        {
+                            string baseSoundPath;
+                            if (pathCount > 1)
+                            {
+                                int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
+
+                                baseSoundPath = curSound.paths[soundIndex];
+                            }
+                            else
+                            {
+                                baseSoundPath = curSound.paths[0];
+                            }
+
+                            string soundPath = System.IO.Path.Combine(jerpBot.storagePath, "sounds\\" + baseSoundPath);
+
+                            if (File.Exists(soundPath))
+                            {
+                                AudioFileReader audioFile = new AudioFileReader(soundPath);
+                                m_OutputEvent.DeviceNumber = m_DeviceNumber;
+                                m_OutputEvent.Init(audioFile);
+
+                                float soundVolume = m_GlobalVolume;
+                                if (curSound.volume > 0)
+                                    soundVolume *= curSound.volume;
+
+                                m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
+                                m_OutputEvent.Play();
+
+                                curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                                m_lastSound = curSound;
+
+                                if (aIsRandom)
+                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
+
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            if (aOutputErrors)
+                            {
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorOnCooldown"), curSound.name));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorInvalidTags"), curSound.name));
+                    }
+                }
+                else
+                {
+                    if (aOutputErrors)
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorInvalidGame"), curSound.name, m_BotBrain.game));
+                    }
+                    
+                }
+            }
+            else
+            {
+                // No sound paths defined (no error here?)
+            }
+
+            return false;
         }
 
         public bool soundExists(string aSound)
@@ -136,7 +305,7 @@ namespace JerpDoesBots
                 curSound = m_Config.soundList[i];
                 if (curSound.name == argumentString)
                 {
-                    playSoundInternal(commandUser, curSound);
+                    playSoundInternal(commandUser, curSound, false, true);
                     break;
                 }
             }
@@ -152,13 +321,13 @@ namespace JerpDoesBots
                 if (deviceNumber >= -1 && deviceNumber < WaveOut.DeviceCount)
                 {
                     m_DeviceNumber = deviceNumber;
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
                     success = true;
                 }
             }
 
             if (!success)
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
         }
 
         public void getDeviceList(userEntry commandUser, string argumentString)
@@ -166,8 +335,10 @@ namespace JerpDoesBots
             for (int i=0; i < WaveOut.DeviceCount; i++)
             {
                 WaveOutCapabilities curDevice = WaveOut.GetCapabilities(i);
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
+
+                Console.WriteLine(string.Format(m_BotBrain.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
             }
+            m_BotBrain.sendDefaultChannelMessage("Device list sent to console.");
         }
 
         public void setVolume(userEntry commandUser, string argumentString)
@@ -177,7 +348,7 @@ namespace JerpDoesBots
             {
                 newVolume = Math.Min(newVolume, 1.0f);
                 m_GlobalVolume = newVolume;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("soundSetGlobalVolume"), newVolume));
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetGlobalVolume"), newVolume));
             }
         }
 
@@ -185,23 +356,53 @@ namespace JerpDoesBots
         {
             m_IsEnabled = true;
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundEnabled"));
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundEnabled"));
         }
 
         public void disable(userEntry commandUser, string argumentString)
         {
             m_IsEnabled = false;
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundDisabled"));
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundDisabled"));
         }
 
         public void getList(userEntry commandUser, string argumentString)
         {
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundList"));
+            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundList"));
+        }
+
+        private bool attemptAddReward(soundCommandDef aCurSound)
+        {
+            try
+            {
+                TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = getCreateRewardRequest(aCurSound);
+                Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.ownerUserID, createRewardRequest);
+                createRewardTask.Wait();
+
+                if (createRewardTask.Result == null)
+                {
+                    m_BotBrain.logWarningsErrors.writeAndLog("Failed to create channel point reward named: " + aCurSound.name);
+                    return false;
+                }
+                else
+                {
+                    aCurSound.rewardID = createRewardTask.Result.Data[0].Id;
+                    aCurSound.existsOnTwitch = true;
+                    return true;    // Successfully created
+                }
+            }
+            catch (Exception e)
+            {
+                m_BotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to create channel point reward named: \"{0}\": {1}", aCurSound.name, e.Message));
+                return false;
+            }
         }
 
         private bool loadSounds()
         {
+            currentPointRewards = new List<soundCommandDef>();
+            List<soundCommandDef> pointRewardAddQueue = new List<soundCommandDef>();
+
             string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_sounds.json");
             if (File.Exists(configPath))
             {
@@ -209,6 +410,103 @@ namespace JerpDoesBots
                 if (!string.IsNullOrEmpty(configFileString))
                 {
                     m_Config = new JavaScriptSerializer().Deserialize<soundCommandConfig>(configFileString);
+
+
+                    int curSoundRewardCount = 0;
+                    foreach (soundCommandDef curSound in m_Config.soundList)    // Collect mandatory sounds first
+                    {
+                        if (curSound.isMandatoryReward && (curSound.requirements == null || curSound.requirements.isMet()) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
+                        {
+                            pointRewardAddQueue.Add(curSound);
+                            curSoundRewardCount++;
+                        }
+                    }
+
+                    // Randomize before collecting non-mandatory sounds
+                    m_Config.soundList.Sort(delegate (soundCommandDef a, soundCommandDef b)
+                    {
+                        return m_BotBrain.randomizer.Next() - m_BotBrain.randomizer.Next();
+                    });
+
+                    foreach (soundCommandDef curSound in m_Config.soundList)    // Collect a set of non-mandatory sounds
+                    {
+                        if (curSound.isValidForPointReward && (curSound.requirements == null || curSound.requirements.isMet()) && curSoundRewardCount < m_Config.pointRewardCountMax && curSoundRewardCount < CUSTOM_REWARDS_MAX)
+                        {
+                            pointRewardAddQueue.Add(curSound);
+                            curSoundRewardCount++;
+                        }
+                    }
+
+                    // Get current list of rewards
+                    Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerUserID);
+                    getRewardsTask.Wait();
+
+                    if (getRewardsTask.Result != null)
+                    {
+                        int totalRewardCount = getRewardsTask.Result.Data.Length;
+                        // Check existing rewards
+                        foreach (TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward curReward in getRewardsTask.Result.Data)
+                        {
+                            if (curReward.Title.StartsWith("Play Sound - "))
+                            {
+                                bool foundRewardInAddQueue = false;
+                                foreach (soundCommandDef curSound in pointRewardAddQueue)
+                                {
+                                    if (curReward.Title == "Play Sound - " + curSound.name)
+                                    {
+                                        curSound.existsOnTwitch = true;
+                                        curSound.rewardID = curReward.Id;
+                                        foundRewardInAddQueue = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!foundRewardInAddQueue)
+                                {
+                                    try
+                                    {
+                                        Task removeRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(m_BotBrain.ownerUserID, curReward.Id);
+                                        removeRewardTask.Wait();
+                                        totalRewardCount--;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        m_BotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to remove channel point reward named: \"{0}\": {1}", curReward.Title, e.Message));
+                                    }
+                                }
+                            }
+                        }
+
+                        int rewardsOnTwitch = 0;
+                        // Add new rewards until we can't fit any more
+                        foreach (soundCommandDef curSound in pointRewardAddQueue)
+                        {
+                            if (curSound.existsOnTwitch)
+                            {
+                                if (rewardsOnTwitch > m_Config.pointRewardCountMax || rewardsOnTwitch > CUSTOM_REWARDS_MAX)
+                                {
+                                    try
+                                    {
+                                        Task removeRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(m_BotBrain.ownerUserID, curSound.rewardID);
+                                        removeRewardTask.Wait();
+                                        rewardsOnTwitch--;
+                                        curSound.existsOnTwitch = false;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        m_BotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to remove channel point reward named: \"{0}\": {1}", curSound.name, e.Message));
+                                    }
+                                }
+                            }
+                            else if (!curSound.existsOnTwitch && rewardsOnTwitch < m_Config.pointRewardCountMax && rewardsOnTwitch < CUSTOM_REWARDS_MAX)
+                            {
+                                if (attemptAddReward(curSound))
+                                {
+                                    rewardsOnTwitch++;
+                                }
+                            }
+                        }
+                    }
 
                     if (m_Config.useDevice >= -1 && m_Config.useDevice < WaveOut.DeviceCount)
                     {
@@ -229,9 +527,9 @@ namespace JerpDoesBots
         public void reloadSounds(userEntry commandUser, string argumentString)
         {
             if (loadSounds())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadSuccess"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadSuccess"));
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("soundReloadFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadFail"));
         }
 
         public void playRandom(userEntry commandUser, string argumentString)

@@ -7,8 +7,6 @@
 			jerpBot.checkCreateBotStorage();
 			jerpBot.checkCreateBotDatabase();
 
-			logger logGeneral		= new logger("log_general.txt");
-
 			botConfig tempConfig = new botConfig();
 			botConnection connConfig;
 
@@ -17,7 +15,8 @@
 			else
 				return;
 
-			jerpBot botGeneral					= new jerpBot(logGeneral, tempConfig);
+			jerpBot botGeneral					= new jerpBot(tempConfig);
+			jerpBot.instance = botGeneral;
 
 			raffle raffleModule						  = new raffle(botGeneral);
 			quotes quoteModule						  = new quotes(botGeneral);
@@ -37,15 +36,20 @@
 			hostMessages hostMessageModule			  = new hostMessages(botGeneral);
 			streamProfiles streamProfileManager		  = new streamProfiles(botGeneral);
 			predictionManager streamPredictionManager = new predictionManager(botGeneral);
+			mediaPlayerMonitor mediaMonitor           = new mediaPlayerMonitor(botGeneral);
+			dataLookup dataLookupManager              = new dataLookup(botGeneral);
+			adManager adManagerModule                 = new adManager(botGeneral);
 
 			customCommandModule.initTable();
 			gameCommandModule.initTable();
             aliasManager.initTable();
 
-			botGeneral.CustomCommandModule = customCommandModule;
-			botGeneral.GameCommandModule = gameCommandModule;
-            botGeneral.SoundCommandModule = soundManager;
-            botGeneral.AliasModule = aliasManager;
+			botGeneral.customCommandModule = customCommandModule;
+			botGeneral.gameCommandModule = gameCommandModule;
+            botGeneral.soundCommandModule = soundManager;
+            botGeneral.aliasModule = aliasManager;
+
+			botGeneral.setLoadComplete();
 
             while (!botGeneral.isReadyToClose)
             {

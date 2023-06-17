@@ -62,7 +62,7 @@ namespace JerpDoesBots
 
                                 default:
                                 case lurkShoutUserType.defaultType:
-                                    m_BotBrain.sendDefaultChannelMessage(shoutEntry.shoutMessage);
+                                    m_BotBrain.sendDefaultChannelAnnounce(shoutEntry.shoutMessage);
                                     break;
                             }
 						}

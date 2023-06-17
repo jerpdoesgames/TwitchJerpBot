@@ -14,7 +14,10 @@ namespace JerpDoesBots
 		protected string createQuery = "CREATE TABLE IF NOT EXISTS commands_custom (commandID INTEGER PRIMARY KEY ASC, command_name TEXT UNIQUE, submitter TEXT, modifier TEXT, lastmod INTEGER, allow_normal INTEGER, message TEXT)";
 		protected string formatHint; // Filled out via localizer in constructor
 		protected string removeQuery = "DELETE FROM commands_custom WHERE command_name=@param1";
+		protected string selectAllQuery = "SELECT * FROM commands_custom ORDER BY command_name ASC";
 		protected string useGame = null;
+		protected string outputListFilename = "jerpdoesbots_commands_custom.json";
+		protected string outputListMessageSuccess;
 
 		private string getGameString()
 		{
@@ -29,14 +32,14 @@ namespace JerpDoesBots
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				useGame = argumentString;
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandGameForced"), argumentString));
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandGameForced"), argumentString));
 			}
 		}
 
 		public void clearGame(userEntry commandUser, string argumentString)
 		{
 			useGame = null;
-			m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandGameAuto"), m_BotBrain.game));
+			m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandGameAuto"), m_BotBrain.game));
 		}
 
 		public SQLiteDataReader loadCommand(string commandName)
@@ -166,7 +169,7 @@ namespace JerpDoesBots
 
 				if (getCommandReader.HasRows)
 				{
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandAddFailExists"), argumentList[0]));
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandAddFailExists"), argumentList[0]));
 				}
 				else
 				{
@@ -185,9 +188,9 @@ namespace JerpDoesBots
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param7", getGameString()));          // Current Game (unused in base)
 
 					if (addCommandCommand.ExecuteNonQuery() > 0)
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandAddSuccess"), argumentList[0]));
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandAddSuccess"), argumentList[0]));
 					else
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandAddFail"), argumentList[0]));
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandAddFail"), argumentList[0]));
 				}
 			}
 			else
@@ -212,11 +215,11 @@ namespace JerpDoesBots
 
 				if (removeCommandCommand.ExecuteNonQuery() > 0)
 				{
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.Localizer.getString("commandRemoveSuccess"), argumentString));
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandRemoveSuccess"), argumentString));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.Localizer.getString("commandRemoveFailNotFound"));
+					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("commandRemoveFailNotFound"));
 				}
 			}
 		}
@@ -228,9 +231,34 @@ namespace JerpDoesBots
 			createCommandTableCommand.ExecuteNonQuery();
 		}
 
+		public virtual object getCurEntryJsonObject(SQLiteDataReader aEntryReader)
+        {
+			return new { name = Convert.ToString(aEntryReader["command_name"]), message = Convert.ToString(aEntryReader["message"]) };
+		}
+
+		public virtual void outputList(userEntry commandUser, string argumentString)
+		{
+			SQLiteCommand getEntriesCommand = new SQLiteCommand(selectAllQuery, m_BotBrain.storageDB);
+			SQLiteDataReader getEntriesReader = getEntriesCommand.ExecuteReader();
+
+			List<object> rowData = new List<object>();
+
+			if (getEntriesReader.HasRows)
+			{
+				while (getEntriesReader.Read())
+				{
+					rowData.Add(getCurEntryJsonObject(getEntriesReader));
+				}
+			}
+
+			m_BotBrain.genericSerializeToFile(rowData, outputListFilename);
+
+			m_BotBrain.sendDefaultChannelMessage(outputListMessageSuccess);
+		}
+
 		public commandModule(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
-			formatHint = m_BotBrain.Localizer.getString("commandFormatHint");
+			formatHint = m_BotBrain.localizer.getString("commandFormatHint");
 			// TODO: Add ability to list out commands.
 		}
 	}
