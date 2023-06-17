@@ -194,6 +194,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="pointReward.cs" />
+    <Compile Include="pointRewardManager.cs" />
     <Compile Include="adManager.cs" />
     <Compile Include="adManagerConfig.cs" />
     <Compile Include="channelCondition.cs" />

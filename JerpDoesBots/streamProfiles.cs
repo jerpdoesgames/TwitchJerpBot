@@ -172,6 +172,8 @@ namespace JerpDoesBots
 		}
 	}
 
+	// =====================================================================/
+
 	class streamProfilesConfig
 	{
 		public List<string> tagsCommon { get; set; }
