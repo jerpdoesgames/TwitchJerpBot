@@ -19,17 +19,9 @@ namespace JerpDoesBots
 		private raffleConfig m_config;
 		private bool m_LoadSuccessful;
 
-        class raffleConfigRedemptionReward
-        {
-			public string title { get; set; }
-			public string description { get; set; }
-			public int cost { get; set; }
-			public string backgroundColor { get; set; }
-		}
-
 		class raffleConfig
         {
-			public raffleConfigRedemptionReward rewardInfo { get; set; }
+			public pointReward rewardInfo { get; set; }
 			public bool requireRewardRedemptionOnLoad { get; set; }
 
 		}
@@ -57,28 +49,19 @@ namespace JerpDoesBots
 			if (m_LoadSuccessful)
             {
 				m_UsePointRedemption = aUseRedemptions;
+				m_config.rewardInfo.enabled = m_UsePointRedemption && m_IsActive;
+                createUpdateChannelPointRedemptionReward();
 
-				if (aUseRedemptions)
+                if (aUseRedemptions)
 				{
 					if (aAnnounceUpdate)
 						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionEnabled"));
 
-					if (m_IsActive)
-                    {
-						bool alreadyExists = false;
-						checkCreateChannelPointRedemptionReward(out alreadyExists);
-
-						if (alreadyExists)
-							updateChannelPointRedemptionRewardEnabled(true);
-					}
 				}
 				else
 				{
 					if (aAnnounceUpdate)
 						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionDisabled"));
-
-					if (m_IsActive)
-						updateChannelPointRedemptionRewardEnabled(false);
 				}
 			}
 		}
@@ -88,102 +71,11 @@ namespace JerpDoesBots
 			setUseRedemptions(!m_UsePointRedemption);
 		}
 
-		private bool checkCreateChannelPointRedemptionReward(out bool bAlreadyExists)
+		private void createUpdateChannelPointRedemptionReward()
         {
-			bAlreadyExists = false;
-
-			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerUserID);
-			getRewardsTask.Wait();
-
-			if (getRewardsTask.Result != null)
-			{
-				foreach (TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward curReward in getRewardsTask.Result.Data)
-				{
-					if (curReward.Title == m_config.rewardInfo.title)
-					{
-						bAlreadyExists = true;
-						return true;  // Already exists
-					}
-				}
-			}
-
-			// Doesn't already exist, create it
-			TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest();
-			createRewardRequest.Cost = m_config.rewardInfo.cost;
-			createRewardRequest.Title = m_config.rewardInfo.title;
-			createRewardRequest.Prompt = m_config.rewardInfo.description;
-			createRewardRequest.BackgroundColor = m_config.rewardInfo.backgroundColor;
-			createRewardRequest.IsEnabled = true;
-
-			try
-			{
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(m_BotBrain.ownerUserID, createRewardRequest);
-				createRewardTask.Wait();
-
-				if (createRewardTask.Result == null)
-				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardCreateFail"));
-					return false;
-				}
-				else
-				{
-					return true;    // Successfully created
-				}
-			}
-			catch (Exception e)
-			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardCreateFail"));
-				return false;
-			}
+			m_config.rewardInfo = pointRewardManager.addUpdatePointReward(m_config.rewardInfo);
+			pointRewardManager.updateRemoteRewardsFromLocalData();
 		}
-
-		private bool updateChannelPointRedemptionRewardEnabled(bool aEnabled)
-        {
-			TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward raffleRedemptionReward = null;
-
-			// grab and store reward ID if it exists
-			Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(m_BotBrain.ownerUserID);
-			getRewardsTask.Wait();
-
-			if (getRewardsTask.Result != null)
-            {
-				foreach (TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward curReward in getRewardsTask.Result.Data)
-                {
-					if (curReward.Title == m_config.rewardInfo.title)
-                    {
-						raffleRedemptionReward = curReward;
-						break;	
-					}
-                }
-            }
-
-			if (raffleRedemptionReward != null)
-			{
-				TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardRequest updateRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardRequest();
-				updateRequest.IsEnabled = aEnabled;
-
-				try
-				{
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomReward.UpdateCustomRewardResponse> updateTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateCustomRewardAsync(m_BotBrain.ownerUserID, raffleRedemptionReward.Id, updateRequest);
-					updateTask.Wait();
-
-					if (updateTask.Result == null)
-					{
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardUpdateEnabledFail"));
-					}
-					else
-                    {
-						return true;
-                    }
-				}
-				catch (Exception e)
-				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleRewardUpdateEnabledFail"));
-				}
-			}
-
-			return false;
-        }
 
 		public void describe(userEntry commandUser, string argumentString)
 		{
@@ -236,26 +128,17 @@ namespace JerpDoesBots
 
 		public void open(userEntry commandUser, string argumentString)
 		{
-			bool rewardAlreadyExists;
-
 			lock (messageLastLock)
             {
-				if (
-					!m_UsePointRedemption ||
-					(
-						checkCreateChannelPointRedemptionReward(out rewardAlreadyExists) &&
-						(!rewardAlreadyExists || updateChannelPointRedemptionRewardEnabled(true))
-					)
-				)
-                {
-					// TODO: Handle something like, if the reward exists but it's not required, disable the reward
-					resetEntries();
-					m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
+				m_config.rewardInfo.enabled = m_UsePointRedemption;
+				pointRewardManager.updateRemoteRewardsFromLocalData();
 
-					m_Throttler.trigger();
+                resetEntries();
+                m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
 
-					m_IsActive = true;
-				}
+                m_Throttler.trigger();
+
+                m_IsActive = true;
             }
 		}
 
@@ -264,9 +147,10 @@ namespace JerpDoesBots
 			m_IsActive = false;
 			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleClosed"));
 
-			if (m_UsePointRedemption)
-				updateChannelPointRedemptionRewardEnabled(false);
-		}
+			m_config.rewardInfo.enabled = false;
+            createUpdateChannelPointRedemptionReward();
+
+        }
 
 		public void count(userEntry commandUser, string argumentString)
 		{
@@ -303,40 +187,7 @@ namespace JerpDoesBots
 				else
 					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCountEmpty") + "  " + m_BotBrain.localizer.getString("raffleHintOpen"));
 			}
-
 		}
-		
-		private bool updateRaffleRewardRedemptionStatus(string aRewardID, string aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus aStatus)
-        {
-
-			List<string> redemptionIDs = new List<string>();
-			redemptionIDs.Add(aRedemptionID);
-
-			TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomRewardRedemptionStatus.UpdateCustomRewardRedemptionStatusRequest updateRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.UpdateCustomRewardRedemptionStatus.UpdateCustomRewardRedemptionStatusRequest();
-			updateRequest.Status = aStatus;
-
-			try
-			{
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.UpdateRedemptionStatus.UpdateRedemptionStatusResponse> refundRedemptionTask = m_BotBrain.twitchAPI.Helix.ChannelPoints.UpdateRedemptionStatusAsync(m_BotBrain.ownerUserID, aRewardID, redemptionIDs, updateRequest);
-				refundRedemptionTask.Wait();
-
-				if (refundRedemptionTask.Result != null)
-				{
-					return true;
-				}
-                else
-                {
-					m_BotBrain.logWarningsErrors.writeAndLog("Failed channel point redemption refund request (API)");
-					return false;
-				}
-			}
-			catch (Exception e)
-			{
-				m_BotBrain.logWarningsErrors.writeAndLog("Failed channel point redemption refund request (exception): " + e.Message);
-			}
-
-			return false;
-        }
 
 		public override void onChannelPointRedemption(userEntry aMessageUser, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
         {
@@ -353,14 +204,13 @@ namespace JerpDoesBots
 						{
 							if (!userList.ContainsKey(aMessageUser.Nickname))
 							{
-								if (updateRaffleRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.FULFILLED))
+								if (pointRewardManager.updateRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.FULFILLED))
 									addUserInternal(aMessageUser);
 								else
 									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusFulfilledFail"), aMessageUser.Nickname));
 							}
 							else
 							{
-
 								failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailUserExists");
 								needRefund = true;
 							}
@@ -381,7 +231,7 @@ namespace JerpDoesBots
 					{
 						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRefund"),aMessageUser.Nickname , failReason));
 
-						if (!updateRaffleRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.CANCELED))
+						if (!pointRewardManager.updateRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.CANCELED))
 							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
 					}
 				}
@@ -397,6 +247,8 @@ namespace JerpDoesBots
 				if (!string.IsNullOrEmpty(queueConfigString))
 				{
 					m_config = new JavaScriptSerializer().Deserialize<raffleConfig>(queueConfigString);
+					m_config.rewardInfo.shouldExistOnTwitch = true;
+					m_config.rewardInfo.enabled = false;
 					m_LoadSuccessful = true;
 
 					setUseRedemptions(m_config.requireRewardRedemptionOnLoad, false);

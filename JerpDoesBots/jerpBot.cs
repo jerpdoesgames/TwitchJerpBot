@@ -1078,6 +1078,10 @@ namespace JerpDoesBots
 
         }
 
+        public void announce(userEntry commandUser, string argumentString)
+        {
+            sendDefaultChannelAnnounce(argumentString);
+        }
         public void randomNumber(userEntry commandUser, string argumentString)
         {
             int randMin = 1;
@@ -1476,6 +1480,7 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
             m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
             m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
+            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
 
             requestChannelInfo();
         }
