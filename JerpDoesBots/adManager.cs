@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Web.Script.Serialization;
 using TwitchLib.PubSub.Events;
 
@@ -6,6 +7,8 @@ namespace JerpDoesBots
 {
     internal class adManager : botModule
     {
+        private const int PREROLL_FREE_TIME_PER_AD_MINUTE = 20;
+        private const int AD_SNOOZE_DURATION_SECONDS = 300;
         private bool m_IsLoaded;
         private adManagerConfig m_Config;
         private long m_CommercialStartTimeMS = 0;
@@ -15,6 +18,7 @@ namespace JerpDoesBots
         private string m_CommercialStartGame = "";
         private string[] m_CommercialStartTags;
         private int m_CommercialStartViewerCount = 0;
+        private int m_SnoozeCountSinceLastAd = 0;
 
         private long commercialLengthMS { get { return m_CommercialLengthSeconds * 1000; } }
 
@@ -51,12 +55,12 @@ namespace JerpDoesBots
                 m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("adManagerCommercialStart"), adTimeString));
             }
 
-            if (m_Config.commercialStartCommands.Count > 0)
+            if (m_Config.commercialStartCommands != null && m_Config.commercialStartCommands.Count > 0)
             {
                 userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
                 foreach (adManagerConfigCommandEntry curCommand in m_Config.commercialStartCommands)
                 {
-                    if (isValidCommand(curCommand))
+                    if (isValidAdCondition(curCommand.requirements))
                     {
                         m_BotBrain.processUserCommand(ownerUser, curCommand.commandString);
                     }
@@ -64,9 +68,9 @@ namespace JerpDoesBots
             }
         }
 
-        private bool isValidCommand(adManagerConfigCommandEntry aCommand)
+        private bool isValidAdCondition(adCondition aCondition)
         {
-            return aCommand.requirements == null || aCommand.requirements.isMet(m_CommercialStartGame, m_CommercialStartTags, m_CommercialStartViewerCount, m_CommercialLengthSeconds);
+            return aCondition == null || aCondition.isMet(m_CommercialStartGame, m_CommercialStartTags, m_CommercialStartViewerCount, m_CommercialLengthSeconds);
         }
 
         public override void frame()
@@ -80,14 +84,42 @@ namespace JerpDoesBots
                     m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("adManagerCommercialEnd"));
                 }
 
-                if (m_Config.commercialEndCommands.Count > 0)
+                if (!m_IsCommercialActive && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
                 {
-                    userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
+                    foreach (adManagerIncomingAdWarning curWarning in m_Config.incomingAdWarnings)
+                    {
+                        curWarning.resetNotifiedStatus();
+                    }
+                }
+
+                m_SnoozeCountSinceLastAd = 0;
+
+                if (m_Config.commercialEndCommands != null && m_Config.commercialEndCommands.Count > 0)
+                {
                     foreach (adManagerConfigCommandEntry curCommand in m_Config.commercialEndCommands)
                     {
-                        if (isValidCommand(curCommand))
+                        if (isValidAdCondition(curCommand.requirements))
                         {
+                            userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
                             m_BotBrain.processUserCommand(ownerUser, curCommand.commandString);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (!m_IsCommercialActive && m_CommercialStartTimeMS != 0 && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
+                {
+                    foreach (adManagerIncomingAdWarning curWarning in m_Config.incomingAdWarnings)
+                    {
+                        if (!curWarning.notifiedSinceLastAd && m_BotBrain.actionTimer.ElapsedMilliseconds > m_CommercialStartTimeMS + (m_SnoozeCountSinceLastAd * AD_SNOOZE_DURATION_SECONDS * 1000) + (m_CommercialLengthSeconds * 1000 * PREROLL_FREE_TIME_PER_AD_MINUTE) - (curWarning.timeBeforeAdSeconds * 1000))
+                        {
+                            if (isValidAdCondition(curWarning.requirements))
+                            {
+                                userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
+                                m_BotBrain.processUserMessage(ownerUser.Nickname, curWarning.commandString);
+                                curWarning.setNotifyTriggered();
+                            }
                         }
                     }
                 }
@@ -107,6 +139,16 @@ namespace JerpDoesBots
             }
         }
 
+        public void setSnoozeCount(userEntry commandUser, string argumentString)
+        {
+            int snoozeCount;
+            if (Int32.TryParse(argumentString, out snoozeCount))
+            {
+                m_SnoozeCountSinceLastAd = snoozeCount;
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountSet"), snoozeCount));
+            }
+        }
+
         public adManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
         {
             m_IsLoaded = loadConfig();
@@ -115,6 +157,7 @@ namespace JerpDoesBots
             {
                 chatCommandDef tempDef = new chatCommandDef("ad", null, false, false);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
+                tempDef.addSubCommand(new chatCommandDef("snooze", setSnoozeCount, false, false));
                 m_BotBrain.addChatCommand(tempDef);
             }
         }
