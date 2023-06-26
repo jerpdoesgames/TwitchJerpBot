@@ -27,19 +27,21 @@ namespace JerpDoesBots
 				return m_BotBrain.game;
 		}
 
-		public void setGame(userEntry commandUser, string argumentString)
+		public void setGame(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				useGame = argumentString;
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandGameForced"), argumentString));
+				if (!aSilent)
+					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandGameForced"), argumentString));
 			}
 		}
 
-		public void clearGame(userEntry commandUser, string argumentString)
+		public void clearGame(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			useGame = null;
-			m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandGameAuto"), m_BotBrain.game));
+			if (!aSilent)
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandGameAuto"), m_BotBrain.game));
 		}
 
 		public SQLiteDataReader loadCommand(string commandName)
@@ -140,8 +142,9 @@ namespace JerpDoesBots
 					string message = Convert.ToString(getCommandReader["message"]);
 					bool allowNormal = Convert.ToBoolean(int.Parse(Convert.ToString(getCommandReader["allow_normal"])));    // Don't look at me, I'm HIDEOUS!
 
-					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString) {
+					chatCommandDef.commandActionDelegate customCommandDelegate = delegate (userEntry commandUser, string argumentString, bool aSilent) {
 						string processedMessage = processCustomCommandArgs(message, argumentString);
+
 						m_BotBrain.sendDefaultChannelMessage(processedMessage);
 					};
 
@@ -152,7 +155,7 @@ namespace JerpDoesBots
 			return null;
 		}
 
-		public virtual void add(userEntry commandUser, string argumentString)
+		public virtual void add(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			string[] argumentList = argumentString.Split(new[] { ' ' }, 3);
 
@@ -188,7 +191,10 @@ namespace JerpDoesBots
 					addCommandCommand.Parameters.Add(new SQLiteParameter("@param7", getGameString()));          // Current Game (unused in base)
 
 					if (addCommandCommand.ExecuteNonQuery() > 0)
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandAddSuccess"), argumentList[0]));
+					{
+						if (!aSilent)
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandAddSuccess"), argumentList[0]));
+                    }
 					else
 						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandAddFail"), argumentList[0]));
 				}
@@ -197,12 +203,7 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(formatHint);
 		}
 
-		public void edit(userEntry commandUser, string argumentString)
-		{
-			// TODO: Add edit for custom commands
-		}
-
-		public void remove(userEntry commandUser, string argumentString)
+		public void remove(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))
 			{
@@ -215,7 +216,8 @@ namespace JerpDoesBots
 
 				if (removeCommandCommand.ExecuteNonQuery() > 0)
 				{
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandRemoveSuccess"), argumentString));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("commandRemoveSuccess"), argumentString));
 				}
 				else
 				{
@@ -236,7 +238,7 @@ namespace JerpDoesBots
 			return new { name = Convert.ToString(aEntryReader["command_name"]), message = Convert.ToString(aEntryReader["message"]) };
 		}
 
-		public virtual void outputList(userEntry commandUser, string argumentString)
+		public virtual void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			SQLiteCommand getEntriesCommand = new SQLiteCommand(selectAllQuery, m_BotBrain.storageDB);
 			SQLiteDataReader getEntriesReader = getEntriesCommand.ExecuteReader();
@@ -253,13 +255,13 @@ namespace JerpDoesBots
 
 			m_BotBrain.genericSerializeToFile(rowData, outputListFilename);
 
-			m_BotBrain.sendDefaultChannelMessage(outputListMessageSuccess);
+			if (!aSilent)
+				m_BotBrain.sendDefaultChannelMessage(outputListMessageSuccess);
 		}
 
 		public commandModule(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			formatHint = m_BotBrain.localizer.getString("commandFormatHint");
-			// TODO: Add ability to list out commands.
 		}
 	}
 }

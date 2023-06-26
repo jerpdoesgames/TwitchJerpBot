@@ -8,7 +8,7 @@ namespace JerpDoesBots
 		private string m_Name;
 		public string name { get { return m_Name; } }
 
-		public delegate void commandActionDelegate(userEntry aUser, string aArgumentString);
+		public delegate void commandActionDelegate(userEntry aUser, string aArgumentString, bool aSilent = false);
 		private commandActionDelegate m_CommandAction;
 
 		[JsonIgnore]

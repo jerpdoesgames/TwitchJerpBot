@@ -100,8 +100,7 @@ namespace JerpDoesBots
                     {
                         if (isValidAdCondition(curCommand.requirements))
                         {
-                            userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
-                            m_BotBrain.processUserCommand(ownerUser, curCommand.commandString);
+                            m_BotBrain.messageOrCommand(curCommand.commandString);
                         }
                     }
                 }
@@ -116,8 +115,7 @@ namespace JerpDoesBots
                         {
                             if (isValidAdCondition(curWarning.requirements))
                             {
-                                userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
-                                m_BotBrain.processUserMessage(ownerUser.Nickname, curWarning.commandString);
+                                m_BotBrain.messageOrCommand(curWarning.commandString);
                                 curWarning.setNotifyTriggered();
                             }
                         }
@@ -126,12 +124,13 @@ namespace JerpDoesBots
             }
         }
 
-        public void reloadConfig(userEntry commandUser, string argumentString)
+        public void reloadConfig(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_IsLoaded = loadConfig();
             if (m_IsLoaded)
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerCommercialReloadSuccess"));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerCommercialReloadSuccess"));
             }
             else
             {
@@ -139,13 +138,14 @@ namespace JerpDoesBots
             }
         }
 
-        public void setSnoozeCount(userEntry commandUser, string argumentString)
+        public void setSnoozeCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int snoozeCount;
             if (Int32.TryParse(argumentString, out snoozeCount))
             {
                 m_SnoozeCountSinceLastAd = snoozeCount;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountSet"), snoozeCount));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountSet"), snoozeCount));
             }
         }
 

@@ -159,7 +159,7 @@ namespace JerpDoesBots
             }
         }
 
-        private bool playSoundInternal(userEntry aUser, soundCommandDef curSound, bool aIsRandom = false, bool aOutputErrors = false)
+        private bool playSoundInternal(userEntry aUser, soundCommandDef curSound, bool aIsRandom = false, bool aOutputErrors = false, bool aSilentMode = false)
         {
             int pathCount = curSound.paths.Count;
             if (pathCount > 0)
@@ -200,7 +200,7 @@ namespace JerpDoesBots
                                 curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
                                 m_lastSound = curSound;
 
-                                if (aIsRandom)
+                                if (aIsRandom && !aSilentMode)
                                     m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
 
                                 return true;
@@ -253,7 +253,7 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void playSound(userEntry commandUser, string argumentString)
+        public void playSound(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!m_IsEnabled)
                 return;
@@ -264,13 +264,13 @@ namespace JerpDoesBots
                 curSound = m_Config.soundList[i];
                 if (curSound.name == argumentString)
                 {
-                    playSoundInternal(commandUser, curSound, false, true);
+                    playSoundInternal(commandUser, curSound, false, true, aSilent);
                     break;
                 }
             }
         }
 
-        public void setDevice(userEntry commandUser, string argumentString)
+        public void setDevice(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             bool success = false;
             int deviceNumber;
@@ -279,7 +279,10 @@ namespace JerpDoesBots
                 if (deviceNumber >= -1 && deviceNumber < WaveOut.DeviceCount)
                 {
                     m_DeviceNumber = deviceNumber;
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
+                    if (!aSilent)
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
+                    }
                     success = true;
                 }
             }
@@ -288,7 +291,7 @@ namespace JerpDoesBots
                 m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
         }
 
-        public void getDeviceList(userEntry commandUser, string argumentString)
+        public void getDeviceList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             for (int i=0; i < WaveOut.DeviceCount; i++)
             {
@@ -296,35 +299,40 @@ namespace JerpDoesBots
 
                 Console.WriteLine(string.Format(m_BotBrain.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
             }
-            m_BotBrain.sendDefaultChannelMessage("Device list sent to console.");
+
+            if (!aSilent)
+                m_BotBrain.sendDefaultChannelMessage("Device list sent to console.");
         }
 
-        public void setVolume(userEntry commandUser, string argumentString)
+        public void setVolume(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             float newVolume;
             if (float.TryParse(argumentString, out newVolume))
             {
                 newVolume = Math.Min(newVolume, 1.0f);
                 m_GlobalVolume = newVolume;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetGlobalVolume"), newVolume));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetGlobalVolume"), newVolume));
             }
         }
 
-        public void enable(userEntry commandUser, string argumentString)
+        public void enable(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_IsEnabled = true;
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundEnabled"));
+            if (!aSilent)
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundEnabled"));
         }
 
-        public void disable(userEntry commandUser, string argumentString)
+        public void disable(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_IsEnabled = false;
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundDisabled"));
+            if (!aSilent)
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundDisabled"));
         }
 
-        public void getList(userEntry commandUser, string argumentString)
+        public void getList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundList"));
         }
@@ -390,18 +398,22 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void reloadSounds(userEntry commandUser, string argumentString)
+        public void reloadSounds(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (loadSounds())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadSuccess"));
+            {
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadSuccess"));
+            }
+                
             else
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadFail"));
         }
 
-        public void playRandom(userEntry commandUser, string argumentString)
+        public void playRandom(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int soundID = m_BotBrain.randomizer.Next(0, m_Config.soundList.Count - 1);
-            playSoundInternal(commandUser, m_Config.soundList[soundID], true);
+            playSoundInternal(commandUser, m_Config.soundList[soundID], true, false, aSilent);
         }
 
         public soundCommands(jerpBot aJerpBot) : base(aJerpBot, true, true, false)

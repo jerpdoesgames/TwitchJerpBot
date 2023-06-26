@@ -286,25 +286,27 @@ namespace JerpDoesBots
             return 0;
         }
 
-		public void forceGame(userEntry commandUser, string argumentString)
+		public void forceGame(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				m_Game = argumentString;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameSet"), argumentString));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameSet"), argumentString));
             }
 		}
 
-		public void clearGame(userEntry commandUser, string argumentString)
+		public void clearGame(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(m_Game))
 			{
 				m_Game = null;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameClear"), getGameString()));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameClear"), getGameString()));
             }
 		}
 
-        private void setValue(userEntry commandUser, string argumentString, string commandName = "set")
+        private void setValue(userEntry commandUser, string argumentString, string commandName = "set", bool aSilent = false)
         {
             string countName;
             int countValue;
@@ -322,7 +324,11 @@ namespace JerpDoesBots
                 if (curCounter.Owner == null || curCounter.Owner.ToLower() == commandUser.Nickname.ToLower())
                 {
                     if (curCounter.set(countValue))
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterValueSet"), curCounter.Name, curCounter.Count, curCounter.Game));
+                    {
+                        if (!aSilent)
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterValueSet"), curCounter.Name, curCounter.Count, curCounter.Game));
+                    }
+                        
                 }
                 else
                 {
@@ -335,12 +341,12 @@ namespace JerpDoesBots
             }
         }
 
-		public void set(userEntry commandUser, string argumentString)
+		public void set(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
-            setValue(commandUser, argumentString);
+            setValue(commandUser, argumentString, "set", aSilent);
 		}
 
-		public void add(userEntry commandUser, string argumentString)
+		public void add(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string countName;
             int countValue;
@@ -355,7 +361,7 @@ namespace JerpDoesBots
                 else
                     countValue = curCounter.Count + countValue;
 
-                setValue(commandUser, countName + " " + countValue, "add");
+                setValue(commandUser, countName + " " + countValue, "add", aSilent);
             }
             else
             {
@@ -363,7 +369,7 @@ namespace JerpDoesBots
             }
         }
 
-		public void remove(userEntry commandUser, string argumentString)
+		public void remove(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string countName;
             int countValue;
@@ -378,7 +384,7 @@ namespace JerpDoesBots
                 else
                     countValue = curCounter.Count - countValue;
 
-                setValue(commandUser, countName + " " + countValue, "remove");
+                setValue(commandUser, countName + " " + countValue, "remove", aSilent);
             }
             else
             {
@@ -386,7 +392,7 @@ namespace JerpDoesBots
             }
 		}
 
-		public void display(userEntry commandUser, string argumentString)
+		public void display(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string counterName;
             string argument;
@@ -410,7 +416,7 @@ namespace JerpDoesBots
             }
 		}
 
-		public void delete(userEntry commandUser, string argumentString)
+		public void delete(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string countName;
             int countValue;
@@ -434,8 +440,9 @@ namespace JerpDoesBots
 
                     if (curCounter.delete())
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterRemoveSuccess"), name, game));
                         m_Entries[game].Remove(name);
+                        if (!aSilent)
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterRemoveSuccess"), name, game));
                     }
                 }
                 else
@@ -449,7 +456,7 @@ namespace JerpDoesBots
             }
 		}
 
-		public void describe(userEntry commandUser, string argumentString)
+		public void describe(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string counterName;
             string argument;
@@ -462,7 +469,15 @@ namespace JerpDoesBots
                     counterEntry curCount = checkCreateEntry(counterName);
 
                     if (curCount.describe(argument))
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionUpdateSuccess"), curCount.Name));
+                    {
+                        if (aSilent)
+                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionUpdateSuccess"), curCount.Name));
+                    }
+                    else
+                    {
+                        // TODO: failure message?
+                    }
+                        
                 }
                 else
                 {
@@ -475,7 +490,7 @@ namespace JerpDoesBots
             }
 		}
 
-		public void about(userEntry commandUser, string argumentString)
+		public void about(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string counterName;
             string argument;
@@ -502,7 +517,7 @@ namespace JerpDoesBots
             }
 		}
 
-		public void setOwner(userEntry commandUser, string argumentString)
+		public void setOwner(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string counterName;
             string argument;
@@ -515,7 +530,8 @@ namespace JerpDoesBots
                     counterEntry curCount = checkCreateEntry(counterName);
 
                     curCount.Owner = argument;
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerSetSuccess"), curCount.Name, argument));
+                    if (!aSilent)
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerSetSuccess"), curCount.Name, argument));
                 }
                 else
                 {
@@ -528,7 +544,7 @@ namespace JerpDoesBots
             }
 		}
 
-		public void clearOwner(userEntry commandUser, string argumentString)
+		public void clearOwner(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             string counterName;
             string argument;
@@ -539,7 +555,8 @@ namespace JerpDoesBots
                 counterEntry curCount = checkCreateEntry(argumentString, false);
 
                 curCount.Owner = null;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerClear"), curCount.Name));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerClear"), curCount.Name));
             }
             else
             {
@@ -547,7 +564,7 @@ namespace JerpDoesBots
             }
 		}
 
-        public void outputList(userEntry commandUser, string argumentString)
+        public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             string getCountersQuery = "SELECT * FROM counters ORDER BY game ASC, name ASC";
 
@@ -566,7 +583,8 @@ namespace JerpDoesBots
 
             m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_counters.json");
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOutputListSuccess"));
+            if (!aSilent)
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOutputListSuccess"));
         }
 
         public counter(jerpBot aJerpBot) : base(aJerpBot, true, true, false)

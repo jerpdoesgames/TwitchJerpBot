@@ -351,11 +351,12 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void updatelocal(userEntry commandUser, string argumentString)
+        public void updatelocal(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (updateLocalRewardsFromRemoteData())
             {
-                m_BotBrain.sendDefaultChannelMessage("Updated local reward point data based on remote rewards.");
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage("Updated local reward point data based on remote rewards.");
             }
             else
             {

@@ -36,7 +36,7 @@ namespace JerpDoesBots
 				return " " + m_BotBrain.localizer.getString("raffleHintJoin");
 		}
 
-		public void about(userEntry commandUser, string argumentString)
+		public void about(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(m_Description))
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleDescriptionAnnounce"), m_Description));
@@ -56,7 +56,6 @@ namespace JerpDoesBots
 				{
 					if (aAnnounceUpdate)
 						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionEnabled"));
-
 				}
 				else
 				{
@@ -66,9 +65,9 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void toggleUseRedemptions(userEntry commandUser, string argumentString)
+		public void toggleUseRedemptions(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-			setUseRedemptions(!m_UsePointRedemption);
+			setUseRedemptions(!m_UsePointRedemption, !aSilent);
 		}
 
 		private void createUpdateChannelPointRedemptionReward()
@@ -77,14 +76,15 @@ namespace JerpDoesBots
 			pointRewardManager.updateRemoteRewardsFromLocalData();
 		}
 
-		public void describe(userEntry commandUser, string argumentString)
+		public void describe(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				m_Description = argumentString;
                 if (m_IsActive)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleDescriptionSet"));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleDescriptionSet"));
                 }
 			}
 		}
@@ -102,7 +102,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void addUser(userEntry commandUser, string argumentString)
+		public void addUser(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (m_UsePointRedemption)
             {
@@ -120,13 +120,14 @@ namespace JerpDoesBots
 			usersAddedRecently.Clear();
 		}
 
-		public void reset(userEntry commandUser, string argumentString)
+		public void reset(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			resetEntries();
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCleared"));
+			if (!aSilent)
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCleared"));
 		}
 
-		public void open(userEntry commandUser, string argumentString)
+		public void open(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			lock (messageLastLock)
             {
@@ -134,7 +135,9 @@ namespace JerpDoesBots
 				pointRewardManager.updateRemoteRewardsFromLocalData();
 
                 resetEntries();
-                m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
+
+				if (!aSilent)
+					m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
 
                 m_Throttler.trigger();
 
@@ -142,26 +145,29 @@ namespace JerpDoesBots
             }
 		}
 
-		public void close(userEntry commandUser, string argumentString)
+		public void close(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			m_IsActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleClosed"));
+
+			if (!aSilent)
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleClosed"));
 
 			m_config.rewardInfo.enabled = false;
             createUpdateChannelPointRedemptionReward();
 
         }
 
-		public void count(userEntry commandUser, string argumentString)
+		public void count(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int userCount = userList.Count();
+
 			if (m_IsActive)
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserCount"), userCount) + getJoinString());
 			else
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserCount"), userCount));
 		}
 
-		public void draw(userEntry commandUser, string argumentString)
+		public void draw(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int userCount = userList.Count();
 
@@ -306,6 +312,5 @@ namespace JerpDoesBots
 			m_BotBrain.addChatCommand(tempDef);
 
 		}
-
 	}
 }

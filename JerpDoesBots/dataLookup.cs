@@ -40,10 +40,13 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void reloadConfig(userEntry commandUser, string argumentString)
+        public void reloadConfig(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (loadConfig())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadSuccess"));
+            {
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadSuccess"));
+            }
             else
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadFail"));
         }
@@ -113,7 +116,7 @@ namespace JerpDoesBots
             return output;
         }
 
-    public void searchForEntry(userEntry commandUser, string argumentString)
+    public void searchForEntry(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_IsLoaded)
             {

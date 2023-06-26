@@ -27,15 +27,18 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void reloadConfig(userEntry commandUser, string argumentString)
+        public void reloadConfig(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (loadConfig())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("mediaMonitorLoadSuccess"));
+            {
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("mediaMonitorLoadSuccess"));
+            }
             else
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("mediaMonitorLoadFail"));
         }
 
-        public void currentSong(userEntry commandUser, string argumentString)
+        public void currentSong(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!string.IsNullOrEmpty(m_LastTrackTitle))
             {

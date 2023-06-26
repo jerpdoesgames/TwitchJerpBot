@@ -86,13 +86,13 @@ namespace JerpDoesBots
             return false;
 		}
 
-		public void applyProfile(userEntry commandUser, string argumentString)
+		public void applyProfile(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (m_IsLoaded && !string.IsNullOrEmpty(argumentString))
 			{
 				if (m_Config.entries.ContainsKey(argumentString))
 				{
-					applyProfileInternal(argumentString);
+					applyProfileInternal(argumentString, aSilent);
                     // TODO: Error if applyProfileInternal returns false for something about failing to apply?
                 }
                 else
@@ -158,11 +158,11 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("channelPointRewardsCreatedRemoved"), pointRewardManager.lastUpdateRewardsAdded, pointRewardManager.lastUpdateRewardsRemoved, pointRewardManager.lastUpdateRewardsUpdated));
         }
 
-		public void applyRewardGroup(userEntry commandUser, string argumentString)
+		public void applyRewardGroup(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			if (m_IsLoaded && !string.IsNullOrEmpty(argumentString))
             {
-				applyRewardGroupInternal(argumentString);
+				applyRewardGroupInternal(argumentString, aSilent);
             }
         }
 
@@ -197,13 +197,14 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void reload(userEntry commandUser, string argumentString)
+		public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			load();
 
 			if (m_IsLoaded)
             {
-				m_BotBrain.sendDefaultChannelMessage("Stream Profiles reloaded");
+				if (!aSilent)
+					m_BotBrain.sendDefaultChannelMessage("Stream Profiles reloaded");
             }
 			else
             {

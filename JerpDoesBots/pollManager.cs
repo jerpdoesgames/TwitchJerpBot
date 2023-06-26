@@ -85,7 +85,7 @@ namespace JerpDoesBots
                 choicesNew++;
         }
 
-		public void vote(userEntry commandUser, string argumentString)
+		public void vote(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (hasPoll && isActive)
 			{
@@ -119,7 +119,7 @@ namespace JerpDoesBots
 			return output;
 		}
 
-		public void open(userEntry commandUser, string argumentString)
+		public void open(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             lock(messageLastLock)
             {
@@ -158,13 +158,14 @@ namespace JerpDoesBots
 
 		}
 
-		public void close(userEntry commandUser, string argumentString)
+		public void close(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("pollClose"));
+			if (!aSilent)
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("pollClose"));
 		}
 
-		public void about(userEntry commandUser, string argumentString)
+		public void about(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(description))
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("pollDescriptionAnnounce"), description));
@@ -172,7 +173,7 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("pollDescriptionEmpty"));
 		}
 
-        public void choices(userEntry commandUser, string argumentString)
+        public void choices(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (isActive)
             {
@@ -180,19 +181,20 @@ namespace JerpDoesBots
             }
         }
 
-        public void describe(userEntry commandUser, string argumentString)
+        public void describe(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				description = argumentString;
                 if (isActive)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("pollDescriptionUpdate"));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("pollDescriptionUpdate"));
                 }
 			}
 		}
 
-		public void count(userEntry commandUser, string argumentString)
+		public void count(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (hasPoll)
 			{
@@ -218,7 +220,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void results(userEntry commandUser, string argumentString)
+		public void results(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			string output = "";
 			if (hasPoll)
