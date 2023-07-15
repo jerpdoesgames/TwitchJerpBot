@@ -64,6 +64,7 @@ namespace JerpDoesBots
         public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
         public string ownerUserID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
         public string botUserID { get { return m_CoreConfig.configData.connections[0].channel_id.ToString(); } }
+        public string botUsername { get { return m_CoreConfig.configData.connections[0].username; } }
 
         private DateTime m_LiveStartTime;
         private SQLiteConnection m_StorageDB;

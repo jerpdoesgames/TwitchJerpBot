@@ -95,7 +95,10 @@ namespace JerpDoesBots
 
 		public bool canUse(userEntry aUser, long aTimeNow)
 		{
-			if (aUser.isBroadcaster)
+			if (aUser.isBroadcaster || aUser.Nickname.ToLower() == jerpBot.instance.ownerUsername.ToLower())
+				return true;
+
+			if (aUser.Nickname.ToLower() == jerpBot.instance.botUsername.ToLower())
 				return true;
 
 			if (isOnCooldown(aTimeNow, aUser))
