@@ -665,31 +665,60 @@ namespace JerpDoesBots
 
         public void followage(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            if (commandUser.isBroadcaster)
+            userEntry checkUser = commandUser;
+            if (!string.IsNullOrEmpty(argumentString))
             {
-                sendDefaultChannelMessage(string.Format(localizer.getString("followageIsBroadcaster"), commandUser.Nickname));
-            }
-            else
-            {
-                TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getFollowsResponse = getUserFollowsResult(commandUser);
-                if (getFollowsResponse != null && getFollowsResponse.Follows.Length > 0)
+                userEntry argUser = checkCreateUser(argumentString);
+                if (!string.IsNullOrEmpty(argUser.twitchUserID))
                 {
-                    commandUser.isFollower = (getFollowsResponse.TotalFollows > 0);
-                    commandUser.lastFollowCheckTime = DateTime.Now;
+                    checkUser = argUser;
+                }
+                else
+                {
+                    List<string> userCheckList = new List<string>();
+                    userCheckList.Add(argumentString);
+                    Task< TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> getFollowResponse = twitchAPI.Helix.Users.GetUsersAsync(null, userCheckList);
+                    getFollowResponse.Wait();
 
-                    if (commandUser.isFollower)
+                    if (getFollowResponse.Result != null && getFollowResponse.Result.Users.Length == 1)
                     {
-                        string followDurationString = simpleDurationString(DateTime.Now.Subtract(getFollowsResponse.Follows[0].FollowedAt));
-                        sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), commandUser.Nickname, followDurationString));
+                        userEntry resultUser = checkCreateUser(getFollowResponse.Result.Users[0].DisplayName);
+                        resultUser.twitchUserID = getFollowResponse.Result.Users[0].Id;
+                        checkUser = resultUser;
                     }
                     else
                     {
-                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), commandUser.Nickname));
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFound"), checkUser.Nickname));
+                        return;
+                    }
+                }
+            }
+
+            if (checkUser.isBroadcaster)
+            {
+                sendDefaultChannelMessage(string.Format(localizer.getString("followageIsBroadcaster"), checkUser.Nickname));
+            }
+            else
+            {
+                TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getFollowsResponse = getUserFollowsResult(checkUser);
+                if (getFollowsResponse != null && getFollowsResponse.Follows.Length > 0)
+                {
+                    checkUser.isFollower = (getFollowsResponse.TotalFollows > 0);
+                    checkUser.lastFollowCheckTime = DateTime.Now;
+
+                    if (checkUser.isFollower)
+                    {
+                        string followDurationString = simpleDurationString(DateTime.Now.Subtract(getFollowsResponse.Follows[0].FollowedAt));
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), checkUser.Nickname, followDurationString));
+                    }
+                    else
+                    {
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), checkUser.Nickname));
                     }
                 }
                 else
                 {
-                    sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), commandUser.Nickname));
+                    sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), checkUser.Nickname));
                 }
             }
         }
