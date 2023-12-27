@@ -147,22 +147,24 @@ namespace JerpDoesBots
 			}
 		}
 
-        public void shoutout(userEntry commandUser, string argumentString)
+        public void shoutout(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             string nickname = jerpBot.getFirstTokenString(argumentString);
 			shoutoutInternal(nickname, true);
         }
 
-        public void enableAPI(userEntry commandUser, string argumentString)
+        public void enableAPI(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			m_APIShoutEnabled = true;
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("shoutoutAPIEnabled"));
+            if (aSilent)
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("shoutoutAPIEnabled"));
         }
 
-        public void disableAPI(userEntry commandUser, string argumentString)
+        public void disableAPI(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_APIShoutEnabled = false;
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("shoutoutAPIDisabled"));
+            if (!aSilent)
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("shoutoutAPIDisabled"));
         }
         private bool load()
         {
@@ -180,12 +182,13 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void reload(userEntry commandUser, string argumentString)
+        public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             loaded = load();
             if (loaded)
             {
-                m_BotBrain.sendDefaultChannelMessage("Reloaded shoutouts config");
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage("Reloaded shoutouts config");
             }
             else
             {

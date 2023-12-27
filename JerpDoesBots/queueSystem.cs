@@ -171,9 +171,9 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReset"));
 		}
 
-		public void resetEntries(userEntry commandUser, string argumentString)
+		public void resetEntries(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
-			reset(true);
+			reset(!aSilent);
 		}
 
         public bool validateUser(userEntry queueUser)
@@ -213,7 +213,7 @@ namespace JerpDoesBots
 			return isValid;
 		}
 
-        public void setMode(userEntry commandUser, string argumentString)
+        public void setMode(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             bool isValid = false;
 
@@ -241,15 +241,18 @@ namespace JerpDoesBots
                 reset(false);
                 m_QueueMode = argumentString;
 
-                if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueModeSet"), m_QueueMode) + "  " + joinString());
-                else
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueModeSet"), m_QueueMode));
+                if (!aSilent)
+                {
+                    if (isActive)
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueModeSet"), m_QueueMode) + "  " + joinString());
+                    else
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueModeSet"), m_QueueMode));
+                }
             }
         }
 
 
-        public void setType(userEntry commandUser, string argumentString)
+        public void setType(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			bool isValid = false;
 
@@ -273,14 +276,18 @@ namespace JerpDoesBots
 				m_QueueType = argumentString;
 
 
-                if (isActive)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueTypeSet"), m_QueueType) + "  " + joinString());
-                else
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueTypeSet"), m_QueueType));
+                if (!aSilent)
+                {
+                    if (isActive)
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueTypeSet"), m_QueueType) + "  " + joinString());
+                    else
+                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueTypeSet"), m_QueueType));
+                }
+
 			}
 		}
 
-		public void about(userEntry commandUser, string argumentString)
+		public void about(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(description))
                 m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueDescriptionDisplay"), description));
@@ -288,16 +295,17 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueDescriptionEmpty"));
 		}
 
-		public void describe(userEntry commandUser, string argumentString)
+		public void describe(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))
 			{
 				description = argumentString;
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueDescriptionUpdated"));
+                if (!aSilent)
+				    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueDescriptionUpdated"));
 			}
 		}
 
-		public void count(userEntry commandUser, string argumentString)
+		public void count(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int userCount = m_EntryList.Count();
 
@@ -523,7 +531,7 @@ namespace JerpDoesBots
             return isValid;
         }
 
-		public void enter(userEntry commandUser, string argumentString)
+		public void enter(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (isActive)
 			{
@@ -635,7 +643,7 @@ namespace JerpDoesBots
             return posFirst;
         }
 
-        public void position(userEntry commandUser, string argumentString)
+        public void position(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int totalEntries;
             int position = getPosition(commandUser, out totalEntries);
@@ -657,7 +665,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void replace(userEntry commandUser, string argumentString)
+        public void replace(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_QueueType != QUEUE_TYPE_PLAIN)
             {
@@ -688,7 +696,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void open(userEntry commandUser, string argumentString)
+        public void open(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             lock(messageLastLock)
             {
@@ -701,30 +709,35 @@ namespace JerpDoesBots
                 if (resetEntries)
                 {
                     reset(false);
-                    m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("queueOpenedReset") + "  " + newJoinString);
+
+                    if (!aSilent)
+                        m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("queueOpenedReset") + "  " + newJoinString);
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("queueOpened") + "  " + newJoinString);
+                    if (!aSilent)
+                        m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("queueOpened") + "  " + newJoinString);
                 }
 
                 m_Throttler.trigger();
             }
 		}
 
-		public void close(userEntry commandUser, string argumentString)
+		public void close(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			isActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueClosed"));
+            if (!aSilent)
+			    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueClosed"));
 		}
 
-        public void setMaxCount(userEntry commandUser, string argumentString)
+        public void setMaxCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int newListMax;
             if (Int32.TryParse(argumentString, out newListMax))
             {
                 m_ListMax = newListMax;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueMaxEntriesSet"), m_ListMax));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueMaxEntriesSet"), m_ListMax));
             }
         }
 
@@ -759,7 +772,7 @@ namespace JerpDoesBots
             return position + ") " + queueEntry.user.Nickname;
         }
 
-        public void list(userEntry commandUser, string argumentString)
+        public void list(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_EntryList.Count > 0)
             {
@@ -784,7 +797,7 @@ namespace JerpDoesBots
 
         }
 
-        public void leave(userEntry commandUser, string argumentString)
+        public void leave(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int removeCount = 0;
             foreach (queueData queueEntry in m_EntryList.ToList())
@@ -795,21 +808,26 @@ namespace JerpDoesBots
                     removeCount++;
                 }
             }
-            if (removeCount == 1)
+
+            if (!aSilent)
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveSingle"), commandUser.Nickname));
+                if (removeCount == 1)
+                {
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveSingle"), commandUser.Nickname));
+                }
+                else if (removeCount > 1)
+                {
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveMultiple"), commandUser.Nickname, removeCount));
+                }
+                else
+                {
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveNotFound"), commandUser.Nickname));
+                }
             }
-            else if (removeCount > 1)
-            {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveMultiple"), commandUser.Nickname, removeCount));
-            }
-            else
-            {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queueLeaveNotFound"), commandUser.Nickname));
-            }
+
         }
 
-        public void viewLevel(userEntry commandUser, string argumentString)
+        public void viewLevel(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
             {
@@ -824,15 +842,18 @@ namespace JerpDoesBots
             }
         }
 
-        public void reloadSettings(userEntry commandUser, string argumentString)
+        public void reloadSettings(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (load())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReloadSuccess"));
+            {
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReloadSuccess"));
+            }
             else
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("queueReloadFail"));
         }
 
-        public void current(userEntry commandUser, string argumentString)
+        public void current(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_CurEntry != null)
             {
@@ -875,7 +896,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void next(userEntry commandUser, string argumentString)
+        public void next(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             List<queueData> entryList = getEntryList();
             int userCount = entryList.Count();
@@ -929,7 +950,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void subNext(userEntry commandUser, string argumentString)
+        public void subNext(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             List<queueData> subList = getEntryList(false, true, true, false);
             queueData nextEntry;
@@ -955,7 +976,7 @@ namespace JerpDoesBots
 
         }
 
-        public void subRandom(userEntry commandUser, string argumentString)
+        public void subRandom(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             queueData nextEntry;
             bool foundEntry = false;
@@ -983,7 +1004,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void random(userEntry commandUser, string argumentString)
+        public void random(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             List<queueData> entryList = getEntryList();
             int userCount = entryList.Count();
@@ -1006,14 +1027,15 @@ namespace JerpDoesBots
             }
         }
 
-        public void permitNoFilter(userEntry commandUser, string argumentString)
+        public void permitNoFilter(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
             {
                 userEntry newUser = m_BotBrain.checkCreateUser(argumentString);
                 m_PermitList.Add(newUser, DateTime.Now);
 
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
             }
         }
 
@@ -1067,7 +1089,7 @@ namespace JerpDoesBots
             return outList;
         }
 
-        public void weightedRandom(userEntry commandUser, string argumentString)
+        public void weightedRandom(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             List<queueData> entryList = getEntryList();
 

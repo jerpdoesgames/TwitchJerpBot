@@ -89,7 +89,7 @@ namespace JerpDoesBots
 
             if (messageToSend != null && !String.IsNullOrEmpty(messageToSend.text))
             {
-                if (messageToSend.text.IndexOf('!') == 0)
+                if (m_BotBrain.isValidCommandFormat(messageToSend.text))
                 {
                     userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
                     m_BotBrain.processUserCommand(ownerUser, messageToSend.text);
@@ -106,19 +106,20 @@ namespace JerpDoesBots
             m_Throttler.trigger();
         }
 
-        public void forceNext(userEntry commandUser, string argumentString)
+        public void forceNext(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_Loaded)
                 sendNextMessage();
         }
 
-        public void reload(userEntry commandUser, string argumentString)
+        public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_Loaded = loadConfig();
             if (m_Loaded)
             {
                 m_MessageIndex = -1;
-                m_BotBrain.sendDefaultChannelMessage("Successfully reloaded automated messages.");
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage("Successfully reloaded automated messages.");
             }
             else
                 m_BotBrain.sendDefaultChannelMessage("Failed to reload automated messages.");

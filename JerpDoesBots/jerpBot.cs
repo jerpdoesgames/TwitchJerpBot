@@ -14,6 +14,8 @@ using TwitchLib.PubSub.Events;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Text.Json;
+using NAudio.Wave.Asio;
+
 namespace JerpDoesBots
 {
     class jerpBot
@@ -62,6 +64,7 @@ namespace JerpDoesBots
         public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
         public string ownerUserID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
         public string botUserID { get { return m_CoreConfig.configData.connections[0].channel_id.ToString(); } }
+        public string botUsername { get { return m_CoreConfig.configData.connections[0].username; } }
 
         private DateTime m_LiveStartTime;
         private SQLiteConnection m_StorageDB;
@@ -336,6 +339,11 @@ namespace JerpDoesBots
         /// </summary>
         public static string getCommandName(string aInput)
         {
+            if (aInput[0] == '@' && aInput[1] == '!')
+            {
+                aInput = aInput.Substring(1);   // Strip silent mode character
+            }
+
             if (aInput.Length > 1 && aInput[0] == '!')
             {
                 return aInput.Substring(1).Split(' ')[0];   // TODO: Find a space in a non-stupid way
@@ -462,7 +470,7 @@ namespace JerpDoesBots
             return null;
         }
 
-        public void getGameCommand(userEntry commandUser, string argumentString)
+        public void getGameCommand(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoCurrentGame"), m_Game));
         }
@@ -500,7 +508,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void getStreamTitle(userEntry commandUser, string argumentString)
+        public void getStreamTitle(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if ((commandUser.isBroadcaster || commandUser.isModerator) && !string.IsNullOrEmpty(argumentString))
             {
@@ -526,7 +534,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void getViewCount(userEntry commandUser, string argumentString)
+        public void getViewCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_IsLive)
                 sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoViewCountLive"), m_ViewersLast));
@@ -534,7 +542,7 @@ namespace JerpDoesBots
                 sendChannelMessage(m_DefaultChannel, m_Localizer.getString("infoViewCountOffline"));
         }
 
-        public void getNewSubCount(userEntry commandUser, string argumentString)
+        public void getNewSubCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_SubsThisSession > 0)
                 sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("infoNewSubCount"), m_SubsThisSession.ToString()));
@@ -542,19 +550,23 @@ namespace JerpDoesBots
                 sendChannelMessage(m_DefaultChannel, m_Localizer.getString("infoNewSubCountNone"));
         }
 
-        public void setUserBrb(userEntry commandUser, string argumentString)
+        public void setUserBrb(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetAway"), commandUser.Nickname));
+            if (!aSilent)
+                sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetAway"), commandUser.Nickname));
+
             commandUser.isBrb = true;
         }
 
-        public void setUserBack(userEntry commandUser, string argumentString)
+        public void setUserBack(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetBack"), commandUser.Nickname));
+            if (!aSilent)
+                sendChannelMessage(m_DefaultChannel, string.Format(m_Localizer.getString("brbSetBack"), commandUser.Nickname));
+
             commandUser.isBrb = false;
         }
 
-        public void announceChatterFollowingCount(userEntry commandUser, string argumentString)
+        public void announceChatterFollowingCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int chattersTotal;
             int chattersFollowing = getNumChattersFollowing(out chattersTotal);
@@ -576,11 +588,12 @@ namespace JerpDoesBots
             File.WriteAllText(outputPath, outputString);
         }
 
-        public void outputCommandList(userEntry commandUser, string argumentString)
+        public void outputCommandList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             genericSerializeToFile(m_CommandList, "jerpdoesbots_commands.json");
 
-            sendDefaultChannelMessage("Successfully wrote command json to output directory.");
+            if (!aSilent)
+                sendDefaultChannelMessage("Successfully wrote command json to output directory.");
         }
 
         // This is crude and could be replaced with something better
@@ -612,7 +625,7 @@ namespace JerpDoesBots
             return string.Join(", ", outputList);
         }
 
-        public void marker(userEntry commandUser, string argumentString)
+        public void marker(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_IsLive)
             {
@@ -629,7 +642,9 @@ namespace JerpDoesBots
                     if (createMarkerTask.Result != null)
                     {
                         TimeSpan markerPos = TimeSpan.FromSeconds(createMarkerTask.Result.Data[0].PositionSeconds);
-                        sendDefaultChannelMessage(string.Format(localizer.getString("markerCreateSuccess"), simpleDurationString(markerPos)));
+
+                        if (!aSilent)
+                            sendDefaultChannelMessage(string.Format(localizer.getString("markerCreateSuccess"), simpleDurationString(markerPos)));
                     }
                     else
                     {
@@ -648,76 +663,114 @@ namespace JerpDoesBots
             }
         }
 
-        public void followage(userEntry commandUser, string argumentString)
+        public void followage(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            if (commandUser.isBroadcaster)
+            userEntry checkUser = commandUser;
+            if (!string.IsNullOrEmpty(argumentString))
             {
-                sendDefaultChannelMessage(string.Format(localizer.getString("followageIsBroadcaster"), commandUser.Nickname));
-            }
-            else
-            {
-                TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getFollowsResponse = getUserFollowsResult(commandUser);
-                if (getFollowsResponse != null && getFollowsResponse.Follows.Length > 0)
+                userEntry argUser = checkCreateUser(argumentString);
+                if (!string.IsNullOrEmpty(argUser.twitchUserID))
                 {
-                    commandUser.isFollower = (getFollowsResponse.TotalFollows > 0);
-                    commandUser.lastFollowCheckTime = DateTime.Now;
+                    checkUser = argUser;
+                }
+                else
+                {
+                    List<string> userCheckList = new List<string>();
+                    userCheckList.Add(argumentString);
+                    Task< TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> getFollowResponse = twitchAPI.Helix.Users.GetUsersAsync(null, userCheckList);
+                    getFollowResponse.Wait();
 
-                    if (commandUser.isFollower)
+                    if (getFollowResponse.Result != null && getFollowResponse.Result.Users.Length == 1)
                     {
-                        string followDurationString = simpleDurationString(DateTime.Now.Subtract(getFollowsResponse.Follows[0].FollowedAt));
-                        sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), commandUser.Nickname, followDurationString));
+                        userEntry resultUser = checkCreateUser(getFollowResponse.Result.Users[0].DisplayName);
+                        resultUser.twitchUserID = getFollowResponse.Result.Users[0].Id;
+                        checkUser = resultUser;
                     }
                     else
                     {
-                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), commandUser.Nickname));
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFound"), checkUser.Nickname));
+                        return;
+                    }
+                }
+            }
+
+            if (checkUser.isBroadcaster)
+            {
+                sendDefaultChannelMessage(string.Format(localizer.getString("followageIsBroadcaster"), checkUser.Nickname));
+            }
+            else
+            {
+                TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getFollowsResponse = getUserFollowsResult(checkUser);
+                if (getFollowsResponse != null && getFollowsResponse.Follows.Length > 0)
+                {
+                    checkUser.isFollower = (getFollowsResponse.TotalFollows > 0);
+                    checkUser.lastFollowCheckTime = DateTime.Now;
+
+                    if (checkUser.isFollower)
+                    {
+                        string followDurationString = simpleDurationString(DateTime.Now.Subtract(getFollowsResponse.Follows[0].FollowedAt));
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), checkUser.Nickname, followDurationString));
+                    }
+                    else
+                    {
+                        sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), checkUser.Nickname));
                     }
                 }
                 else
                 {
-                    sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), commandUser.Nickname));
+                    sendDefaultChannelMessage(string.Format(localizer.getString("followageNotFollowing"), checkUser.Nickname));
                 }
             }
         }
 
-        public void getHelpString(userEntry commandUser, string argumentString)
+        public void getHelpString(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             sendChannelMessage(m_DefaultChannel, m_Localizer.getString("helpText"));
         }
 
-        public void quitCommand(userEntry commandUser, string argumentString)
+        public void quitCommand(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            if (actionQueue.Count > 0)
+            if (!aSilent)
             {
-                m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuitMessagesQueued"), false);
-            }
-            else
-            {
-                m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuit"), false);
+                if (actionQueue.Count > 0)
+                {
+                    m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuitMessagesQueued"), false);
+                }
+                else
+                {
+                    m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuit"), false);
+                }
             }
 
             isDone = true;
             quit();
         }
 
-        public void processUserCommand(userEntry commandUser, string message)
+        public bool processUserCommand(userEntry aCommandUser, string aMessage)
         {
+            bool silentMode = aMessage[0] == '@';
+            if (silentMode)
+            {
+                aMessage = aMessage.Substring(1);
+            }
+
             if (!m_IsFullyLoaded || m_IsDone)
             {
-                return;
+                return false;
             }
-            int commandEnd = message.IndexOf(' ');
+            int commandEnd = aMessage.IndexOf(' ');
             string command;
 
             string argumentString = "";
 
             if (commandEnd > 0)
             {
-                command = message.Substring(1, commandEnd);
-                argumentString = message.Substring(commandEnd + 1);
+                command = aMessage.Substring(1, commandEnd);
+                argumentString = aMessage.Substring(commandEnd + 1);
             }
             else
             {
-                command = message.Substring(1);
+                command = aMessage.Substring(1);
             }
 
             command = command.ToLower().TrimEnd();
@@ -726,7 +779,7 @@ namespace JerpDoesBots
             chatCommandDef commandDef = null;
             for (int i = 0; i < m_CommandList.Count; i++)
             {
-                commandDef = findCommand(m_CommandList[i], message.Substring(1), 0, ref commandLength);
+                commandDef = findCommand(m_CommandList[i], aMessage.Substring(1), 0, ref commandLength);
 
                 if (commandDef != null)
                     break;
@@ -749,22 +802,28 @@ namespace JerpDoesBots
                         {
                             argumentString = " " + argumentString;
                         }
-                        processUserCommand(commandUser, foundAlias[i] + argumentString); // TODO: Exploit checking on argumentString
+                        return processUserCommand(aCommandUser, foundAlias[i] + argumentString); // TODO: Exploit checking on argumentString
                     }
-                    return;
+                    return true;    // TODO: Return actual command output
                 }
             }
 
-            if (commandDef != null && commandDef.Run != null && commandDef.canUse(commandUser, m_ActionTimer.ElapsedMilliseconds))
+            if (commandDef != null && commandDef.Run != null && commandDef.canUse(aCommandUser, m_ActionTimer.ElapsedMilliseconds))
             {
-                argumentString = message.Substring(Math.Min(message.Length, commandLength + 1));
+                argumentString = aMessage.Substring(Math.Min(aMessage.Length, commandLength + 1));
                 commandDef.timeLast = m_ActionTimer.ElapsedMilliseconds;
-                commandDef.Run(commandUser, argumentString);
-                return;
+                commandDef.Run(aCommandUser, argumentString, silentMode);
+                return true;    // TODO: Return actual command output
             }
 
             if (m_SoundCommandModule.soundExists(command))
-                processUserCommand(commandUser, "!sound " + command);
+            {
+                string silentPrefix = silentMode ? "@" : "";
+                return processUserCommand(aCommandUser, silentPrefix + "!sound " + command);
+            }
+                
+
+            return true;    // TODO: Return actual command output
 
         }
 
@@ -837,7 +896,12 @@ namespace JerpDoesBots
             messageUser.inChannel = aHasJoined;
         }
 
-        public void processUserMessage(string aNickname, string aMessage)
+        public bool isValidCommandFormat(string aMessage)
+        {
+            return ((aMessage[0] == '@' && aMessage[1] == '!') || aMessage[0] == '!');
+        }
+
+        public bool processUserMessage(string aNickname, string aMessage)
         {
             userEntry messageUser = checkCreateUser(aNickname);
 
@@ -845,10 +909,10 @@ namespace JerpDoesBots
 
             m_LogChat.writeAndLog("Chat | " + aNickname + " | " + aMessage);
 
-            if (aMessage[0] == '!')  // Try to assume this is a command
+            if (isValidCommandFormat(aMessage))
             {
                 messageUser.incrementCommandCount();
-                processUserCommand(messageUser, aMessage);
+                return processUserCommand(messageUser, aMessage);
             }
             else
             {
@@ -864,6 +928,7 @@ namespace JerpDoesBots
                 messageUser.incrementMessageCount();
                 if (aMessage.Length <= MESSAGE_VOTE_MAX_LENGTH && aMessage.IndexOf(" ") == -1)
                     processUserCommand(messageUser, "!vote " + aMessage);
+                return true;
             }
         }
 
@@ -942,7 +1007,7 @@ namespace JerpDoesBots
             return null;
         }
 
-        public void getUptime(userEntry commandUser, string argumentString)
+        public void getUptime(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_IsLive)
             {
@@ -960,7 +1025,7 @@ namespace JerpDoesBots
             m_CommandList.Add(aNewCommand);
         }
 
-        public void checkSub(userEntry commandUser, string argumentString)
+        public void checkSub(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!string.IsNullOrEmpty(argumentString))
             {
@@ -976,7 +1041,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void checkFollower(userEntry commandUser, string argumentString)
+        public void checkFollower(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!string.IsNullOrEmpty(argumentString))
             {
@@ -992,7 +1057,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void checkBroadcaster(userEntry commandUser, string argumentString)
+        public void checkBroadcaster(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!string.IsNullOrEmpty(argumentString))
             {
@@ -1008,7 +1073,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void checkModerator(userEntry commandUser, string argumentString)
+        public void checkModerator(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!string.IsNullOrEmpty(argumentString))
             {
@@ -1078,7 +1143,33 @@ namespace JerpDoesBots
 
         }
 
-        public void randomNumber(userEntry commandUser, string argumentString)
+        public void announce(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            sendDefaultChannelAnnounce(argumentString);
+        }
+
+        public bool messageOrCommand(string aInput)
+        {
+            if (!String.IsNullOrEmpty(aInput))
+            {
+                if (isValidCommandFormat(aInput))
+                {
+                    userEntry ownerUser = checkCreateUser(ownerUsername);
+                    return processUserCommand(ownerUser, aInput);
+                }
+                else
+                {
+                    sendDefaultChannelMessage(aInput);
+                    return true;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public void randomNumber(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int randMin = 1;
             int randMax = 1000;
@@ -1458,7 +1549,7 @@ namespace JerpDoesBots
             m_ActionTimer = Stopwatch.StartNew();
 
 			m_CommandList = new List<chatCommandDef>();
-			m_CommandList.Add(new chatCommandDef("botquit", this.quitCommand, false, false));
+			m_CommandList.Add(new chatCommandDef("botquit", quitCommand, false, false));
 			m_CommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
 			m_CommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
 			m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
@@ -1476,6 +1567,7 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
             m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
             m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
+            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
 
             requestChannelInfo();
         }

@@ -74,7 +74,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void question(userEntry commandUser, string argumentString)
+        public void question(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             triviaQuestion currentQuestion = getCurrentQuestion();
 
@@ -102,7 +102,7 @@ namespace JerpDoesBots
             return output;
         }
 
-        public void start(userEntry commandUser, string argumentString)
+        public void start(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
             if (!string.IsNullOrEmpty(argumentString))
             {
@@ -157,19 +157,24 @@ namespace JerpDoesBots
             }
 		}
 
-		public void stop(userEntry commandUser, string argumentString)
+		public void stop(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			m_IsActive = false;
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStopped"));
+            if (!aSilent)
+			    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStopped"));
 		}
 
-        public void reload(userEntry commandUser, string argumentString)
+        public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_IsActive = false;
             m_LoadSuccessful = load();
 
             if (m_LoadSuccessful)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedReloaded"));
+            {
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedReloaded"));
+            }
+                
             else
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedLoadFail"));
         }
@@ -248,14 +253,14 @@ namespace JerpDoesBots
             return scoreString;
         }
 
-        public void scores(userEntry commandUser, string argumentString)
+        public void scores(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             string scoreString = getTopScoreString();
 
             m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTopContestants"), scoreString));
         }
 
-        public void setMaxQuestions(userEntry commandUser, string argumentString)
+        public void setMaxQuestions(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int newMax;
 
@@ -267,11 +272,12 @@ namespace JerpDoesBots
                 if (m_IsActive)
                     nextString = "  " + m_BotBrain.localizer.getString("triviaMaxQuestionsSetWhileActive");
 
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaMaxQuestionsSet"), m_TotalQuestions) + nextString);
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaMaxQuestionsSet"), m_TotalQuestions) + nextString);
             }
         }
 
-        public void topics(userEntry commandUser, string argumentString)
+        public void topics(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             string topicString = "";
             bool hasOne = false;

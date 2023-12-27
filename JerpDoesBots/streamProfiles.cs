@@ -6,15 +6,40 @@ using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
-	class gameDefaultProfileEntry
+	/// <summary>
+	/// These specify profiles can be applied by default if certain conditions are met.
+	/// </summary>
+	class defaultProfileEntry
 	{
-		public string categoryName { get; set; }
+		/// <summary>
+		///  Unused.  Readable text name of the category.
+		/// </summary>
+		public string categoryName { get; set; }	// TODO: Allow this to be a fallback so I don't need to check category IDs?
+		/// <summary>
+		/// ID for the category on Twitch.  Can be empty/null to skip.
+		/// </summary>
 		public string categoryID { get; set; }
+		/// <summary>
+		/// Name the profile to be set if requirements are met for this entry.
+		/// </summary>
 		public string useProfile { get; set; }
+		/// <summary>
+		/// Whether this profile activates when the bot first loads.
+		/// </summary>
 		public bool activateOnBotLoad { get; set; }
+		/// <summary>
+		/// Whether this profile activates when changing categories.
+		/// </summary>
 		public bool activateOnCategoryChange { get; set; }
+		/// <summary>
+		/// Optional requirements for this profile to activate.
+		/// </summary>
+		public streamCondition requirements { get; set; }
 	}
 
+	/// <summary>
+	/// A bundle of title, category, tags, and rewards that can be applied together.
+	/// </summary>
     class streamProfileEntry
 	{
 		public string title { get; set; }
@@ -23,176 +48,38 @@ namespace JerpDoesBots
 		public string rewardGroup { get; set; }
 	}
 
-	class streamProfileReward // TODO: Move this somewhere centralized and use it for raffles/etc.
-	{
-		public string title { get; set; }
-		public string description { get; set; }
-		public int cost { get; set; }
-		public int maxPerStream { get; set; }
-		public string backgroundColor { get; set; }
-		public int globalCooldownSeconds { get; set; }
-		public int maxPerUserPerStream { get; set; }
-		public bool requireUserInput { get; set; }
-		public bool autoFulfill { get; set; }
-		public bool enabled { get; set; }
-		public string rewardID { get; set; }	// ID on Twitch
-
-		public streamProfileReward()
-        {
-			cost = 1;
-			maxPerStream = -1;
-			globalCooldownSeconds = -1;
-			maxPerUserPerStream = -1;
-			enabled = true;
-			autoFulfill = false;
-        }
-
-		public TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest getCreateRequest()
-        {
-			TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest newRewardRequest = new TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest();
-			newRewardRequest.Title = title;
-			newRewardRequest.Cost = cost;
-
-			if (!string.IsNullOrEmpty(description))
-				newRewardRequest.Prompt = description;
-
-			if (!string.IsNullOrEmpty(backgroundColor))
-				newRewardRequest.BackgroundColor = backgroundColor;
-
-			if (maxPerUserPerStream >= 1)
-            {
-				newRewardRequest.MaxPerUserPerStream = maxPerUserPerStream;
-				newRewardRequest.IsMaxPerUserPerStreamEnabled = true;
-            }
-
-			if (maxPerStream >= 1)
-            {
-				newRewardRequest.MaxPerStream = maxPerStream;
-				newRewardRequest.IsMaxPerStreamEnabled = true;
-            }
-			
-			if (globalCooldownSeconds >= 1)
-            {
-				newRewardRequest.GlobalCooldownSeconds = globalCooldownSeconds;
-				newRewardRequest.IsGlobalCooldownEnabled = true;
-            }
-
-			newRewardRequest.ShouldRedemptionsSkipRequestQueue = autoFulfill;
-			newRewardRequest.IsUserInputRequired = requireUserInput;
-
-			newRewardRequest.IsEnabled = enabled;
-
-			return newRewardRequest;
-		}
-
-		public bool attemptAddRequest(jerpBot aBotBrain, out bool aAlreadyExists)
-        {
-			aAlreadyExists = false;
-			if (!updateInfoTask(aBotBrain))
-            {
-				try
-				{
-					TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsRequest createRewardRequest = getCreateRequest();
-					Task<TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward.CreateCustomRewardsResponse> createRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.CreateCustomRewardsAsync(aBotBrain.ownerUserID, createRewardRequest);
-					createRewardTask.Wait();
-
-					if (createRewardTask.Result == null)
-					{
-						aBotBrain.logWarningsErrors.writeAndLog("Failed to create channel point reward named: " + title);
-						return false;
-					}
-					else
-					{
-						rewardID = createRewardTask.Result.Data[0].Id;
-						return true;    // Successfully created
-					}
-				}
-				catch (Exception e)
-				{
-					aBotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to create channel point reward named: \"{0}\": {1}", title, e.Message));
-					return false;
-				}
-			}
-			else
-            {
-				aAlreadyExists = true;
-				return true;	// Already exists
-            }
-        }
-
-		public bool updateInfoTask(jerpBot aBotBrain)
-        {
-			if (string.IsNullOrEmpty(rewardID))
-            {
-				Task<TwitchLib.Api.Helix.Models.ChannelPoints.GetCustomReward.GetCustomRewardsResponse> getRewardsTask = aBotBrain.twitchAPI.Helix.ChannelPoints.GetCustomRewardAsync(aBotBrain.ownerUserID);
-				getRewardsTask.Wait();
-
-				if (getRewardsTask.Result != null)
-				{
-					foreach (TwitchLib.Api.Helix.Models.ChannelPoints.CustomReward curReward in getRewardsTask.Result.Data)
-					{
-						if (curReward.Title == title)
-						{
-							rewardID = curReward.Id;
-							return true;
-						}
-					}
-				}
-			}
-			else
-            {
-				return true;
-            }
-
-			return false;
-		}
-
-		public bool attemptRemoveRequest(jerpBot aBotBrain, out bool aExisted)
-        {
-			aExisted = false;
-			if (updateInfoTask(aBotBrain))
-            {
-				try
-				{
-					Task removeRewardTask = aBotBrain.twitchAPI.Helix.ChannelPoints.DeleteCustomRewardAsync(aBotBrain.ownerUserID, rewardID);
-					removeRewardTask.Wait();
-
-					aExisted = true;
-					rewardID = null;
-					return true;    // Successfully removed
-				}
-				catch (Exception e)
-				{
-					aBotBrain.logWarningsErrors.writeAndLog(string.Format("Exception when trying to remove channel point reward named: \"{0}\": {1}", title, e.Message));
-					return false;
-				}
-			}
-			aBotBrain.logWarningsErrors.writeAndLog("Unable to find ID for and thus remove reward named: " + title);
-			return false;
-		}
-	}
+	// =====================================================================/
 
 	class streamProfilesConfig
 	{
 		public List<string> tagsCommon { get; set; }
 		public Dictionary<string, streamProfileEntry> entries { get; set; }
-		public Dictionary<string, List<streamProfileReward>> rewardGroups { get; set; }
+		public Dictionary<string, List<pointReward>> rewardGroups { get; set; }
 		public string profileNameDefault { get; set; }
-		public List<gameDefaultProfileEntry> gameDefaultProfiles { get; set; }
+		public List<defaultProfileEntry> gameDefaultProfiles { get; set; }
 
 		public streamProfilesConfig()
 		{
-			gameDefaultProfiles = new List<gameDefaultProfileEntry>();
+			gameDefaultProfiles = new List<defaultProfileEntry>();
 		}
     }
 
+	/// <summary>
+	/// Module for applying Stream Profiles - essentially bundles of title, category, tags, channel point rewards, etc. which can all be assigned together.
+	/// </summary>
 	class streamProfiles : botModule
 	{
 		private streamProfilesConfig m_Config;
 		private bool m_IsLoaded = false;
 		public const int TAGS_MAX = 10;
 
-		private bool applyProfileInternal(string aProfileName, bool aSilentMode = false)
+        /// <summary>
+        /// Internal function for applying profiles.
+        /// </summary>
+        /// <param name="aProfileName">Name of the profile to apply.</param>
+        /// <param name="aSilent">Whether to have output on success.</param>
+        /// <returns>Whether the profile was successfully applied.</returns>
+        private bool applyProfileInternal(string aProfileName, bool aSilentMode = false)
 		{
 			if (m_Config.entries.ContainsKey(aProfileName))
 			{
@@ -233,13 +120,19 @@ namespace JerpDoesBots
             return false;
 		}
 
-		public void applyProfile(userEntry commandUser, string argumentString)
+		/// <summary>
+		/// User-facing method for applying profiles
+		/// </summary>
+		/// <param name="commandUser">The user who's attempting to set a profile.</param>
+		/// <param name="argumentString">Name of the profile being set.</param>
+		/// <param name="aSilent">Whether to have output on success.</param>
+		public void applyProfile(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (m_IsLoaded && !string.IsNullOrEmpty(argumentString))
 			{
 				if (m_Config.entries.ContainsKey(argumentString))
 				{
-					applyProfileInternal(argumentString);
+					applyProfileInternal(argumentString, aSilent);
                     // TODO: Error if applyProfileInternal returns false for something about failing to apply?
                 }
                 else
@@ -249,13 +142,16 @@ namespace JerpDoesBots
 			}
 		}
 
-
-        public override void onCategoryIDChanged()	// TODO: Should consolidate this and onBotFullyLoaded
-        {
+        /// <summary>
+		/// Internal function for applying an automatic/default profile
+		/// </summary>
+		/// <param name="aActivateViaCategoryChange">Whether to apply when the category is changed (false for applying as a result of chat bot loading).</param>
+        private void attemptApplyDefaultProfile(bool aActivateViaCategoryChange = false)
+		{
             bool hasGameDefaultProfile = false;
-            foreach (gameDefaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
+            foreach (defaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
             {
-                if (curProfile.categoryID == m_BotBrain.CategoryID && curProfile.activateOnCategoryChange)
+                if (((aActivateViaCategoryChange && curProfile.activateOnCategoryChange) || (!aActivateViaCategoryChange && curProfile.activateOnBotLoad)) && (string.IsNullOrEmpty(curProfile.categoryID) || curProfile.categoryID == m_BotBrain.CategoryID) && (curProfile.requirements == null || curProfile.requirements.isMet()))
                 {
                     applyProfileInternal(curProfile.useProfile, true);
                     hasGameDefaultProfile = true;
@@ -269,65 +165,50 @@ namespace JerpDoesBots
             }
         }
 
-        public override void onBotFullyLoaded()
+		/// <summary>
+		/// Checks for and applies a profile after changing categories.
+		/// </summary>
+        public override void onCategoryIDChanged()
         {
-			bool hasGameDefaultProfile = false;
-			foreach (gameDefaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
-			{
-				if (curProfile.categoryID == m_BotBrain.CategoryID && curProfile.activateOnBotLoad)
-				{
-					applyProfileInternal(curProfile.useProfile, true);
-					hasGameDefaultProfile = true;
-					break;
-				}
-			}
-
-			if (!hasGameDefaultProfile && !string.IsNullOrEmpty(m_Config.profileNameDefault))
-			{
-				applyProfileInternal(m_Config.profileNameDefault, true);
-			}
+			attemptApplyDefaultProfile(true);
         }
 
+		/// <summary>
+		/// Checks for and applies a profile after the bot is first loaded.
+		/// </summary>
+        public override void onBotFullyLoaded()
+        {
+            attemptApplyDefaultProfile();
+        }
+
+		/// <summary>
+		/// Internal function to apply a group of channel point rewards.
+		/// </summary>
+		/// <param name="aGroupName">Name for the group of rewards to apply.</param>
+		/// <param name="aSilentMode">Whether to have output on success.</param>
         public void applyRewardGroupInternal(string aGroupName, bool aSilentMode = false)
         {
-			int countRemoved = 0;
-			int countAdded = 0;
-			bool rewardExisted;
-
 			// Clear rewards from other groups first
 			foreach(string groupKey in m_Config.rewardGroups.Keys)
             {
-				if (groupKey != aGroupName)
+
+                foreach (pointReward curReward in m_Config.rewardGroups[groupKey])
                 {
-					foreach (streamProfileReward curReward in m_Config.rewardGroups[groupKey])
-                    {
-						curReward.attemptRemoveRequest(m_BotBrain, out rewardExisted);
-						if (rewardExisted)
-							countRemoved++;
-                    }
+					curReward.shouldExistOnTwitch = groupKey == aGroupName;
                 }
             }
 
-			// Add rewards from new group (if exists)
-			if (m_Config.rewardGroups.ContainsKey(aGroupName))
-            {
-				foreach (streamProfileReward curReward in m_Config.rewardGroups[aGroupName])
-                {
-					curReward.attemptAddRequest(m_BotBrain, out rewardExisted);
-					if (!rewardExisted)
-						countAdded++;
-                }
-			}
+			pointRewardManager.updateRemoteRewardsFromLocalData();
 
-			if (!aSilentMode)
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("channelPointRewardsCreatedRemoved"), countAdded, countRemoved));
+			if (!aSilentMode && (pointRewardManager.lastUpdateRewardsAdded > 0 || pointRewardManager.lastUpdateRewardsRemoved > 0 || pointRewardManager.lastUpdateRewardsUpdated > 0))
+				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("channelPointRewardsCreatedRemoved"), pointRewardManager.lastUpdateRewardsAdded, pointRewardManager.lastUpdateRewardsRemoved, pointRewardManager.lastUpdateRewardsUpdated));
         }
 
-		public void applyRewardGroup(userEntry commandUser, string argumentString)
+		public void applyRewardGroup(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			if (m_IsLoaded && !string.IsNullOrEmpty(argumentString))
             {
-				applyRewardGroupInternal(argumentString);
+				applyRewardGroupInternal(argumentString, aSilent);
             }
         }
 
@@ -341,18 +222,41 @@ namespace JerpDoesBots
 				if (!string.IsNullOrEmpty(configFileString))
 				{
 					m_Config = new JavaScriptSerializer().Deserialize<streamProfilesConfig>(configFileString);
-					m_IsLoaded = true;
+
+
+					Dictionary<string, List<pointReward>> updatedRewardGroups = new Dictionary<string, List<pointReward>>();
+                    foreach (string groupKey in m_Config.rewardGroups.Keys)
+                    {
+						List<pointReward> updatedRewardList = new List<pointReward>();	// To repopulate in case rewards already exist (on reload)
+                        foreach (pointReward curReward in m_Config.rewardGroups[groupKey])
+                        {
+							updatedRewardList.Add(pointRewardManager.addUpdatePointReward(curReward));
+                        }
+
+						updatedRewardGroups[groupKey] = updatedRewardList;
+                    }
+
+					m_Config.rewardGroups = updatedRewardGroups;
+
+                    m_IsLoaded = true;
 				}
 			}
 		}
 
-		public void reload(userEntry commandUser, string argumentString)
+		/// <summary>
+		/// Reloads the list of stream profiles, reward groups, etc. to reflect the current json config.
+		/// </summary>
+		/// <param name="commandUser">The user who's attempting to reload the profile list.</param>
+		/// <param name="argumentString">Unused.</param>
+		/// <param name="aSilent">Whether to output on success.</param>
+		public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			load();
 
 			if (m_IsLoaded)
             {
-				m_BotBrain.sendDefaultChannelMessage("Stream Profiles reloaded");
+				if (!aSilent)
+					m_BotBrain.sendDefaultChannelMessage("Stream Profiles reloaded");
             }
 			else
             {
@@ -360,6 +264,10 @@ namespace JerpDoesBots
 			}
         }
 
+		/// <summary>
+		/// Initialize command entries for Stream Profiles.
+		/// </summary>
+		/// <param name="aJerpBot">Would-be singleton for the main jerpBot brain.</param>
 		public streamProfiles(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			load();

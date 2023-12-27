@@ -8,7 +8,7 @@ namespace JerpDoesBots
 		private string m_Name;
 		public string name { get { return m_Name; } }
 
-		public delegate void commandActionDelegate(userEntry aUser, string aArgumentString);
+		public delegate void commandActionDelegate(userEntry aUser, string aArgumentString, bool aSilent = false);
 		private commandActionDelegate m_CommandAction;
 
 		[JsonIgnore]
@@ -95,7 +95,10 @@ namespace JerpDoesBots
 
 		public bool canUse(userEntry aUser, long aTimeNow)
 		{
-			if (aUser.isBroadcaster)
+			if (aUser.isBroadcaster || aUser.Nickname.ToLower() == jerpBot.instance.ownerUsername.ToLower())
+				return true;
+
+			if (aUser.Nickname.ToLower() == jerpBot.instance.botUsername.ToLower())
 				return true;
 
 			if (isOnCooldown(aTimeNow, aUser))

@@ -6,7 +6,7 @@ namespace JerpDoesBots
 {
 	class quotes : botModule
 	{
-		public void add(userEntry commandUser, string argumentString)
+		public void add(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (argumentString.Length > 0)
 			{
@@ -29,7 +29,8 @@ namespace JerpDoesBots
 				{
 					long lastInsertID = m_BotBrain.storageDB.LastInsertRowId;
 
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteAddSuccess"), lastInsertID));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteAddSuccess"), lastInsertID));
 				}
 				else
 				{
@@ -41,7 +42,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void display(userEntry commandUser, string argumentString)
+		public void display(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int quoteID;
 
@@ -70,7 +71,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void remove(userEntry commandUser, string argumentString)
+		public void remove(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int quoteID;
 			if (Int32.TryParse(argumentString, out quoteID))
@@ -81,7 +82,8 @@ namespace JerpDoesBots
 
 				if (removeQuoteCommand.ExecuteNonQuery() > 0)
 				{
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteRemove"), quoteID));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteRemove"), quoteID));
 				}
 				else
 				{
@@ -90,7 +92,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void random(userEntry commandUser, string argumentString)
+		public void random(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			string getQuoteQuery = "SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1";
 
@@ -112,7 +114,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void outputList(userEntry commandUser, string argumentString)
+		public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			string getQuotesQuery = "SELECT * FROM quotes";
 
@@ -131,10 +133,11 @@ namespace JerpDoesBots
 
 			m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_quotes.json");
 
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteOutputListSuccess"));
+			if (!aSilent)
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteOutputListSuccess"));
 		}
 
-		public void edit(userEntry commandUser, string argumentString)
+		public void edit(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			string[] argumentList = argumentString.Split(new[] { ' ' }, 2);
 			if (argumentList.Length == 2)
@@ -149,7 +152,8 @@ namespace JerpDoesBots
 
 					if (editQuoteCommand.ExecuteNonQuery() > 0)
 					{
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteUpdated"), quoteID));
+						if (!aSilent)
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteUpdated"), quoteID));
 					}
 					else
 					{
@@ -159,7 +163,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void setGame(userEntry commandUser, string argumentString)
+		public void setGame(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			string[] argumentList = argumentString.Split(new[] { ' ' }, 2);
 			if (argumentList.Length == 2)
@@ -174,7 +178,8 @@ namespace JerpDoesBots
 
 					if (editQuoteCommand.ExecuteNonQuery() > 0)
 					{
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteUpdated"), quoteID));
+						if (!aSilent)
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteUpdated"), quoteID));
 					}
 					else
 					{

@@ -25,7 +25,7 @@ namespace JerpDoesBots
             }
         }
 
-        public void addEntry(userEntry commandUser, string argumentString)
+        public void addEntry(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_Entries.Count < MAX_ENTRIES)
             {
@@ -59,14 +59,15 @@ namespace JerpDoesBots
             }
         }
 
-        public void purgeEntries(userEntry commandUser, string argumentString)
+        public void purgeEntries(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int prevEntryCount = m_Entries.Count;
             m_Entries.Clear();
 
             if (prevEntryCount > 0)
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("delayQueueClearSuccess"));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("delayQueueClearSuccess"));
             }
             else
             {
@@ -75,7 +76,7 @@ namespace JerpDoesBots
 
         }
         
-        public void getCount(userEntry commandUser, string argumentString)
+        public void getCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayQueueCount"), m_Entries.Count));
         }
@@ -92,7 +93,7 @@ namespace JerpDoesBots
                     if (!String.IsNullOrEmpty(messageToSend))
                     {
 
-                        if (messageToSend.IndexOf('!') == 0)
+                        if (m_BotBrain.isValidCommandFormat(messageToSend))
                         {
                             userEntry botOwnerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
 

@@ -59,19 +59,20 @@ namespace JerpDoesBots
             }
         }
 
-        public void current(userEntry commandUser, string argumentString)
+        public void current(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
         }
 
-        public void setOffset(userEntry commandUser, string argumentString)
+        public void setOffset(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int offsetVal;
 
             if (Int32.TryParse(argumentString, out offsetVal))
             {
                 m_HoursPassedOffset = offsetVal;
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("hydrateReminderHoursPassedOffset"), m_HoursPassedOffset));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("hydrateReminderHoursPassedOffset"), m_HoursPassedOffset));
             }
         }
 

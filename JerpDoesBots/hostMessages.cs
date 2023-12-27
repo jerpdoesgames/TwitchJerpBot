@@ -23,10 +23,14 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void reloadMessages(userEntry commandUser, string argumentString)
+        public void reloadMessages(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (loadConfig())
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadSuccess"));
+            {
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadSuccess"));
+            }
+                
             else
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadFail"));
         }

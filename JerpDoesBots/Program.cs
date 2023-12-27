@@ -18,6 +18,7 @@
 			jerpBot botGeneral					= new jerpBot(tempConfig);
 			jerpBot.instance = botGeneral;
 
+			pointRewardManager pointRewardsModule     = new pointRewardManager(botGeneral); // Keep this early as other modules will be dependent on the fist rewards list update.
 			raffle raffleModule						  = new raffle(botGeneral);
 			quotes quoteModule						  = new quotes(botGeneral);
 			customCommand customCommandModule		  = new customCommand(botGeneral);

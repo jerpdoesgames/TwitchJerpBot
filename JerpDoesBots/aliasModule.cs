@@ -33,7 +33,7 @@ namespace JerpDoesBots
             return null;
         }
 
-        public override void add(userEntry commandUser, string argumentString)
+        public override void add(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             bool usesExistingAlias = false;
 
@@ -52,7 +52,6 @@ namespace JerpDoesBots
                         break;
                     }
                 }
-                
             }
 
             if (!usesExistingAlias)
@@ -86,7 +85,10 @@ namespace JerpDoesBots
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param5", argumentList[1]));          // Message
 
                         if (addCommandCommand.ExecuteNonQuery() > 0)
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddSuccess"), argumentList[0]));
+                        {
+                            if (!aSilent)
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddSuccess"), argumentList[0]));
+                        }
                         else
                             m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddFail"), argumentList[0]));
                     }
@@ -102,7 +104,7 @@ namespace JerpDoesBots
             
         }
 
-        public void outputList(userEntry commandUser, string argumentString)
+        public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             string getQuotesQuery = "SELECT * FROM command_alias ORDER BY command_name ASC";
 
@@ -121,7 +123,8 @@ namespace JerpDoesBots
 
             m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
 
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasOutputListSuccess"));
+            if (!aSilent)
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasOutputListSuccess"));
         }
 
         public commandAlias(jerpBot botGeneral) : base(botGeneral)

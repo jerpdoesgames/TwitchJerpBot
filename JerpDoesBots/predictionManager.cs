@@ -33,7 +33,7 @@ namespace JerpDoesBots
 			return null;
         }
 
-		public void displayLast(userEntry commandUser, string argumentString)
+		public void displayLast(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			Prediction lastPrediction = getLastPrediction();
 			if (lastPrediction != null)
@@ -77,7 +77,7 @@ namespace JerpDoesBots
         }
 
 
-		public void cancel(userEntry commandUser, string argumentString)
+		public void cancel(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			try
             {
@@ -87,7 +87,8 @@ namespace JerpDoesBots
 					Task cancelTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.CANCELED));
 					cancelTask.Wait();
 
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelSuccess"));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelSuccess"));
 				}
 				else
 				{
@@ -100,7 +101,7 @@ namespace JerpDoesBots
 			}
         }
 
-		public void close(userEntry commandUser, string argumentString)
+		public void close(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			try
 			{
@@ -110,7 +111,8 @@ namespace JerpDoesBots
 					Task closeTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.LOCKED));
 					closeTask.Wait();
 
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseSuccess"));
+					if (!aSilent)
+						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseSuccess"));
 				}
 				else
 				{
@@ -123,7 +125,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public void decide(userEntry commandUser, string argumentString)
+		public void decide(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			try
 			{
@@ -137,7 +139,8 @@ namespace JerpDoesBots
 						Task decideTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.RESOLVED, lastPrediction.Outcomes[outcomeIndex - 1].Id));
 						decideTask.Wait();
 
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDecideSuccess"), lastPrediction.Outcomes[outcomeIndex - 1].Title));
+						if (!aSilent)
+							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDecideSuccess"), lastPrediction.Outcomes[outcomeIndex - 1].Title));
 					}
 					else
                     {
@@ -160,7 +163,7 @@ namespace JerpDoesBots
 			return (!string.IsNullOrEmpty(aOutcome) && aOutcome.Length > 0 && aOutcome.Length <= 25);
         }
 
-		public void create(userEntry commandUser, string argumentString)
+		public void create(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			string[] argArray = argumentString.Split('/');
 			if (argArray.Length >= 5)
@@ -221,7 +224,8 @@ namespace JerpDoesBots
 						Task<CreatePredictionResponse> createTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.CreatePredictionAsync(newPredictionRequest));
 						createTask.Wait();
 
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCreateSuccess"));
+						if (!aSilent)
+							m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCreateSuccess"));
 					}
 					catch (Exception e)
                     {
