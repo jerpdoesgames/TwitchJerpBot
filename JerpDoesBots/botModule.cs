@@ -4,7 +4,7 @@ namespace JerpDoesBots
 {
     class botModule
 	{
-		public virtual void frame() {}
+		public virtual void onFrame() {}
         public virtual void onBotFullyLoaded() { }
 		public virtual void onCategoryIDChanged() { }
         public virtual void onUserMessage(userEntry aUser, string aMessage) {}

@@ -326,7 +326,7 @@ namespace JerpDoesBots
             }
         }
 
-        public override void frame()
+        public override void onFrame()
 		{
 			if (m_IsActive)
 			{
@@ -428,9 +428,9 @@ namespace JerpDoesBots
         public trivia(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
             m_Throttler = new throttler(aJerpBot);
-            m_Throttler.waitTimeMax = 120000;
+            m_Throttler.waitTimeMSMax = 120000;
             m_Throttler.lineCountReductionMax = 15;
-            m_Throttler.lineCountReduction = 4000;
+            m_Throttler.lineCountReductionMS = 4000;
 
             m_Scores = new Dictionary<userEntry, int>();
             m_Questions = new List<triviaQuestion>();

@@ -23,7 +23,7 @@ namespace JerpDoesBots
 			userChoices.Clear();
 		}
 
-		public override void frame()
+		public override void onFrame()
 		{
 			if (isActive)
 			{
@@ -305,7 +305,7 @@ namespace JerpDoesBots
 		public pollManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			m_Throttler = new throttler(aJerpBot);
-			m_Throttler.waitTimeMax = 30000;
+			m_Throttler.waitTimeMSMax = 30000;
 			m_Throttler.lineCountMinimum = 8;
 
 			userChoices = new Dictionary<userEntry, int>();

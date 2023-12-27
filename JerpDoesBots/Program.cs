@@ -40,8 +40,9 @@
 			mediaPlayerMonitor mediaMonitor           = new mediaPlayerMonitor(botGeneral);
 			dataLookup dataLookupManager              = new dataLookup(botGeneral);
 			adManager adManagerModule                 = new adManager(botGeneral);
+            autoExec autoExecModule                   = new autoExec(botGeneral);
 
-			customCommandModule.initTable();
+            customCommandModule.initTable();
 			gameCommandModule.initTable();
             aliasManager.initTable();
 
@@ -54,7 +55,7 @@
 
             while (!botGeneral.isReadyToClose)
             {
-                botGeneral.frame();
+                botGeneral.onFrame();
             }
 
 		}

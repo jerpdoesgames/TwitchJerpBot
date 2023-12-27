@@ -960,7 +960,7 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void frame()
+        public void onFrame()
         {
             if (m_TwitchClientBot.IsConnected)
             {
@@ -977,7 +977,7 @@ namespace JerpDoesBots
                 foreach (botModule curModule in m_Modules)
                 {
                     if (isModuleValidForUserAction(curModule))
-                        curModule.frame();
+                        curModule.onFrame();
                 }
 
                 processActionQueue();
@@ -1222,7 +1222,6 @@ namespace JerpDoesBots
         private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             m_HasJoinedChannel = true;
-            sendChannelMessage(e.Channel, m_Localizer.getString("announceChannelJoin"));
             m_LogConnection.writeAndLog($"Bot account joined channel {e.Channel}");
         }
 

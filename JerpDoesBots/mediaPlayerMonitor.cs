@@ -46,7 +46,7 @@ namespace JerpDoesBots
             }
         }
 
-        public override void frame()
+        public override void onFrame()
         {
             if (m_IsLoaded && m_Config.enabled)
             {
@@ -93,7 +93,7 @@ namespace JerpDoesBots
             m_Throttler = new throttler(aJerpBot);
             m_Throttler.requiresUserMessages = false;
             m_Throttler.messagesReduceTimer = false;
-            m_Throttler.waitTimeMax = 3000;
+            m_Throttler.waitTimeMSMax = 3000;
 
             m_IsLoaded = loadConfig();
 

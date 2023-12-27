@@ -45,7 +45,7 @@ namespace JerpDoesBots
             return m_BotBrain.localizer.getString("hydrateReminderEmpty");
         }
 
-        public override void frame()
+        public override void onFrame()
         {
             if (m_Throttler.isReady)
             {
@@ -81,7 +81,7 @@ namespace JerpDoesBots
             m_Throttler = new throttler(aJerpBot);
             m_Throttler.requiresUserMessages = false;
             m_Throttler.messagesReduceTimer = false;
-            m_Throttler.waitTimeMax = 30000;
+            m_Throttler.waitTimeMSMax = 30000;
             chatCommandDef tempDef = new chatCommandDef("hydrate", null, false, false);
             tempDef.addSubCommand(new chatCommandDef("current", current, true, true));
             tempDef.addSubCommand(new chatCommandDef("offset", setOffset, false, false));
