@@ -6,15 +6,40 @@ using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
 {
-	class gameDefaultProfileEntry
+	/// <summary>
+	/// These specify profiles can be applied by default if certain conditions are met.
+	/// </summary>
+	class defaultProfileEntry
 	{
-		public string categoryName { get; set; }
+		/// <summary>
+		///  Unused.  Readable text name of the category.
+		/// </summary>
+		public string categoryName { get; set; }	// TODO: Allow this to be a fallback so I don't need to check category IDs?
+		/// <summary>
+		/// ID for the category on Twitch.  Can be empty/null to skip.
+		/// </summary>
 		public string categoryID { get; set; }
+		/// <summary>
+		/// Name the profile to be set if requirements are met for this entry.
+		/// </summary>
 		public string useProfile { get; set; }
+		/// <summary>
+		/// Whether this profile activates when the bot first loads.
+		/// </summary>
 		public bool activateOnBotLoad { get; set; }
+		/// <summary>
+		/// Whether this profile activates when changing categories.
+		/// </summary>
 		public bool activateOnCategoryChange { get; set; }
+		/// <summary>
+		/// Optional requirements for this profile to activate.
+		/// </summary>
+		public streamCondition requirements { get; set; }
 	}
 
+	/// <summary>
+	/// A bundle of title, category, tags, and rewards that can be applied together.
+	/// </summary>
     class streamProfileEntry
 	{
 		public string title { get; set; }
@@ -31,21 +56,30 @@ namespace JerpDoesBots
 		public Dictionary<string, streamProfileEntry> entries { get; set; }
 		public Dictionary<string, List<pointReward>> rewardGroups { get; set; }
 		public string profileNameDefault { get; set; }
-		public List<gameDefaultProfileEntry> gameDefaultProfiles { get; set; }
+		public List<defaultProfileEntry> gameDefaultProfiles { get; set; }
 
 		public streamProfilesConfig()
 		{
-			gameDefaultProfiles = new List<gameDefaultProfileEntry>();
+			gameDefaultProfiles = new List<defaultProfileEntry>();
 		}
     }
 
+	/// <summary>
+	/// Module for applying Stream Profiles - essentially bundles of title, category, tags, channel point rewards, etc. which can all be assigned together.
+	/// </summary>
 	class streamProfiles : botModule
 	{
 		private streamProfilesConfig m_Config;
 		private bool m_IsLoaded = false;
 		public const int TAGS_MAX = 10;
 
-		private bool applyProfileInternal(string aProfileName, bool aSilentMode = false)
+        /// <summary>
+        /// Internal function for applying profiles.
+        /// </summary>
+        /// <param name="aProfileName">Name of the profile to apply.</param>
+        /// <param name="aSilent">Whether to have output on success.</param>
+        /// <returns>Whether the profile was successfully applied.</returns>
+        private bool applyProfileInternal(string aProfileName, bool aSilentMode = false)
 		{
 			if (m_Config.entries.ContainsKey(aProfileName))
 			{
@@ -86,6 +120,12 @@ namespace JerpDoesBots
             return false;
 		}
 
+		/// <summary>
+		/// User-facing method for applying profiles
+		/// </summary>
+		/// <param name="commandUser">The user who's attempting to set a profile.</param>
+		/// <param name="argumentString">Name of the profile being set.</param>
+		/// <param name="aSilent">Whether to have output on success.</param>
 		public void applyProfile(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (m_IsLoaded && !string.IsNullOrEmpty(argumentString))
@@ -102,12 +142,16 @@ namespace JerpDoesBots
 			}
 		}
 
-        public override void onCategoryIDChanged()	// TODO: Should consolidate this and onBotFullyLoaded
-        {
+        /// <summary>
+		/// Internal function for applying an automatic/default profile
+		/// </summary>
+		/// <param name="aActivateViaCategoryChange">Whether to apply when the category is changed (false for applying as a result of chat bot loading).</param>
+        private void attemptApplyDefaultProfile(bool aActivateViaCategoryChange = false)
+		{
             bool hasGameDefaultProfile = false;
-            foreach (gameDefaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
+            foreach (defaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
             {
-                if (curProfile.categoryID == m_BotBrain.CategoryID && curProfile.activateOnCategoryChange)
+                if (((aActivateViaCategoryChange && curProfile.activateOnCategoryChange) || (!aActivateViaCategoryChange && curProfile.activateOnBotLoad)) && (string.IsNullOrEmpty(curProfile.categoryID) || curProfile.categoryID == m_BotBrain.CategoryID) && (curProfile.requirements == null || curProfile.requirements.isMet()))
                 {
                     applyProfileInternal(curProfile.useProfile, true);
                     hasGameDefaultProfile = true;
@@ -121,25 +165,27 @@ namespace JerpDoesBots
             }
         }
 
-        public override void onBotFullyLoaded()
+		/// <summary>
+		/// Checks for and applies a profile after changing categories.
+		/// </summary>
+        public override void onCategoryIDChanged()
         {
-			bool hasGameDefaultProfile = false;
-			foreach (gameDefaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
-			{
-				if (curProfile.categoryID == m_BotBrain.CategoryID && curProfile.activateOnBotLoad)
-				{
-					applyProfileInternal(curProfile.useProfile, true);
-					hasGameDefaultProfile = true;
-					break;
-				}
-			}
-
-			if (!hasGameDefaultProfile && !string.IsNullOrEmpty(m_Config.profileNameDefault))
-			{
-				applyProfileInternal(m_Config.profileNameDefault, true);
-			}
+			attemptApplyDefaultProfile(true);
         }
 
+		/// <summary>
+		/// Checks for and applies a profile after the bot is first loaded.
+		/// </summary>
+        public override void onBotFullyLoaded()
+        {
+            attemptApplyDefaultProfile();
+        }
+
+		/// <summary>
+		/// Internal function to apply a group of channel point rewards.
+		/// </summary>
+		/// <param name="aGroupName">Name for the group of rewards to apply.</param>
+		/// <param name="aSilentMode">Whether to have output on success.</param>
         public void applyRewardGroupInternal(string aGroupName, bool aSilentMode = false)
         {
 			// Clear rewards from other groups first
@@ -197,6 +243,12 @@ namespace JerpDoesBots
 			}
 		}
 
+		/// <summary>
+		/// Reloads the list of stream profiles, reward groups, etc. to reflect the current json config.
+		/// </summary>
+		/// <param name="commandUser">The user who's attempting to reload the profile list.</param>
+		/// <param name="argumentString">Unused.</param>
+		/// <param name="aSilent">Whether to output on success.</param>
 		public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			load();
@@ -212,6 +264,10 @@ namespace JerpDoesBots
 			}
         }
 
+		/// <summary>
+		/// Initialize command entries for Stream Profiles.
+		/// </summary>
+		/// <param name="aJerpBot">Would-be singleton for the main jerpBot brain.</param>
 		public streamProfiles(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			load();

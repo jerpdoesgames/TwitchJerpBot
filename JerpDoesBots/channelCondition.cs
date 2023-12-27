@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace JerpDoesBots
 {
@@ -9,10 +10,20 @@ namespace JerpDoesBots
         public List<string> requiredTags { get; set; }
         public List<string> barredTags { get; set; }
 
+        private Nullable<DateTime> m_DateTimeStart;
+        private Nullable<DateTime> m_DateTimeEnd;
+        public string timeStart { set { m_DateTimeStart = DateTime.Parse(value); } }
+        public string timeEnd { set { m_DateTimeEnd = DateTime.Parse(value); } }
+
+        public bool isValidDateTime()
+        {
+            DateTime curTime = DateTime.Now;
+
+            return ((m_DateTimeStart == null || curTime >= m_DateTimeStart) && (m_DateTimeEnd == null || curTime <= m_DateTimeEnd));
+        }
 
         public bool validGame(string aOverrideGame = null)
         {
-
             string useGame = !string.IsNullOrEmpty(aOverrideGame) ? aOverrideGame : jerpBot.instance.game;
 
             if (allowedGames != null && allowedGames.Count > 0)
@@ -90,6 +101,9 @@ namespace JerpDoesBots
                 return false;
 
             if (!validTags(aOverrideTags))
+                return false;
+
+            if (!isValidDateTime())
                 return false;
 
             return true;
