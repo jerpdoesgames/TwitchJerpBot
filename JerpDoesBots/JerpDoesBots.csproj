@@ -194,6 +194,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="autoExec.cs" />
+    <Compile Include="autoExecConfig.cs" />
     <Compile Include="pointReward.cs" />
     <Compile Include="pointRewardManager.cs" />
     <Compile Include="adManager.cs" />

@@ -264,7 +264,7 @@ namespace JerpDoesBots
 			return false;
 		}
 
-		public override void frame()
+		public override void onFrame()
 		{
 			if (m_IsActive)
 			{
@@ -290,7 +290,7 @@ namespace JerpDoesBots
 		public raffle(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			m_Throttler = new throttler(aJerpBot);
-			m_Throttler.waitTimeMax = 15000;
+			m_Throttler.waitTimeMSMax = 15000;
 			m_Throttler.lineCountMinimum = 8;
 			m_Throttler.messagesReduceTimer = false;
 

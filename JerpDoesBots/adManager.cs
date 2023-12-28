@@ -5,7 +5,10 @@ using TwitchLib.PubSub.Events;
 
 namespace JerpDoesBots
 {
-    internal class adManager : botModule
+    /// <summary>
+    /// Module for managing ads on Twitch.
+    /// </summary>
+    internal class adManager : botModule    // TODO: Hook up API support for ads/snoozes https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelad_breakbegin
     {
         private const int PREROLL_FREE_TIME_PER_AD_MINUTE = 20;
         private const int AD_SNOOZE_DURATION_SECONDS = 300;
@@ -37,6 +40,10 @@ namespace JerpDoesBots
             return false;
         }
 
+        /// <summary>
+        /// Occurs when a commercial begins.
+        /// </summary>
+        /// <param name="aCommercialArgs">Information about the commercial being played.</param>
         public override void onCommercialStart(OnCommercialArgs aCommercialArgs)
         {
             m_CommercialStartTimeMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
@@ -68,12 +75,17 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>
+        /// Whether the condition for this ad is met (also true if the condition is null).
+        /// </summary>
+        /// <param name="aCondition">The condition to check.</param>
+        /// <returns></returns>
         private bool isValidAdCondition(adCondition aCondition)
         {
             return aCondition == null || aCondition.isMet(m_CommercialStartGame, m_CommercialStartTags, m_CommercialStartViewerCount, m_CommercialLengthSeconds);
         }
 
-        public override void frame()
+        public override void onFrame()
         {
             if (m_IsCommercialActive && m_BotBrain.actionTimer.ElapsedMilliseconds - m_CommercialStartTimeMS > commercialLengthMS)
             {
@@ -138,6 +150,12 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>
+        /// Log the amount of snoozes that have been used since the last ad.  Used to track how much time before ads will play so warnings can be output as needed.
+        /// </summary>
+        /// <param name="commandUser">User who's logging snoozes.</param>
+        /// <param name="argumentString">'Integer' count of snoozes that been used.</param>
+        /// <param name="aSilent">Whether to output on success.</param>
         public void setSnoozeCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             int snoozeCount;
@@ -149,6 +167,10 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>
+        /// Initialize command entries for the ad manager.
+        /// </summary>
+        /// <param name="aJerpBot"></param>
         public adManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
         {
             m_IsLoaded = loadConfig();

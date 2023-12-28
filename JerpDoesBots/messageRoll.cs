@@ -7,7 +7,7 @@ namespace JerpDoesBots
     class messageRoll : botModule
 	{
         private messageRollConfig m_Config;
-        private bool m_Loaded = false;
+        private bool m_IsLoaded = false;
         private int m_MessageIndex = -1;
         private throttler m_Throttler;
 
@@ -60,9 +60,9 @@ namespace JerpDoesBots
             return null;
         }
 
-		public override void frame()
+		public override void onFrame()
 		{
-            if (m_Loaded && m_Throttler.isReady)
+            if (m_IsLoaded && m_Throttler.isReady)
             {
                 sendNextMessage();
             }
@@ -108,14 +108,14 @@ namespace JerpDoesBots
 
         public void forceNext(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            if (m_Loaded)
+            if (m_IsLoaded)
                 sendNextMessage();
         }
 
         public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            m_Loaded = loadConfig();
-            if (m_Loaded)
+            m_IsLoaded = loadConfig();
+            if (m_IsLoaded)
             {
                 m_MessageIndex = -1;
                 if (!aSilent)
@@ -130,11 +130,11 @@ namespace JerpDoesBots
 		{
             if (loadConfig())
             {
-                m_Loaded = true;
+                m_IsLoaded = true;
 
                 m_Throttler = new throttler(aJerpBot);
-                m_Throttler.waitTimeMax = 900000;
-                m_Throttler.lineCountReduction = 23333;
+                m_Throttler.waitTimeMSMax = 900000;
+                m_Throttler.lineCountReductionMS = 23333;
                 m_Throttler.lineCountReductionMax = 30;
 
                 chatCommandDef tempDef = new chatCommandDef("message", null, false, false);

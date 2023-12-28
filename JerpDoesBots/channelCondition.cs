@@ -22,9 +22,14 @@ namespace JerpDoesBots
             return ((m_DateTimeStart == null || curTime >= m_DateTimeStart) && (m_DateTimeEnd == null || curTime <= m_DateTimeEnd));
         }
 
-        public bool validGame(string aOverrideGame = null)
+        /// <summary>
+        /// Whether the specified allowed/barred category is set for the channel.
+        /// </summary>
+        /// <param name="aOverrideCategory">Used to fix a specific category in place (typically used when the same conditions need to be met when an ad starts/ends).</param>
+        /// <returns></returns>
+        public bool isValidCategory(string aOverrideCategory = null)
         {
-            string useGame = !string.IsNullOrEmpty(aOverrideGame) ? aOverrideGame : jerpBot.instance.game;
+            string useGame = !string.IsNullOrEmpty(aOverrideCategory) ? aOverrideCategory : jerpBot.instance.game;
 
             if (allowedGames != null && allowedGames.Count > 0)
             {
@@ -58,7 +63,11 @@ namespace JerpDoesBots
             return true;
         }
 
-
+        /// <summary>
+        /// Whether the specified allowed/barred tags are in/not in use by the channel.
+        /// </summary>
+        /// <param name="aOverrideTags"></param>
+        /// <returns>Used to fix specific tags in place (typically used when the same conditions need to be met when an ad starts/ends).</returns>
         public bool validTags(string[] aOverrideTags = null)
         {
             string[] useTags = aOverrideTags != null && aOverrideTags.Length > 0 ? aOverrideTags : jerpBot.instance.tags;
@@ -95,9 +104,15 @@ namespace JerpDoesBots
             return true;
         }
 
-        public virtual bool isMet(string aOverrideGame = null, string[] aOverrideTags = null)
+        /// <summary>
+        /// Whether all conditions are met by the channel.
+        /// </summary>
+        /// <param name="aOverrideCategory">Used to fix a specific category in place (typically used when the same conditions need to be met when an ad starts/ends).</param>
+        /// <param name="aOverrideTags">Used to fix specific tags in place (typically used when the same conditions need to be met when an ad starts/ends).</param>
+        /// <returns></returns>
+        public virtual bool isMet(string aOverrideCategory = null, string[] aOverrideTags = null)
         {
-            if (!validGame(aOverrideGame))
+            if (!isValidCategory(aOverrideCategory))
                 return false;
 
             if (!validTags(aOverrideTags))
@@ -119,6 +134,10 @@ namespace JerpDoesBots
         public float subPercentMin { get; set; }
         public float subPercentMax { get; set; }
 
+        /// <summary>
+        /// Whether the specified min/max follower count is true for the stream.
+        /// </summary>
+        /// <returns></returns>
         private bool isValidFollowPercentage()
         {
             int totalChatters;
@@ -143,6 +162,10 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>
+        /// Whether the specified min/max subscriber count is true for the stream.
+        /// </summary>
+        /// <returns></returns>
         private bool isValidSubscriberPercentage()
         {
             int totalChatters;
@@ -167,7 +190,14 @@ namespace JerpDoesBots
             }
         }
 
-        public bool isMet(string aOverrideGame = null, string[] aOverrideTags = null, int aOverrideViewerCount = -1)
+        /// <summary>
+        /// Whether all conditions are met by the stream.
+        /// </summary>
+        /// <param name="aOverrideCategory">Used to fix a specific category in place (typically used when the same conditions need to be met when an ad starts/ends).</param>
+        /// <param name="aOverrideTags">Used to fix specific tags in place (typically used when the same conditions need to be met when an ad starts/ends).</param>
+        /// <param name="aOverrideViewerCount">Used to fix a specific viewer count in place (typically used when the same conditions need to be met when an ad starts/ends).</param>
+        /// <returns></returns>
+        public bool isMet(string aOverrideCategory = null, string[] aOverrideTags = null, int aOverrideViewerCount = -1)
         {
             int useViewCount = aOverrideViewerCount != -1 ? aOverrideViewerCount : jerpBot.instance.viewersLast;
 
@@ -182,7 +212,7 @@ namespace JerpDoesBots
             if (!isValidSubscriberPercentage())
                 return false;
 
-            if (!base.isMet(aOverrideGame, aOverrideTags))
+            if (!base.isMet(aOverrideCategory, aOverrideTags))
                 return false;
 
             return true;
@@ -199,15 +229,17 @@ namespace JerpDoesBots
         }
     }
 
-
+    /// <summary>
+    /// Extended version of streamCondition to check ad-specific data such as the duration of an ad.
+    /// </summary>
     internal class adCondition : streamCondition
     {
         public int adTimeSecondsMin { get; set; }
         public int adTimeSecondsMax { get; set; }
 
-        public bool isMet(string aOverrideGame = null, string[] aOverrideTags = null, int aOverrideViewerCount = -1, int aCommercialLengthSeconds = -1)
+        public bool isMet(string aOverrideCategory = null, string[] aOverrideTags = null, int aOverrideViewerCount = -1, int aCommercialLengthSeconds = -1)
         {
-            if (!base.isMet(aOverrideGame, aOverrideTags, aOverrideViewerCount))
+            if (!base.isMet(aOverrideCategory, aOverrideTags, aOverrideViewerCount))
                 return false;
 
             if ((adTimeSecondsMax > 0 && aCommercialLengthSeconds > adTimeSecondsMax) || (adTimeSecondsMin > 0 && aCommercialLengthSeconds < adTimeSecondsMin))

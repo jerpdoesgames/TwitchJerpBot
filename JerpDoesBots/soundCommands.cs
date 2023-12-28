@@ -164,7 +164,7 @@ namespace JerpDoesBots
             int pathCount = curSound.paths.Count;
             if (pathCount > 0)
             {
-                if (curSound.requirements == null || curSound.requirements.validGame())
+                if (curSound.requirements == null || curSound.requirements.isValidCategory())
                 {
                     if (curSound.requirements == null || curSound.requirements.validTags())
                     {

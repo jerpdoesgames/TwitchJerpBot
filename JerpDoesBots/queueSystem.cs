@@ -1126,7 +1126,7 @@ namespace JerpDoesBots
             }
         }
 
-        public override void frame()
+        public override void onFrame()
 		{
 			if (isActive)
 			{
@@ -1178,7 +1178,7 @@ namespace JerpDoesBots
 		public queueSystem(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
             m_Throttler = new throttler(aJerpBot);
-            m_Throttler.waitTimeMax = 120000;
+            m_Throttler.waitTimeMSMax = 120000;
 
             m_EntryList = new List<queueData>();
 			usersAddedRecently = new List<queueData>();

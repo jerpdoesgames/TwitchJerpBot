@@ -81,7 +81,7 @@ namespace JerpDoesBots
             m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayQueueCount"), m_Entries.Count));
         }
 
-        public override void frame()
+        public override void onFrame()
         {
             List<delaySendEntry> removedEntries = new List<delaySendEntry>();
 
