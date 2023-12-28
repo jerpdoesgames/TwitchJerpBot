@@ -188,11 +188,11 @@ namespace JerpDoesBots
             if (loaded)
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage("Reloaded shoutouts config");
+                    m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("shoutoutReloadSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("Failed to reload shoutouts config");
+                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("shoutoutReloadFail"));
             }
         }
 

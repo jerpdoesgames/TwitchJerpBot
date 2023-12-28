@@ -42,7 +42,7 @@ namespace JerpDoesBots
         {
             if (!string.IsNullOrEmpty(m_LastTrackTitle))
             {
-                m_BotBrain.sendDefaultChannelMessage("The current track is: " + m_LastTrackTitle);
+                m_BotBrain.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("mediaMonitorCurrentTrack"), m_LastTrackTitle));
             }
         }
 

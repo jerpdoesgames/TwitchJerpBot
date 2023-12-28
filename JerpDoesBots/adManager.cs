@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
+using TwitchLib.Api.Helix.Models.Channels.GetAdSchedule;
+using TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd;
 using TwitchLib.PubSub.Events;
 
 namespace JerpDoesBots
@@ -8,10 +11,8 @@ namespace JerpDoesBots
     /// <summary>
     /// Module for managing ads on Twitch.
     /// </summary>
-    internal class adManager : botModule    // TODO: Hook up API support for ads/snoozes https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelad_breakbegin
+    internal class adManager : botModule
     {
-        private const int PREROLL_FREE_TIME_PER_AD_MINUTE = 20;
-        private const int AD_SNOOZE_DURATION_SECONDS = 300;
         private bool m_IsLoaded;
         private adManagerConfig m_Config;
         private long m_CommercialStartTimeMS = 0;
@@ -21,7 +22,11 @@ namespace JerpDoesBots
         private string m_CommercialStartGame = "";
         private string[] m_CommercialStartTags;
         private int m_CommercialStartViewerCount = 0;
-        private int m_SnoozeCountSinceLastAd = 0;
+
+        private int m_AvailableSnoozes = 0;
+        private Nullable<DateTime> m_SnoozeRefreshAt;
+        private Nullable<DateTime> m_NextAdAt;
+        private const int SNOOZE_COUNT_MAX = 3;
 
         private long commercialLengthMS { get { return m_CommercialLengthSeconds * 1000; } }
 
@@ -41,6 +46,28 @@ namespace JerpDoesBots
         }
 
         /// <summary>
+        /// Request and store data from the channel's ad schedule, including snooze data and when the next ad will occur.
+        /// </summary>
+        private void getAdScheduleData()
+        {
+            Task<GetAdScheduleResponse> getAdScheduleTask = jerpBot.instance.twitchAPI.Helix.Channels.GetAdScheduleAsync(jerpBot.instance.ownerUserID);
+            getAdScheduleTask.Wait();
+
+            if (getAdScheduleTask.Result != null && getAdScheduleTask.Result.Data.Length >= 0)
+            {
+                AdSchedule adScheduleData = getAdScheduleTask.Result.Data[0];
+                m_NextAdAt = DateTime.Parse(adScheduleData.NextAdAt);
+                m_SnoozeRefreshAt = DateTime.Parse(adScheduleData.SnoozeRefreshAt);
+                m_AvailableSnoozes = adScheduleData.SnoozeCount;
+            }
+        }
+
+        public override void onStreamLive()
+        {
+            getAdScheduleData();
+        }
+
+        /// <summary>
         /// Occurs when a commercial begins.
         /// </summary>
         /// <param name="aCommercialArgs">Information about the commercial being played.</param>
@@ -53,6 +80,8 @@ namespace JerpDoesBots
             m_CommercialStartTags = m_BotBrain.tags;
             
             m_IsCommercialActive = true;
+
+            m_NextAdAt = null;
 
             if (m_Config.announceCommercialStart)
             {
@@ -87,6 +116,7 @@ namespace JerpDoesBots
 
         public override void onFrame()
         {
+            // Commercial completed
             if (m_IsCommercialActive && m_BotBrain.actionTimer.ElapsedMilliseconds - m_CommercialStartTimeMS > commercialLengthMS)
             {
                 m_IsCommercialActive = false;
@@ -104,8 +134,6 @@ namespace JerpDoesBots
                     }
                 }
 
-                m_SnoozeCountSinceLastAd = 0;
-
                 if (m_Config.commercialEndCommands != null && m_Config.commercialEndCommands.Count > 0)
                 {
                     foreach (adManagerConfigCommandEntry curCommand in m_Config.commercialEndCommands)
@@ -116,23 +144,73 @@ namespace JerpDoesBots
                         }
                     }
                 }
+
+                getAdScheduleData();
             }
             else
             {
-                if (!m_IsCommercialActive && m_CommercialStartTimeMS != 0 && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
+                // Check whether to display ad warnings
+                if (!m_IsCommercialActive && m_NextAdAt != null && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
                 {
-                    foreach (adManagerIncomingAdWarning curWarning in m_Config.incomingAdWarnings)
+                    TimeSpan timeUntilNextAd = m_NextAdAt.Value.Subtract(DateTime.Now);
+                    double secondsUntilNextAd = timeUntilNextAd.TotalSeconds;
+
+                    if (secondsUntilNextAd > 0)
                     {
-                        if (!curWarning.notifiedSinceLastAd && m_BotBrain.actionTimer.ElapsedMilliseconds > m_CommercialStartTimeMS + (m_SnoozeCountSinceLastAd * AD_SNOOZE_DURATION_SECONDS * 1000) + (m_CommercialLengthSeconds * 1000 * PREROLL_FREE_TIME_PER_AD_MINUTE) - (curWarning.timeBeforeAdSeconds * 1000))
+                        foreach (adManagerIncomingAdWarning curWarning in m_Config.incomingAdWarnings)
                         {
-                            if (isValidAdCondition(curWarning.requirements))
+                            if (!curWarning.notifiedSinceLastAd && secondsUntilNextAd <= curWarning.timeBeforeAdSeconds)
                             {
-                                m_BotBrain.messageOrCommand(curWarning.commandString);
-                                curWarning.setNotifyTriggered();
+                                if (isValidAdCondition(curWarning.requirements))
+                                {
+                                    curWarning.setNotifyTriggered();
+                                    m_BotBrain.messageOrCommand(curWarning.commandString);
+                                }
+                            }
+                            else if (curWarning.notifiedSinceLastAd && secondsUntilNextAd > curWarning.timeBeforeAdSeconds) // Catches snoozes
+                            {
+                                curWarning.resetNotifiedStatus();
                             }
                         }
                     }
                 }
+            }
+        }
+        /// <summary>
+        /// Time until snooze in "#m#s" format.
+        /// </summary>
+        /// <returns></returns>
+        public string getNextSnoozeTimeString()
+        {
+            string output = "??m??s";
+
+            if (m_SnoozeRefreshAt != null)
+            {
+                TimeSpan timeUntilNextSnooze = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now);
+                if (timeUntilNextSnooze.TotalSeconds > 0)
+                {
+                    output = timeUntilNextSnooze.Minutes + "m" + timeUntilNextSnooze + "s";
+                }
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="commandUser">Outputs how many snoozes are available as a string.  Will also output the time until another snooze is available if the count is less than SNOOZE_COUNT_MAX.</param>
+        /// <param name="argumentString">Unused.</param>
+        /// <param name="aSilent">Unused.</param>
+        public void outputSnoozeInfo(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            if (m_AvailableSnoozes >= SNOOZE_COUNT_MAX)
+            {
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountOutput"), m_AvailableSnoozes));
+            }
+            else
+            {
+                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountOutputMoreIncoming"), m_AvailableSnoozes, getNextSnoozeTimeString()));
             }
         }
 
@@ -142,28 +220,60 @@ namespace JerpDoesBots
             if (m_IsLoaded)
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerCommercialReloadSuccess"));
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerReloadSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerCommercialReloadFail"));
+                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerReloadFail"));
             }
         }
 
         /// <summary>
-        /// Log the amount of snoozes that have been used since the last ad.  Used to track how much time before ads will play so warnings can be output as needed.
+        /// Attempt to snooze an ad using the Twitch API.
         /// </summary>
-        /// <param name="commandUser">User who's logging snoozes.</param>
-        /// <param name="argumentString">'Integer' count of snoozes that been used.</param>
+        /// <param name="commandUser">User who's attempting to snooze an ad.</param>
+        /// <param name="argumentString">Unused.</param>
         /// <param name="aSilent">Whether to output on success.</param>
-        public void setSnoozeCount(userEntry commandUser, string argumentString, bool aSilent = false)
+        public void snoozeAd(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            int snoozeCount;
-            if (Int32.TryParse(argumentString, out snoozeCount))
+            if (!m_IsCommercialActive)
             {
-                m_SnoozeCountSinceLastAd = snoozeCount;
-                if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountSet"), snoozeCount));
+                if (m_AvailableSnoozes > 0)
+                {
+                    try
+                    {
+                        Task<TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd.SnoozeNextAdResponse> snoozeResponse = m_BotBrain.twitchAPI.Helix.Channels.SnoozeNextAd(m_BotBrain.ownerUserID);
+                        snoozeResponse.Wait();
+
+                        if (snoozeResponse.Result != null && snoozeResponse.Result.Data.Length > 0)
+                        {
+                            SnoozeNextAd snoozeData = snoozeResponse.Result.Data[0];
+                            m_AvailableSnoozes = snoozeData.SnoozeCount;
+                            m_SnoozeRefreshAt = DateTime.Parse(snoozeData.SnoozeRefreshAt);
+                            m_NextAdAt = DateTime.Parse(snoozeData.NextAdAt);
+
+                            if (m_AvailableSnoozes > 0)
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeSuccess"), m_AvailableSnoozes));
+                            else
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeSuccessNoneLeft"), getNextSnoozeTimeString()));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerSnoozeFailUnknownReason"));
+                        Console.WriteLine("Unable to snooze ad: " + e.Message);
+                    }
+                }
+                else
+                {
+                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeFailNoSnoozesLeft"), getNextSnoozeTimeString()));
+                }
+
+
+            }
+            else
+            {
+                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerSnoozeFailCommercialActive"));
             }
         }
 
@@ -179,7 +289,8 @@ namespace JerpDoesBots
             {
                 chatCommandDef tempDef = new chatCommandDef("ad", null, false, false);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
-                tempDef.addSubCommand(new chatCommandDef("snooze", setSnoozeCount, false, false));
+                tempDef.addSubCommand(new chatCommandDef("snooze", snoozeAd, true, false));
+                tempDef.addSubCommand(new chatCommandDef("count", outputSnoozeInfo, true, false));
                 m_BotBrain.addChatCommand(tempDef);
             }
         }

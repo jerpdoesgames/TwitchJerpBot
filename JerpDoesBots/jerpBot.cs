@@ -142,7 +142,31 @@ namespace JerpDoesBots
         private static long m_SendThrottleMin = 1000;
 
         private bool m_IsLive = false;
-        public bool IsLive { get { return m_IsLive; } set { m_IsLive = value; } }
+        /// <summary>
+        /// Whether the steam is live.  Also dispatches an event to modules if switching from offline to live and vice versa.
+        /// </summary>
+        public bool IsLive {
+            get { return m_IsLive; }
+            set {
+
+                if (value != m_IsLive)
+                {
+                    m_IsLive = value;
+                    foreach (botModule curModule in m_Modules)
+                    {
+                        if (isModuleValidForUserAction(curModule))
+                        {
+                            if (m_IsLive)
+                                curModule.onStreamLive();
+                            else
+                                curModule.onStreamOffline();
+
+                        }
+                    }
+
+                }
+            }
+        }
         private string m_Title = "";
         public string Title { get { return m_Title; } }
 
@@ -179,11 +203,6 @@ namespace JerpDoesBots
         public long lineCount { get { return m_LineCount; } }
 
         private List<chatCommandDef> m_CommandList;
-
-        public void setLive(bool newLive)
-        {
-            m_IsLive = newLive;
-        }
 
         public void addModule(botModule aModule)
         {
@@ -1479,7 +1498,7 @@ namespace JerpDoesBots
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
 
             m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
-            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
+            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, null, true);  // TODO: Remove when updating to TwitchLib.Connection 2.0 or later.
 
             TwitchLib.Client.Enums.ClientProtocol useClientProtocol = webSocketsSupported ? TwitchLib.Client.Enums.ClientProtocol.WebSocket : TwitchLib.Client.Enums.ClientProtocol.TCP;
 

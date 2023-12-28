@@ -119,10 +119,10 @@ namespace JerpDoesBots
             {
                 m_MessageIndex = -1;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage("Successfully reloaded automated messages.");
+                    m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("messageRollReloadSuccess"));
             }
             else
-                m_BotBrain.sendDefaultChannelMessage("Failed to reload automated messages.");
+                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("messageRollReloadFail"));
 
         }
 

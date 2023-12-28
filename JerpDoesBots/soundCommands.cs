@@ -301,7 +301,7 @@ namespace JerpDoesBots
             }
 
             if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage("Device list sent to console.");
+                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundDeviceListOutput"));
         }
 
         public void setVolume(userEntry commandUser, string argumentString, bool aSilent = false)

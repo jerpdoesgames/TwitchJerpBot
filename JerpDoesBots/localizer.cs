@@ -14,6 +14,12 @@ namespace JerpDoesBots
         {
             public Dictionary<string, string> entries { get; set; }
         }
+
+        /// <summary>
+        /// Get a string from the localization database using its key.
+        /// </summary>
+        /// <param name="aKey">Key for the string to return</param>
+        /// <returns></returns>
         public string getString(string aKey)
         {
             string output;

@@ -356,11 +356,11 @@ namespace JerpDoesBots
             if (updateLocalRewardsFromRemoteData())
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage("Updated local reward point data based on remote rewards.");
+                    m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("channelPointRewardsUpdateLocalFromRemoteSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage("Failed to update local reward point data / grab remote data.");
+                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("channelPointRewardsUpdateLocalFromRemoteFail"));
             }
         }
 

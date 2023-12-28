@@ -256,12 +256,12 @@ namespace JerpDoesBots
 			if (m_IsLoaded)
             {
 				if (!aSilent)
-					m_BotBrain.sendDefaultChannelMessage("Stream Profiles reloaded");
+					m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("streamProfileReloadSuccess"));
             }
 			else
             {
-				m_BotBrain.sendDefaultChannelMessage("Stream Profiles reload failed");
-			}
+                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("streamProfileReloadFail"));
+            }
         }
 
 		/// <summary>
