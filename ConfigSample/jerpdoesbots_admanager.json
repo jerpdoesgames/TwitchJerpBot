@@ -1,0 +1,61 @@
+{
+    "announceCommercialStart": true,
+    "announceCommercialEnd": true,
+    "commercialStartCommands": [
+        {
+            "requirements": {
+                "allowedGames": [
+                    "ELDEN RING",
+                    "King of the Castle"
+                ]
+            },
+            "commandString": "@!trivia setmax 10"
+        },
+        {
+            "requirements": {
+                "allowedGames": [
+                    "ELDEN RING"
+                ]
+            },
+            "commandString": "!trivia start eldenring"
+        },
+        {
+            "requirements": {
+                "allowedGames": [
+                    "King of the Castle"
+                ]
+            },
+            "commandString": "!trivia start kingofthecastle"
+        }
+    ],
+    "commercialEndCommands": [
+        {
+            "requirements": {
+                "allowedGames": [
+                    "ELDEN RING",
+                    "King of the Castle"
+                ]
+            },
+            "commandString": "@!trivia stop"
+        },
+        {
+            "requirements": {
+                "allowedGames": [
+                    "ELDEN RING",
+                    "King of the Castle"
+                ]
+            },
+            "commandString": "!trivia scores"
+        }
+    ],
+    "incomingAdWarnings": [
+        {
+            "commandString": "Ad Starting in about 3 minutes.",
+            "timeBeforeAdSeconds": 180
+        },
+        {
+            "commandString": "Ad Starting in ~60 seconds!",
+            "timeBeforeAdSeconds": 60
+        }
+    ]
+}

@@ -1,0 +1,80 @@
+{
+    "entries": [
+        {
+            "activateOnBotLoad": true,
+            "commands": [
+                "jerpHype jerpBot in da house! jerpHype"
+            ]
+        },
+        {
+            "commands": [
+                "Remind Jerp to take his meds jerpSip"
+            ],
+            "cooldownTimeSeconds": 1800,
+            "activateOnTimer": true,
+            "requirements": {
+                "timestart": "10:30 pm",
+                "timeEnd": "10:40 pm"
+            }
+        },
+        {
+            "commands": [
+                "Did you know jerpBot has a !quote feature? jerpWat  Mods can add new entries with commands like !quote add \"Thing I said\" -Jerp 2023"
+            ],
+            "cooldownTimeSeconds": 900,
+            "activateOnMessageTerm": true,
+            "messageTermsToCheck": [
+                "quote"
+            ]
+        },
+        {
+            "commands": [
+                "Jerp killed the Parade Master first try in about 60 seconds: https://www.twitch.tv/jerp/clip/HomelyGiantBoarOMGScoots-Wo97D5PUY1JMlMxo"
+            ],
+            "cooldownTimeSeconds": 900,
+            "activateOnMessageTerm": true,
+            "messageTermsToCheck": [
+                "Parade Master"
+            ],
+            "requirements": {
+                "allowedGames": [
+                    "Lies of P"
+                ]
+            }
+        },
+        {
+            "commands": [
+                "Jerp's first encounter with Romeo went pretty well: https://www.twitch.tv/jerp/clip/SingleFragilePoultryCopyThis-Lpf3Iyel_t8bvrmI"
+            ],
+            "cooldownTimeSeconds": 900,
+            "activateOnMessageTerm": true,
+            "messageTermsToCheck": [
+                "Romeo"
+            ],
+            "requirements": {
+                "allowedGames": [
+                    "Lies of P"
+                ]
+            }
+        },
+        {
+            "commands": [
+                "Did you know Jerp made a spell comparator for Elden Ring?  https://jerp.tv/eldenring/spells"
+            ],
+            "cooldownTimeSeconds": 900,
+            "activateOnMessageTerm": true,
+            "messageTermsUseORCheck" : true,
+            "messageTermsToCheck": [
+                "magic",
+                "incantation",
+                "sorcery",
+                "sorceries"
+            ],
+            "requirements": {
+                "allowedGames": [
+                    "ELDEN RING"
+                ]
+            }
+        }
+    ]
+}

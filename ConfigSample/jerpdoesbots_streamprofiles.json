@@ -1,9 +1,151 @@
 {
+    "profileNameDefault": "default",
+    "gameDefaultProfiles": [
+        {
+            "useProfile": "liesofp_12272023",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true,
+            "requirements": {
+                "timestart": "12/27/2023 6:00 pm",
+                "timeEnd": "12/27/2023 11:00 pm"
+            }
+        },
+        {
+            "useProfile": "liesofp_12282023",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true,
+            "requirements": {
+                "timestart": "12/28/2023 6:00 pm",
+                "timeEnd": "12/28/2023 11:00 pm"
+            }
+        },
+        {
+            "categoryName": "Observation",
+            "categoryID": "510694",
+            "useProfile": "observation_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "Void Stranger",
+            "categoryID": "44005315", 
+            "useProfile": "void_stranger_12302023",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true,
+            "requirements": {
+                "timestart": "12/30/2023 6:00 pm",
+                "timeEnd": "12/30/2023 11:00 pm"
+            }
+        },
+        {
+            "categoryName": "ZeroRanger",
+            "categoryID": "490880",
+            "useProfile": "zero_ranger",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "Fatum Betula",
+            "categoryID": "518265",
+            "useProfile": "fatum_betula_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "King of the Castle",
+            "categoryID": "1500238812",
+            "useProfile": "kotc_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "Kapital Punishment 22XX",
+            "categoryID": "832045591",
+            "useProfile": "kopkiller",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "Street Fighter 6",
+            "categoryID": "55453844",
+            "useProfile": "sf6_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "Death Stranding: Director's Cut",
+            "categoryID": "1594393054",
+            "useProfile": "deathstranding",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "Guilty Gear: Strive",
+            "categoryID": "517159",
+            "useProfile": "ggst_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true
+        },
+        {
+            "categoryName": "ELDEN RING",
+            "categoryID": "512953",
+            "useProfile": "er_110",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true            
+        },
+        {
+            "categoryName": "Hunt the Night",
+            "categoryID": "601824138",
+            "useProfile": "huntthenight_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true            
+        },
+        {
+            "categoryName": "Shadows of Doubt",
+            "categoryID": "518086",
+            "useProfile": "shadowsofdoubt_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true            
+        },
+        {
+            "categoryName": "Murtop",
+            "categoryID": "1909866812",
+            "useProfile": "murtop_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true            
+        },
+        {
+            "categoryName": "Software and Game Development",
+            "categoryID": "1469308723",
+            "useProfile": "programming_default",
+            "activateOnBotLoad": true,
+            "activateOnCategoryChange": true            
+        }
+    ],
     "tagsCommon": [
-        "cc8d5abb-39c9-4942-a1ee-e1558512119e"
+        "Capybara",
+        "PNGTuber",
+        "Chill",
+        "English",
+        "Discussion",
+        "ADHD",
+        "VTuber"
     ],
     "rewardGroups":
     {
+        "none": [
+        ],
+        "erchoosebuild": [
+            {
+                "title": "Choose my build!",
+                "description": "Include a link to a screenshot/overview or provide a decent description of the build.",
+                "cost": 1000,
+                "backgroundColor": "#d6b140",
+                "globalCooldownSeconds": 1800,
+                "requireUserInput": true,
+                "autoFulfill": false
+            }
+        ],
         "mariomaker2": [
             {
                 "title": "Change character to Toad",
@@ -37,6 +179,31 @@
                 "cost": 2500,
                 "requireUserInput": true,
                 "backgroundColor": "#375a87"
+            }
+        ],
+        "inscryption": [
+            {
+                "title": "Select next card",
+                "description": "For any case where I'm given the ability to acquire a new card.",
+                "cost": 1500,
+                "requireUserInput": true,
+                "backgroundColor": "#375a87"
+            }
+        ],
+        "unsighted": [
+            {
+                "title": "Swap weapons",
+                "description": "Tell me which pair of weapons I should use next (so long as I can still get through the area, anyways!).",
+                "cost": 500,
+                "requireUserInput": true,
+                "backgroundColor": "#574C45"
+            },
+            {
+                "title": "No parries for 5 minutes",
+                "description": "I have to kill enemies via other means for 5 minutes.",
+                "cost": 1500,
+                "requireUserInput": false,
+                "backgroundColor": "#873737"
             }
         ],
         "gungeon": [
@@ -76,24 +243,302 @@
                 "cost": 1500,
                 "backgroundColor": "#525152"
             }
+        ],
+        "er_misc": [
+            {
+                "title": "Duel me! (PC only)",
+                "description": "We can fight (1v1 in the Colosseum via password), but you gotta pay.  Feel free to specify what level and I'll set a character set up.  Will do 3 rounds per redemption (but no longer than 15 minutes total).",
+                "cost": 5000,
+                "backgroundColor": "#de383b",
+                "autoFulfill": false
+            },
+            {
+                "title": "Viewer Duels for 30 minutes (PC only)",
+                "description": "Pick my level & I'll make a character and queue up for 1v1s in the Colosseum for 30 minutes for pasworded duels.",
+                "cost": 25000,
+                "backgroundColor": "#fcc82a",
+                "autoFulfill": false
+            }
         ]
     },
     "entries": {
+        "default": {
+            "tags": [
+                "NoBackseating",
+                "FirstPlaythrough"                
+            ],
+            "rewardGroup": "none"
+        },
         "mmq": {
-            "title": "Viewer Levels & Level Design | !queue add [code] (Mario Maker 2)",
+            "title": "Viewer Levels (queue open!) | !add !list !id !filter (Mario Maker 2)",
             "category": "511399",
             "tags": [
-                "fec05015-e841-4cff-a53c-8aa1336cf863",
-                "85a78d1f-77e7-468e-a3e5-76ed7c99864b"
+                "ViewerLevels",
+                "CasualPlaythrough",
+                "LevelDesign"
+            ],
+            "rewardGroup": "mariomaker2"
+        },
+        "mmqfast": {
+            "title": "Viewer Levels (!add !list !id) - 10m lightning rounds w/Predictions! (Mario Maker 2)",
+            "category": "511399",
+            "tags": [
+                "ViewerLevels",
+                "CasualPlaythrough",
+                "LevelDesign"
             ],
             "rewardGroup": "mariomaker2"
         },
         "mmqclosed": {
-            "title": "Viewer Levels (queue closed) & Level Design (Mario Maker 2)",
+            "title": "Viewer Levels (queue closed) | !id (Mario Maker 2)",
             "category": "511399",
             "tags": [
-                "fec05015-e841-4cff-a53c-8aa1336cf863"
+                "ViewerLevels",
+                "CasualPlaythrough",
+                "LevelDesign"
+            ],
+            "rewardGroup": "mariomaker2"
+        },
+        "mmdesign": {
+            "title": "Level Design & Chill | !id (my code = 26P-2HB-FSF)",
+            "category": "511399",
+            "tags": [
+                "CasualPlaythrough",
+                "LevelDesign"
+            ],
+            "rewardGroup": "none"
+        },
+        "mmdesignq": {
+            "title": "Level Design & Chill (viewer levels at 1h) | !add !list !id (my code = 26P-2HB-FSF)",
+            "category": "511399",
+            "tags": [
+                "CasualPlaythrough",
+                "LevelDesign"
+            ],
+            "rewardGroup": "marioMaker2"
+        },
+        "inscryption": {
+            "title": "Kaycee's Mod - a glorious return to Leshy's cabin (Inscryption)",
+            "category": "1147745783",
+            "tags": [
+                "CasualPlaythrough",
+                "PC"
+            ],
+            "rewardGroup": "inscryption"
+        },
+        "er_110": {
+            "title": "Finally checking out v1.10 - let's have a casual browse and see how things feel.",
+            "category": "512953",
+            "tags": [
+                "PC",
+                "CasualPlaythrough"
             ]
+        },
+        "erchoose": {
+            "title": "De-Rusting (+ Choose my !build [PC Invasions]) - Elden Ring",
+            "category": "512953",
+            "tags": [
+                "PvP",
+                "Invasions",
+                "PC"
+            ],
+            "rewardGroup": "erchoosebuild"
+        },
+        "er_invasion_theater": {
+            "title": "Elden Ring Invasion Theater (Episode 4) - Watching & Discussing Your Invasions w/@TehCannonFodder!",
+            "category": "512953",
+            "tags": [
+                "PvP",
+                "Invasions",
+                "PC"
+            ]
+        },
+        "helpcannon": {
+            "title": "Helping @TehCannonFodder build his RL1/WL0 mule (Elden Ring)",
+            "category": "512953",
+            "tags": [
+                "PvE",
+                "PC",
+                "Coop"
+            ]
+        },
+        "ermule": {
+            "title": "Adding more stuff to my mule on PC (Elden Ring)",
+            "category": "512953",
+            "tags": [
+                "PvE",
+                "PC"
+            ],
+            "rewardGroup": "er_misc"
+        },
+        "kopkiller": {
+            "title": "Kapital Punishment 22XX (thanks to Morningstar Game Studio for the key!)",
+            "category": "832045591",
+            "tags": [
+                "EarlyAccess",
+                "PC"
+            ]
+        },
+        "liesofp_12272023": {
+            "title": "Wait... what kind of ergo??? (Lies of P, day 8)",
+            "category": "653624336",
+            "tags": [
+                "FirstPlaythrough",
+                "CasualPlaythrough",
+                "NoBackseating",
+                "SoulsLike",
+                "PC"
+            ]
+        },
+        "liesofp_12282023": {
+            "title": "Alchemists did it? (Lies of P, day 9)",
+            "category": "653624336",
+            "tags": [
+                "FirstPlaythrough",
+                "CasualPlaythrough",
+                "NoBackseating",
+                "SoulsLike",
+                "PC"
+            ]
+        },
+        "donutdodo": {
+            "title": "Incredibly legit arcade action - Donut Dodo!",
+            "category": "1947040468",
+            "tags": [
+                "HighScoreAttempts",
+                "PC"
+            ]
+        },
+        "deathstranding": {
+            "title": "Reconnect America, eh? - Death Stranding continues! (Day 4)",
+            "category": "1594393054",
+            "tags": [
+                "FirstPlaythrough",
+                "NoBackseating",
+                "CasualPlaythrough",
+                "PC"
+            ]
+        },
+        "shadowtactics": {
+            "title": "Stealthin' Around in the Edo Period (Shadow Tactics: Blade of the Shogun - Day 1) - Thanks to @CarsonDrewIt for the gift!",
+            "category": "492501",
+            "tags": [
+                "FirstPlaythrough",
+                "NoBackseating",
+                "CasualPlaythrough",
+                "PC"
+            ]
+        },
+        "sf6_default": {
+            "title": "Drinking away the stress w/Jamie, mostly [!app] (Street Fighter 6)",
+            "category": "55453844",
+            "tags": [
+                "PlayingWithViewers",
+                "NoBackseating",
+                "Jamie"
+            ],
+            "rewardGroup": "none"
+        },
+        "ggst_default": {
+            "title": "Jerp didn't enter a proper title! (Guilty Gear Strive)",
+            "category": "517159",
+            "tags": [
+                "PlayingWithViewers",
+                "NoBackseating",
+                "Asuka"
+            ],
+            "rewardGroup": "none"
+        },
+        "kotc_default": {
+            "title": "We May Have a Generational Wealth Problem - Jarvis IV takes the throne (King of the Castle M5S1) - thanks again to @TehCannonFodder for showing me this game!",
+            "category": "1500238812",
+            "tags": [
+                "PlayingWithViewers"
+            ],
+            "rewardGroup": "none"
+        },
+        "huntthenight_default": {
+            "title": "Final Feathers, and...? | Hunt the Night - Day 8 (thanks @Dare_Drop for the key!)",
+            "category": "601824138",
+            "tags": [
+                "FirstPlaythrough",
+                "NoBackseating",
+                "DareDrop",
+                "CasualPlaythrough",
+                "PC"
+            ],
+            "rewardGroup": "none"
+        },
+        "shadowsofdoubt_default": {
+            "title": "Mellowing the Insanity | City 2 Day 9 (Thanks to @Dare_Drop for the key!)",
+            "category": "518086",
+            "tags": [
+                "NoBackseating",
+                "DareDrop",
+                "CasualPlaythrough",
+                "PC"
+            ],
+            "rewardGroup": "none"
+        },
+        "murtop_default": {
+            "title": "Chasing highscores in Murtop - It's sort of like a mix of Bomberman & Dig Dug | Thanks to Flynn's Arcade for the key!",
+            "category": "1909866812",
+            "tags": [
+                "HighScoreAttempts",
+                "Leaderboard",
+                "PC"
+            ],
+            "rewardGroup": "none"
+        },
+        "programming_default": {
+            "title": "JerpBot dev / other housekeeping (an excuse to chill & chat, mostly)",
+            "category": "1469308723",
+            "tags": [
+                "CSharp",
+                "TwitchAPI",
+                "VisualStudio"
+            ],
+            "rewardGroup": "none"
+        },
+        "fatum_betula_default": {
+            "title": "So... what is Fatum Betula? - thanks to @Malastrome for the gift!",
+            "category": "518265",
+            "tags": [
+                "FirstPlaythrough",
+                "NoBackseating",
+                "SeizureWarning",
+                "PC"
+            ],
+            "rewardGroup": "none"
+        },
+        "observation_default": {
+            "title": "Let's give this another shot, with a gamepad this time... (Observation) - thanks to @Havoc2357 for the gift!",
+            "category": "510694",
+            "tags": [
+                "FirstPlaythrough",
+                "NoBackseating",
+                "PC"
+            ],
+            "rewardGroup": "none"
+        },
+        "void_stranger_12302023": {
+            "title": "So, about those burdens... (Day 33)",
+            "category": "44005315",
+            "tags": [
+                "FirstPlaythrough",
+                "NoBackseating",
+                "PC"
+            ],
+            "rewardGroup": "none"
+        },
+        "zero_ranger": {
+            "title": "Return to Zero (for a little bit, at least)",
+            "category": "490880",
+            "tags": [
+                "PC",
+                "CasualPlaythrough"
+            ],
+            "rewardGroup": "none"
         }
-    }
+     }
 }

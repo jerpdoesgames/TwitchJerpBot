@@ -22,7 +22,7 @@
 			]
 		},
 		{
-			"username": "JerpBot connection for checking host notifications",
+			"username": "JerpBot connection for checking raid notifications",
 			"nickname": "botTwitchUsername",
 			"oauth": "oauth:aaaaaaaaaaaaa",
 			"server": "irc.twitch.tv",

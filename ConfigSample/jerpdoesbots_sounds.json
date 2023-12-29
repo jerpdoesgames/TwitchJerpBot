@@ -2,18 +2,24 @@
   "enabled": true,
   "useDevice": -1,
   "globalVolume": 1.0,
+  "pointRewardCountMax": 25,
+  "pointRewardCostDefault": 50,
   "soundList": [
     {
       "name": "soundname",
+      "isValidForPointReward": true,
+      "isMandatoryReward": true,
       "source": "Game or movie name or whatever",
       "character": "The character this sound is from.",
       "description": "A description of this sound.",
       "paths": [
         "subdir/soundFileName.wav"
-      ]
+      ],
+      "volume": 0.75
     },
     {
       "name": "othersoundname",
+      "isValidForPointReward": true,
       "source": "Game or movie name or whatever",
       "character": "The character this sound is from.",
       "description": "A description of this sound.",

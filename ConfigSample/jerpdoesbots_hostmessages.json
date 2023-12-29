@@ -1,0 +1,24 @@
+{
+	"thresholds": [
+		{
+			"viewers": 100,
+			"messages": [
+                "Thanks for the raid {0}!  Welcome, everyone!  For anybody new to the channel, I'm Jerp, a variety streamer who plays a ton of indie and retro games.  Want to know more about me?  Check out the channel panels below (or check my website: https://jerp.tv ).",
+                "With so many people arriving, please be sure to have a quick glance at the channel rules (TLDR: we're pretty chill and civil around here).",
+                "Also, if you like what you see, please follow the channel - we're happy to have you around for future streams."
+            ]
+        },
+		{
+			"viewers": 10,
+			"messages": [
+                "Thanks for the raid {0}!  Welcome, everyone!  For anybody new to the channel, I'm Jerp, a variety streamer who plays a ton of indie and retro games.  Want to know more about me?  Check out the channel panels below (or check my website: https://jerp.tv )."
+            ]
+        },
+		{
+			"viewers": 1,
+			"messages": [
+                "Thanks for the raid {0}!"
+            ]
+        }
+	]
+}
