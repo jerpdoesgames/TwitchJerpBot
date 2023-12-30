@@ -87,6 +87,47 @@ namespace JerpDoesBots
                 }
             }
         }
+
+        /// <summary>
+        /// Executes commands after stream goes live.
+        /// </summary>
+        public override void onStreamLive()
+        {
+            if (m_IsLoaded)
+            {
+                foreach (autoExecConfigEntry curEntry in m_Config.entries)
+                {
+                    if (curEntry.activateOnStreamLive && (curEntry.requirements == null || curEntry.requirements.isMet()))
+                    {
+                        foreach (string curCommandString in curEntry.commands)
+                        {
+                            m_BotBrain.messageOrCommand(curCommandString);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Executes commands after stream goes offline (after first going online).
+        /// </summary>
+        public override void onStreamOffline()
+        {
+            if (m_IsLoaded)
+            {
+                foreach (autoExecConfigEntry curEntry in m_Config.entries)
+                {
+                    if (curEntry.activateOnStreamOffline && (curEntry.requirements == null || curEntry.requirements.isMet()))
+                    {
+                        foreach (string curCommandString in curEntry.commands)
+                        {
+                            m_BotBrain.messageOrCommand(curCommandString);
+                        }
+                    }
+                }
+            }
+        }
+
         public override void onUserMessage(userEntry aUser, string aMessage)
         {
             if (m_IsLoaded)

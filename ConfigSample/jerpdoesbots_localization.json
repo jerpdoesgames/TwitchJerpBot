@@ -303,6 +303,10 @@
           "adManagerSnoozeCountOutputMoreIncoming": "{0} snooze(s) available.  Another snooze will be added in {1}.",
           "messageRollReloadSuccess": "Successfully reloaded automated messages.",
           "messageRollReloadFail": "Failed to reload automated messages.",
-          "mediaMonitorCurrentTrack": "The current track is {0}."
+          "mediaMonitorCurrentTrack": "The current track is {0}.",
+          "dataLookupLoadSuccess": "Reloaded Data Lookup config & databases.",
+          "dataLookupLoadFail": "Failed to reload Data Lookup config/databases.",
+          "dataLookupSearchInvalidQueryNumeric": "Failed to find numeric entry.",
+          "dataLookupSearchInvalidQueryNotFound": "Failed to find matching entry."
     }
 }

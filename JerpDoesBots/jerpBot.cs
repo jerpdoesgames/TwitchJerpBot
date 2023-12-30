@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
@@ -11,10 +14,6 @@ using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Text.Json;
-using NAudio.Wave.Asio;
 
 namespace JerpDoesBots
 {
@@ -835,15 +834,13 @@ namespace JerpDoesBots
                 return true;    // TODO: Return actual command output
             }
 
-            if (m_SoundCommandModule.soundExists(command))
+            if (m_SoundCommandModule.soundExists(command, true))
             {
                 string silentPrefix = silentMode ? "@" : "";
                 return processUserCommand(aCommandUser, silentPrefix + "!sound " + command);
             }
-                
 
             return true;    // TODO: Return actual command output
-
         }
 
         public userEntry checkCreateUser(string aUsername, bool aCanCreate = true)

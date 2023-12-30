@@ -1,9 +1,8 @@
-﻿using System;
+﻿using NAudio.Wave;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Web.Script.Serialization;
-using NAudio.Wave;
-using System.Threading.Tasks;
 
 namespace JerpDoesBots
 {
@@ -13,6 +12,10 @@ namespace JerpDoesBots
         public List<string> paths { get; set; }
         public float volume { get; set; }
         public bool isValidForPointReward { get; set; }
+        /// <summary>
+        /// Primarily used to filter out sounds that should only be accessible for internal use.  Defaults to true.
+        /// </summary>
+        public bool isValidForCommand { get; set; }
         public int pointRewardCost { get; set; }
         public bool isMandatoryReward { get; set; }
         public string source { get; set; }
@@ -25,6 +28,7 @@ namespace JerpDoesBots
         public soundCommandDef()
         {
             pointRewardCost = 0;
+            isValidForCommand = true;
         }
     }
 
@@ -122,15 +126,7 @@ namespace JerpDoesBots
             bool needRefund = false;
             if (isEnabled)
             {
-                soundCommandDef foundSound = null;
-                foreach (soundCommandDef curSound in m_Config.soundList)
-                {
-                    if (curSound.reward.shouldExistOnTwitch && curSound.reward.rewardID == aRewardID)
-                    {
-                        foundSound = curSound;
-                        break;
-                    }
-                }
+                soundCommandDef foundSound = m_Config.soundList.Find(x => x.reward.shouldExistOnTwitch && x.reward.rewardID == aRewardID);
 
                 if (foundSound != null)
                 {
@@ -159,7 +155,7 @@ namespace JerpDoesBots
             }
         }
 
-        private bool playSoundInternal(userEntry aUser, soundCommandDef curSound, bool aIsRandom = false, bool aOutputErrors = false, bool aSilentMode = false)
+        private bool playSoundInternal(userEntry aUser, soundCommandDef curSound, bool aIsRandom = false, bool aOutputErrors = false, bool aSilentMode = false, bool aFromShoutout = false)
         {
             int pathCount = curSound.paths.Count;
             if (pathCount > 0)
@@ -236,37 +232,37 @@ namespace JerpDoesBots
             return false;
         }
 
-        public bool soundExists(string aSound)
+        public bool soundExists(string aSound, bool aIsCommand = true)
         {
-            if (!m_IsEnabled)
-                return false;
-
-            soundCommandDef curSound;
-            for (int i = 0; i < m_Config.soundList.Count; i++)
+            if (m_IsEnabled)
             {
-                curSound = m_Config.soundList[i];
-                if (curSound.name == aSound)
+                soundCommandDef checkSound = getSoundDef(aSound);
+                if (checkSound != null && (!aIsCommand || checkSound.isValidForCommand))
                 {
                     return true;
                 }
             }
+
+            return m_IsEnabled && getSoundDef(aSound) != null;
+
             return false;
         }
 
-        public void playSound(userEntry commandUser, string argumentString, bool aSilent = false)
+        public soundCommandDef getSoundDef(string aSound, bool aIsCommand = true)
+        {
+            List<soundCommandDef> useSoundList = aIsCommand ? getValidCommandSounds() : m_Config.soundList;
+            return useSoundList.Find(x => x.name.ToLower() == aSound.ToLower());
+        }
+
+        public void playSoundCommand(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!m_IsEnabled)
                 return;
 
-            soundCommandDef curSound;
-            for (int i=0; i < m_Config.soundList.Count; i++)
+            soundCommandDef useSound = getSoundDef(argumentString, true);
+            if (useSound != null)
             {
-                curSound = m_Config.soundList[i];
-                if (curSound.name == argumentString)
-                {
-                    playSoundInternal(commandUser, curSound, false, true, aSilent);
-                    break;
-                }
+                playSoundInternal(commandUser, useSound, false, true, aSilent);
             }
         }
 
@@ -410,10 +406,17 @@ namespace JerpDoesBots
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadFail"));
         }
 
+
+        public List<soundCommandDef> getValidCommandSounds()
+        {
+            return m_Config.soundList.FindAll(x => x.isValidForCommand);
+        }
+
         public void playRandom(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            int soundID = m_BotBrain.randomizer.Next(0, m_Config.soundList.Count - 1);
-            playSoundInternal(commandUser, m_Config.soundList[soundID], true, false, aSilent);
+            List<soundCommandDef> validSounds = getValidCommandSounds();
+            int soundID = m_BotBrain.randomizer.Next(0, validSounds.Count - 1);
+            playSoundInternal(commandUser, validSounds[soundID], true, false, aSilent);
         }
 
         public soundCommands(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
@@ -422,7 +425,7 @@ namespace JerpDoesBots
             {
                 isEnabled = m_Config.enabled;
 
-                chatCommandDef tempDef = new chatCommandDef("sound", playSound, true, true);
+                chatCommandDef tempDef = new chatCommandDef("sound", playSoundCommand, true, true);
                 tempDef.addSubCommand(new chatCommandDef("volume", setVolume, false, false));
                 tempDef.addSubCommand(new chatCommandDef("list", getList, true, true));
                 tempDef.addSubCommand(new chatCommandDef("enable", enable, true, false));

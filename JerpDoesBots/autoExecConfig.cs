@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JerpDoesBots
 {
@@ -44,6 +41,16 @@ namespace JerpDoesBots
         /// Whether this entry can be considered for activation when the bot first loads.  False by default.
         /// </summary>
         public bool activateOnBotLoad { get; set; }
+
+        /// <summary>
+        /// Whether this entry can be considered for activation when the stream goes live.  False by default.
+        /// </summary>
+        public bool activateOnStreamLive { get; set; }
+
+        /// <summary>
+        /// Whether this entry can be considered for activation when the stream goes from live to offline.  False by default.
+        /// </summary>
+        public bool activateOnStreamOffline { get; set; }
 
         /// <summary>
         /// Whether this entry can be considered for activation when the category changes.  False by default.

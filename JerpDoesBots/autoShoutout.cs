@@ -15,8 +15,21 @@ namespace JerpDoesBots
 
     class autoShoutoutUser
 	{
+        /// <summary>
+        /// Name of the user being shouted out (case-insitive to search, will match the case of the name listed in the shoutout config.
+        /// </summary>
 		public string name { get; set; }
+        /// <summary>
+        /// Message to display when shouting out the user.
+        /// </summary>
 		public string shoutMessage { get; set; }
+        /// <summary>
+        /// Commands to execute (or additional messages to send) when shouting out the user.
+        /// </summary>
+        public List<string> shoutCommands { get; set; }
+        /// <summary>
+        /// Used to define whether this includes a link to a stream or it's a message-only shoutout.
+        /// </summary>
         public autoShoutUserType type { get; set; }
 	}
 
@@ -143,6 +156,15 @@ namespace JerpDoesBots
                         m_LastShoutedNickname = userToShout.Nickname;
                         userToShout.lastShoutoutTimeMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
                     }
+
+                    if (shoutUser != null && shoutUser.shoutCommands != null && shoutUser.shoutCommands.Count > 0)
+                    {
+                        foreach (string curCommand in shoutUser.shoutCommands)
+                        {
+                            jerpBot.instance.messageOrCommand(curCommand);
+                        }
+                    }
+                    
                 }
 			}
 		}

@@ -1,8 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Web.Script.Serialization;
-using System.Diagnostics;
-using System.Collections.Generic;
 
 namespace JerpDoesBots
 {
@@ -47,12 +45,12 @@ namespace JerpDoesBots
                 if (!aSilent)
                     m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadSuccess"));
             }
-            else
+            else if (!aSilent)
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadFail"));
         }
 
 
-        private string getEntryNumeric(dataLookupConfigCatalog aCatalog, string aQueryString)
+        private string getEntryNumeric(dataLookupConfigCatalog aCatalog, string aQueryString, bool aSilent = false)
         {
             string output = "";
 
@@ -85,7 +83,7 @@ namespace JerpDoesBots
                     }
                 }
             }
-            else
+            else if (!aSilent)
             {
                 output = string.Format(m_BotBrain.localizer.getString("dataLookupSearchInvalidQueryNumeric"));
             }
@@ -93,13 +91,31 @@ namespace JerpDoesBots
             return output;
         }
 
-        public string getEntry(dataLookupConfigCatalog aCatalog, string aQuery)
+        public string getEntryRandom(dataLookupConfigCatalog aCatalog, bool aSilent = false)
+        {
+            if (aCatalog.isNumeric)
+            {
+                int entryIndex = jerpBot.instance.randomizer.Next(0, aCatalog.numericEntries.Count - 1);
+                return string.Format(aCatalog.outputStringMatch, aCatalog.numericEntries[entryIndex]);
+            }
+            else
+            {
+                List<string> entryList = new List<string>();
+                entryList.AddRange(aCatalog.entries.Values);
+
+                int entryIndex = jerpBot.instance.randomizer.Next(0, aCatalog.entries.Count - 1);
+
+                return string.Format(aCatalog.outputStringMatch, entryList[entryIndex]);
+            }
+        }
+
+        public string getEntry(dataLookupConfigCatalog aCatalog, string aQuery, bool aSilent = false)
         {
             string output = "";
 
             if (aCatalog.isNumeric)
             {
-                return getEntryNumeric(aCatalog, aQuery);
+                return getEntryNumeric(aCatalog, aQuery, aSilent);
             }
             else
             {
@@ -107,7 +123,7 @@ namespace JerpDoesBots
                 {
                     output = string.Format(aCatalog.outputStringMatch, aCatalog.entries[aQuery]);
                 }
-                else
+                else if (!aSilent)
                 {
                     output = string.Format(m_BotBrain.localizer.getString("dataLookupSearchInvalidQueryNotFound"));
                 }
@@ -116,7 +132,20 @@ namespace JerpDoesBots
             return output;
         }
 
-    public void searchForEntry(userEntry commandUser, string argumentString, bool aSilent = false)
+        public void getEntryRandomCommand(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            if (m_IsLoaded)
+            {
+                if (!string.IsNullOrEmpty(argumentString) && m_Config.entries.ContainsKey(argumentString))
+                {
+                    dataLookupConfigCatalog useCatalog = m_Config.entries[argumentString];
+                    string output = getEntryRandom(useCatalog, aSilent);
+                    m_BotBrain.sendDefaultChannelMessage(output);
+                }
+            }
+        }
+
+        public void searchForEntry(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (m_IsLoaded)
             {
@@ -131,7 +160,7 @@ namespace JerpDoesBots
                         {
                             string catalogKey = argumentList[1];
                             dataLookupConfigCatalog useCatalog = m_Config.entries[catalogName];
-                            string output = getEntry(useCatalog, catalogKey);
+                            string output = getEntry(useCatalog, catalogKey, aSilent);
                             m_BotBrain.sendDefaultChannelMessage(output);
                         }
                     }
@@ -146,6 +175,7 @@ namespace JerpDoesBots
             if (m_IsLoaded)
             {
                 chatCommandDef tempDef = new chatCommandDef("lookup", searchForEntry, true, true);
+                tempDef.addSubCommand(new chatCommandDef("random", getEntryRandomCommand, false, false));
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
 
                 m_BotBrain.addChatCommand(tempDef);
