@@ -1385,7 +1385,7 @@ namespace JerpDoesBots
         {
             if (aStream != null)
             {
-                m_IsLive = true;
+                IsLive = true;
                 m_ViewersLast = aStream.ViewerCount;
                 m_LiveStartTime = aStream.StartedAt;
                 m_Game = aStream.GameName;
@@ -1406,7 +1406,7 @@ namespace JerpDoesBots
 
         private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e)
         {
-            m_IsLive = false;
+            IsLive = false;
         }
 
         private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)

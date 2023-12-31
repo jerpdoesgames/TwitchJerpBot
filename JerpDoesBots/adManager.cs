@@ -56,8 +56,8 @@ namespace JerpDoesBots
             if (getAdScheduleTask.Result != null && getAdScheduleTask.Result.Data.Length >= 0)
             {
                 AdSchedule adScheduleData = getAdScheduleTask.Result.Data[0];
-                m_NextAdAt = DateTime.Parse(adScheduleData.NextAdAt);
-                m_SnoozeRefreshAt = DateTime.Parse(adScheduleData.SnoozeRefreshAt);
+                m_NextAdAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(adScheduleData.NextAdAt)).DateTime.ToLocalTime();
+                m_SnoozeRefreshAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(adScheduleData.SnoozeRefreshAt)).DateTime.ToLocalTime();
                 m_AvailableSnoozes = adScheduleData.SnoozeCount;
             }
         }
@@ -189,7 +189,7 @@ namespace JerpDoesBots
                 TimeSpan timeUntilNextSnooze = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now);
                 if (timeUntilNextSnooze.TotalSeconds > 0)
                 {
-                    output = timeUntilNextSnooze.Minutes + "m" + timeUntilNextSnooze + "s";
+                    output = timeUntilNextSnooze.Minutes + "m" + timeUntilNextSnooze.Seconds + "s";
                 }
             }
 
@@ -248,9 +248,9 @@ namespace JerpDoesBots
                         if (snoozeResponse.Result != null && snoozeResponse.Result.Data.Length > 0)
                         {
                             SnoozeNextAd snoozeData = snoozeResponse.Result.Data[0];
+                            m_NextAdAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(snoozeData.NextAdAt)).DateTime.ToLocalTime();
+                            m_SnoozeRefreshAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(snoozeData.SnoozeRefreshAt)).DateTime.ToLocalTime();
                             m_AvailableSnoozes = snoozeData.SnoozeCount;
-                            m_SnoozeRefreshAt = DateTime.Parse(snoozeData.SnoozeRefreshAt);
-                            m_NextAdAt = DateTime.Parse(snoozeData.NextAdAt);
 
                             if (m_AvailableSnoozes > 0)
                                 m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeSuccess"), m_AvailableSnoozes));
