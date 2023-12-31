@@ -272,14 +272,23 @@ namespace JerpDoesBots
                 {
 					if (m_Throttler.isReady)
 					{
-						if (userAddedRecently)
+                        if (userAddedRecently)
 						{
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + getJoinString());
+							if (!string.IsNullOrEmpty(m_Description))
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + " (" + m_Description + ")  " + getJoinString());
+                            else
+                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + getJoinString());
+
 							usersAddedRecently.Clear();
 							userAddedRecently = false;
 						}
 						else
-							m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleAnnounceOpen") + getJoinString());
+						{
+                            if (!string.IsNullOrEmpty(m_Description))
+	                            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleAnnounceOpen") + " (" + m_Description + ")  " + getJoinString());
+                            else
+                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleAnnounceOpen") + getJoinString());
+                        }
 
 						m_Throttler.trigger();
 					}
