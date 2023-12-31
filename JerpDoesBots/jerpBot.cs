@@ -77,6 +77,9 @@ namespace JerpDoesBots
         private bool m_IsFullyLoaded = false;
         private bool m_HasExecutedLoadEvent = false;
         private bool m_HasReceivedChannelInfo = false;
+        private Nullable<DateTime> m_NextIsFollowingCheck;
+        private int m_FollowerStaleCheckThrottleSeconds = 5;
+        private int m_FollowerCheckFailDelaySeconds = 60;
 
         private string m_DefaultChannel;
         private bool m_IsReadyToClose = false; // Ready to completely end the program
@@ -435,7 +438,6 @@ namespace JerpDoesBots
                     }
                 }
             }
-
         }
 
         public void quit()
@@ -876,31 +878,36 @@ namespace JerpDoesBots
 
         public bool checkUpdateIsFollower(userEntry aUser)
         {
-            if (!aUser.isBroadcaster)
+            if (m_NextIsFollowingCheck == null || DateTime.Now.Subtract(m_NextIsFollowingCheck.Value).TotalSeconds > m_FollowerStaleCheckThrottleSeconds)
             {
-                TimeSpan timeSinceFollowCheck = DateTime.Now.Subtract(aUser.lastFollowCheckTime);
-
-                if (timeSinceFollowCheck.TotalSeconds > m_FollowerStaleCheckSeconds && !string.IsNullOrEmpty(aUser.twitchUserID))
+                m_NextIsFollowingCheck = DateTime.Now.AddSeconds(m_FollowerStaleCheckThrottleSeconds);
+                if (!aUser.isBroadcaster)
                 {
-                    try
-                    {
-                        TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse userFollowsResponse = getUserFollowsResult(aUser);
+                    TimeSpan timeSinceFollowCheck = DateTime.Now.Subtract(aUser.lastFollowCheckTime);
 
-                        if (userFollowsResponse != null)
+                    if (timeSinceFollowCheck.TotalSeconds > m_FollowerStaleCheckSeconds && !string.IsNullOrEmpty(aUser.twitchUserID))
+                    {
+                        try
                         {
-                            aUser.isFollower = (userFollowsResponse.TotalFollows > 0);
-                            aUser.lastFollowCheckTime = DateTime.Now;
+                            TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse userFollowsResponse = getUserFollowsResult(aUser);
+
+                            if (userFollowsResponse != null)
+                            {
+                                aUser.isFollower = (userFollowsResponse.TotalFollows > 0);
+                                aUser.lastFollowCheckTime = DateTime.Now;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname + "| Error: " + e.Message);
+                            m_NextIsFollowingCheck = DateTime.Now.AddSeconds(m_FollowerCheckFailDelaySeconds);
                         }
                     }
-                    catch (Exception e)
-                    {
-                        m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname + "| Error: " + e.Message);
-                    }
                 }
-            }
-            else
-            {
-                aUser.isFollower = true;
+                else
+                {
+                    aUser.isFollower = true;
+                }
             }
 
             return aUser.isFollower;

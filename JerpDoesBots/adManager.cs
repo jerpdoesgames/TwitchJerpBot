@@ -25,6 +25,8 @@ namespace JerpDoesBots
 
         private int m_AvailableSnoozes = 0;
         private Nullable<DateTime> m_SnoozeRefreshAt;
+        private int m_SnoozeRefreshThrottleSeconds = 30;
+        private int m_SnoozeRefreshCheckBufferSeconds = 1;  // Just to be sure it should have updated when we next check for snoozes.
         private Nullable<DateTime> m_NextAdAt;
         private const int SNOOZE_COUNT_MAX = 3;
 
@@ -149,6 +151,17 @@ namespace JerpDoesBots
             }
             else
             {
+                if (!m_IsCommercialActive && m_SnoozeRefreshAt != null)
+                {
+                    // Check next snooze
+                    TimeSpan timeUntilSnoozeAvailable = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now);
+                    if (timeUntilSnoozeAvailable.Seconds + m_SnoozeRefreshCheckBufferSeconds <= 0)
+                    {
+                        m_SnoozeRefreshAt = DateTime.Now.AddSeconds(m_SnoozeRefreshThrottleSeconds);    // Enforcing a throttle in case it fails, otherwise this will be overwritten with the actual time.
+                        getAdScheduleData();
+                    }
+                }
+
                 // Check whether to display ad warnings
                 if (!m_IsCommercialActive && m_NextAdAt != null && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
                 {
