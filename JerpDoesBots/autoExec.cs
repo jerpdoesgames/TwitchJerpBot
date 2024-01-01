@@ -29,11 +29,11 @@ namespace JerpDoesBots
         }
 
         /// <summary>
-        /// Reloads autoexec 
+        /// Reloads json configuration for autoExec module.
         /// </summary>
-        /// <param name="commandUser"></param>
-        /// <param name="argumentString"></param>
-        /// <param name="aSilent"></param>
+        /// <param name="commandUser">User attempting to trigger a reload.</param>
+        /// <param name="argumentString">Unused</param>
+        /// <param name="aSilent">Wehther to output on success/fail.</param>
         public void reloadConfig(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             m_IsLoaded = loadConfig();
@@ -44,13 +44,11 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("autoExecReloadFail"));
+                if (!aSilent)
+                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("autoExecReloadFail"));
             }
         }
 
-        /// <summary>
-        /// Executes commands after changing categories.
-        /// </summary>
         public override void onCategoryIDChanged()
         {
             if (m_IsLoaded)
@@ -68,9 +66,6 @@ namespace JerpDoesBots
             }
         }
 
-        /// <summary>
-        /// Executes commands after the bot is first loaded.
-        /// </summary>
         public override void onBotFullyLoaded()
         {
             if (m_IsLoaded)
@@ -88,9 +83,6 @@ namespace JerpDoesBots
             }
         }
 
-        /// <summary>
-        /// Executes commands after stream goes live.
-        /// </summary>
         public override void onStreamLive()
         {
             if (m_IsLoaded)
@@ -108,9 +100,6 @@ namespace JerpDoesBots
             }
         }
 
-        /// <summary>
-        /// Executes commands after stream goes offline (after first going online).
-        /// </summary>
         public override void onStreamOffline()
         {
             if (m_IsLoaded)
@@ -174,9 +163,6 @@ namespace JerpDoesBots
             }
         }
 
-        /// <summary>
-        /// Executes commands periodically, checking a throttler every frame.
-        /// </summary>
         public override void onFrame()
         {
             if (m_IsLoaded && m_Throttler.isReady)
@@ -199,7 +185,7 @@ namespace JerpDoesBots
         }
 
         /// <summary>
-        /// Initialize command entries for the automatic command executor.
+        /// Automatic command executor - can output messages and commands in response to specific events and on specific intervals.
         /// </summary>
         /// <param name="aJerpBot"></param>
         public autoExec(jerpBot aJerpBot) : base(aJerpBot, true, true, false)

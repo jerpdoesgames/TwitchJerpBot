@@ -6,6 +6,12 @@ namespace JerpDoesBots
 {
 	class quotes : botModule
 	{
+		/// <summary>
+		/// Add a note quote.
+		/// </summary>
+		/// <param name="commandUser">User attempting to add a quote.</param>
+		/// <param name="argumentString">Text of the quote to add.</param>
+		/// <param name="aSilent">Whether to output a message on success/failure.</param>
 		public void add(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (argumentString.Length > 0)
@@ -42,6 +48,12 @@ namespace JerpDoesBots
 			}
 		}
 
+		/// <summary>
+		/// Displays a quote.  Called when passing no arguments or passing a numeric argument.
+		/// </summary>
+		/// <param name="commandUser">User attempting to display a quote.</param>
+		/// <param name="argumentString">Optional - integer ID for a specific quote to display.</param>
+		/// <param name="aSilent">Whether to output on success/failure.  Will always display a succesfully retrieved quote.  False by default.</param>
 		public void display(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int quoteID;
@@ -71,6 +83,12 @@ namespace JerpDoesBots
 			}
 		}
 
+		/// <summary>
+		/// Remove a quote from the database.
+		/// </summary>
+		/// <param name="commandUser">Unused.  User attempting to remove a quote.</param>
+		/// <param name="argumentString">ID of the quote to remove.</param>
+		/// <param name="aSilent">Whether to output a message on success.</param>
 		public void remove(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			int quoteID;
@@ -92,6 +110,12 @@ namespace JerpDoesBots
 			}
 		}
 
+		/// <summary>
+		/// Output a random quote.
+		/// </summary>
+		/// <param name="commandUser">Unused.  User attempting to display a quote.</param>
+		/// <param name="argumentString">Unused</param>
+		/// <param name="aSilent">Whether to display a message on failure.</param>
 		public void random(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			string getQuoteQuery = "SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1";
@@ -108,7 +132,7 @@ namespace JerpDoesBots
 
 				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteDisplay"), quoteID, message, game));
 			}
-			else
+			else if (!aSilent)
 			{
 				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteNoneFound"));
 			}
@@ -139,7 +163,7 @@ namespace JerpDoesBots
             m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_quotes.json");
         }
 
-		public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+        public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			outputListInternal();
 
@@ -147,6 +171,12 @@ namespace JerpDoesBots
 				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteOutputListSuccess"));
 		}
 
+        /// <summary>
+        /// Output a localized string (quoteList) which includes a link to a list of quotes.
+        /// </summary>
+        /// <param name="commandUser">Unused.  User attempting to output a link to a list of quotes.</param>
+        /// <param name="argumentString">Unused.</param>
+        /// <param name="aSilent">Unused.</param>
         public void quoteListCommand(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteList"));
