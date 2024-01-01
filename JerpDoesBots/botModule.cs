@@ -58,9 +58,19 @@ namespace JerpDoesBots
 		/// <param name="aCommercialArgs">Data about the commercial being played including its length.</param>
 		public virtual void onCommercialStart(OnCommercialArgs aCommercialArgs) { }
 		
-		public virtual void onRaid(string aHostName, int aViewerCount) { }
+		/// <summary>
+		/// Occurs when being raided by another channel.
+		/// </summary>
+		/// <param name="aHostName">Name of the streamer raiding the channel.</param>
+		/// <param name="aViewerCount">Amount of viewers in the raid.</param>
+		public virtual void onRaidReceived(string aHostName, int aViewerCount) { }
 
-		private bool m_RequiresConnection	= true;
+        /// <summary>
+        /// Occurs when making a global request to dump data such as quotes lists/etc. - this module should dump a json file with all of its data in %userprofile%\Documents\JerpBot\output
+        /// </summary>
+        public virtual void onOutputDataRequest() { }
+
+        private bool m_RequiresConnection	= true;
 		private bool m_RequiresChannel		= true;
 		private bool m_RequiresPM			= false;
 

@@ -238,22 +238,32 @@ namespace JerpDoesBots
 			return new { name = Convert.ToString(aEntryReader["command_name"]), message = Convert.ToString(aEntryReader["message"]) };
 		}
 
-		public virtual void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+		public virtual void outputListInternal()
 		{
-			SQLiteCommand getEntriesCommand = new SQLiteCommand(selectAllQuery, m_BotBrain.storageDB);
-			SQLiteDataReader getEntriesReader = getEntriesCommand.ExecuteReader();
+            SQLiteCommand getEntriesCommand = new SQLiteCommand(selectAllQuery, m_BotBrain.storageDB);
+            SQLiteDataReader getEntriesReader = getEntriesCommand.ExecuteReader();
 
-			List<object> rowData = new List<object>();
+            List<object> rowData = new List<object>();
 
-			if (getEntriesReader.HasRows)
-			{
-				while (getEntriesReader.Read())
-				{
-					rowData.Add(getCurEntryJsonObject(getEntriesReader));
-				}
-			}
+            if (getEntriesReader.HasRows)
+            {
+                while (getEntriesReader.Read())
+                {
+                    rowData.Add(getCurEntryJsonObject(getEntriesReader));
+                }
+            }
 
-			m_BotBrain.genericSerializeToFile(rowData, outputListFilename);
+            m_BotBrain.genericSerializeToFile(rowData, outputListFilename);
+        }
+
+        public override void onOutputDataRequest()
+        {
+            outputListInternal();
+        }
+
+        public virtual void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+		{
+			outputListInternal();
 
 			if (!aSilent)
 				m_BotBrain.sendDefaultChannelMessage(outputListMessageSuccess);

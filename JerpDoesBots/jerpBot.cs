@@ -165,7 +165,6 @@ namespace JerpDoesBots
 
                         }
                     }
-
                 }
             }
         }
@@ -608,12 +607,33 @@ namespace JerpDoesBots
             File.WriteAllText(outputPath, outputString);
         }
 
-        public void outputCommandList(userEntry commandUser, string argumentString, bool aSilent = false)
+        public void outputCommandListInternal()
         {
             genericSerializeToFile(m_CommandList, "jerpdoesbots_commands.json");
+        }
+
+        public void outputCommandList(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            
 
             if (!aSilent)
                 sendDefaultChannelMessage("Successfully wrote command json to output directory.");
+        }
+
+        public void outputAllData(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            outputCommandListInternal();
+
+            foreach (botModule curModule in m_Modules)
+            {
+                if (isModuleValidForUserAction(curModule))
+                {
+                    curModule.onOutputDataRequest();
+                }
+            }
+
+            if (!aSilent)
+                sendDefaultChannelMessage("Successfully wrote all module data json to output directory.");
         }
 
         // This is crude and could be replaced with something better
@@ -816,15 +836,16 @@ namespace JerpDoesBots
                 string[] foundAlias = m_AliasModule.loadAlias(command);
                 if (foundAlias != null)
                 {
+                    int failedCommands = 0;
                     for (int i=0; i < foundAlias.Length; i++)
                     {
                         if (!string.IsNullOrEmpty(argumentString))
                         {
                             argumentString = " " + argumentString;
                         }
-                        return processUserCommand(aCommandUser, foundAlias[i] + argumentString); // TODO: Exploit checking on argumentString
+                        failedCommands += processUserCommand(aCommandUser, foundAlias[i] + argumentString) ? 0 : 1; // TODO: Exploit checking on argumentString
                     }
-                    return true;    // TODO: Return actual command output
+                    return failedCommands == 0 ? true : false;    // TODO: Return actual command output
                 }
             }
 
@@ -1372,7 +1393,7 @@ namespace JerpDoesBots
                 tempModule = m_Modules[i];
 
                 if (isModuleValidForUserAction(tempModule))
-                    tempModule.onRaid(e.RaidNotification.MsgParamDisplayName, Int32.Parse(e.RaidNotification.MsgParamViewerCount));
+                    tempModule.onRaidReceived(e.RaidNotification.MsgParamDisplayName, Int32.Parse(e.RaidNotification.MsgParamViewerCount));
             }
         }
 
@@ -1590,6 +1611,7 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
             m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
             m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
+            m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
 
             requestChannelInfo();
         }

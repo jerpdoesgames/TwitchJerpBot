@@ -22,12 +22,16 @@ namespace JerpDoesBots
         /// <returns></returns>
         public string getString(string aKey)
         {
-            string output;
+            if (m_Loaded)
+            {
+                string output;
 
-            if (m_Config.entries.TryGetValue(aKey, out output))
-                return output;
-            else
-                return "INVALID LOC KEY: " + aKey;
+                if (m_Config.entries.TryGetValue(aKey, out output))
+                    return output;
+                else
+                    return "INVALID LOC KEY: " + aKey;
+            }
+            return "CONFIG NOT AVAILABLE: " + aKey;
         }
 
         public bool loadConfig()

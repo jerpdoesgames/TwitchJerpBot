@@ -35,9 +35,8 @@ namespace JerpDoesBots
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadFail"));
         }
 
-        public override void onRaid(string aHostName, int aViewerCount)
+        public override void onRaidReceived(string aHostName, int aViewerCount)
         {
-
             for (int i = 0; i < m_Config.thresholds.Count; i++)
             {
                 if (aViewerCount >= m_Config.thresholds[i].viewers)

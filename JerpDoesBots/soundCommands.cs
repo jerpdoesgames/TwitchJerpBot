@@ -244,8 +244,6 @@ namespace JerpDoesBots
             }
 
             return m_IsEnabled && getSoundDef(aSound) != null;
-
-            return false;
         }
 
         public soundCommandDef getSoundDef(string aSound, bool aIsCommand = true)

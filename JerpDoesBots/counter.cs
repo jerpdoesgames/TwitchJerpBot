@@ -564,7 +564,12 @@ namespace JerpDoesBots
             }
 		}
 
-        public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+        public override void onOutputDataRequest()
+        {
+            outputListInternal();
+        }
+
+        public void outputListInternal()
         {
             string getCountersQuery = "SELECT * FROM counters ORDER BY game ASC, name ASC";
 
@@ -582,6 +587,11 @@ namespace JerpDoesBots
             }
 
             m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_counters.json");
+        }
+
+        public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            outputListInternal();
 
             if (!aSilent)
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOutputListSuccess"));

@@ -97,7 +97,7 @@ namespace JerpDoesBots
 			}
 			catch (Exception e)
             {
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelFail"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelFail") + " : " + e.Message);
 			}
         }
 
@@ -121,7 +121,7 @@ namespace JerpDoesBots
 			}
 			catch (Exception e)
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseFail"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseFail") + " : " + e.Message);
 			}
 		}
 
@@ -154,7 +154,7 @@ namespace JerpDoesBots
 			}
 			catch (Exception e)
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDecideFail"));
+				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDecideFail") + " : " + e.Message);
 			}
 		}
 
@@ -229,7 +229,7 @@ namespace JerpDoesBots
 					}
 					catch (Exception e)
                     {
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionCreateFail"), m_BotBrain.localizer.getString("predictionCreateFailUnknown")));
+						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionCreateFail"), m_BotBrain.localizer.getString("predictionCreateFailUnknown") + " : " +  e.Message));
 					}
                 }
 				else

@@ -101,10 +101,14 @@ namespace JerpDoesBots
             {
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasAddFailLoop"));
             }
-            
         }
 
-        public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+        public override void onOutputDataRequest()
+        {
+            outputListInternal();
+        }
+
+        public override void outputListInternal()
         {
             string getQuotesQuery = "SELECT * FROM command_alias ORDER BY command_name ASC";
 
@@ -122,6 +126,11 @@ namespace JerpDoesBots
             }
 
             m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
+        }
+
+        public override void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            outputListInternal();
 
             if (!aSilent)
                 m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasOutputListSuccess"));
