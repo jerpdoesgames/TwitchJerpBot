@@ -11,7 +11,7 @@ namespace JerpDoesBots
 	{
 		public Prediction getLastPrediction()
 		{
-			Task<GetPredictionsResponse> lastPredictionTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.GetPredictionsAsync(m_BotBrain.ownerUserID, null, null, 1));
+			Task<GetPredictionsResponse> lastPredictionTask = Task.Run(() => jerpBot.instance.twitchAPI.Helix.Predictions.GetPredictionsAsync(jerpBot.instance.ownerUserID, null, null, 1));
 			lastPredictionTask.Wait();
 
 			if (lastPredictionTask.Result != null)
@@ -33,6 +33,12 @@ namespace JerpDoesBots
 			return null;
         }
 
+		/// <summary>
+		/// Display last prediction and its outcome.
+		/// </summary>
+		/// <param name="commandUser">User attempting to display the last prediction.</param>
+		/// <param name="argumentString"></param>
+		/// <param name="aSilent"></param>
 		public void displayLast(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			Prediction lastPrediction = getLastPrediction();
@@ -45,38 +51,43 @@ namespace JerpDoesBots
 
 						if (winningOutcome != null)
 						{
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDisplayLast"), lastPrediction.Title, winningOutcome.Title));
+							jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionDisplayLast"), lastPrediction.Title, winningOutcome.Title));
 						}
 						else
                         {
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDisplayLastNoOutcome"), lastPrediction.Title));
+							jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionDisplayLastNoOutcome"), lastPrediction.Title));
 						}
 						break;
 
 					case PredictionStatus.ACTIVE:
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDisplayLastActive"), lastPrediction.Title));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionDisplayLastActive"), lastPrediction.Title));
 						break;
 
 					case PredictionStatus.LOCKED:
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDisplayLastLocked"), lastPrediction.Title));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionDisplayLastLocked"), lastPrediction.Title));
 						break;
 
 					case PredictionStatus.CANCELED:
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDisplayLastCanceled"), lastPrediction.Title));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionDisplayLastCanceled"), lastPrediction.Title));
 						break;
 
 					default:
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDisplayLastFail"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionDisplayLastFail"));
 						break;
 				}
             }
 			else
             {
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDisplayLastFail"));
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionDisplayLastFail"));
 			}
         }
 
-
+		/// <summary>
+		/// Cancels an active/locked prediction.
+		/// </summary>
+		/// <param name="commandUser">User attempting to cancel this prediction.</param>
+		/// <param name="argumentString">Unused.</param>
+		/// <param name="aSilent">Whether to output a message on success.</param>
 		public void cancel(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			try
@@ -84,23 +95,29 @@ namespace JerpDoesBots
 				Prediction lastPrediction = getLastPrediction();
 				if (lastPrediction != null && (lastPrediction.Status == PredictionStatus.ACTIVE || lastPrediction.Status == PredictionStatus.LOCKED))
 				{
-					Task cancelTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.CANCELED));
+					Task cancelTask = Task.Run(() => jerpBot.instance.twitchAPI.Helix.Predictions.EndPredictionAsync(jerpBot.instance.ownerUserID, lastPrediction.Id, PredictionEndStatus.CANCELED));
 					cancelTask.Wait();
 
 					if (!aSilent)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelSuccess"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCancelSuccess"));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelFailStatus"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCancelFailStatus"));
 				}
 			}
 			catch (Exception e)
             {
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCancelFail") + " : " + e.Message);
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCancelFail") + " : " + e.Message);
 			}
         }
 
+		/// <summary>
+		/// Close (lock) an prediction so no additional votes can be made.
+		/// </summary>
+		/// <param name="commandUser">User closing (locking) this prediction.</param>
+		/// <param name="argumentString">Unused.</param>
+		/// <param name="aSilent">Whether to output a message when the prediction is successfully closed (locked).</param>
 		public void close(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			try
@@ -108,23 +125,29 @@ namespace JerpDoesBots
 				Prediction lastPrediction = getLastPrediction();
 				if (lastPrediction != null && lastPrediction.Status == PredictionStatus.ACTIVE)
 				{
-					Task closeTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.LOCKED));
+					Task closeTask = Task.Run(() => jerpBot.instance.twitchAPI.Helix.Predictions.EndPredictionAsync(jerpBot.instance.ownerUserID, lastPrediction.Id, PredictionEndStatus.LOCKED));
 					closeTask.Wait();
 
 					if (!aSilent)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseSuccess"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCloseSuccess"));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseFailStatus"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCloseFailStatus"));
 				}
 			}
 			catch (Exception e)
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCloseFail") + " : " + e.Message);
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCloseFail") + " : " + e.Message);
 			}
 		}
 
+		/// <summary>
+		/// Announce the outcome of a prediction.
+		/// </summary>
+		/// <param name="commandUser">User announcing the oucome of a prediction.</param>
+		/// <param name="argumentString">Integer index of the outcome which won (1 or 2).</param>
+		/// <param name="aSilent">Whether to output a message on success.</param>
 		public void decide(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			try
@@ -136,25 +159,25 @@ namespace JerpDoesBots
 
 					if  (Int32.TryParse(argumentString, out outcomeIndex) && (outcomeIndex == 1 || outcomeIndex == 2) && lastPrediction.Outcomes.Length == 2)
                     {
-						Task decideTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.EndPredictionAsync(m_BotBrain.ownerUserID, lastPrediction.Id, PredictionEndStatus.RESOLVED, lastPrediction.Outcomes[outcomeIndex - 1].Id));
+						Task decideTask = Task.Run(() => jerpBot.instance.twitchAPI.Helix.Predictions.EndPredictionAsync(jerpBot.instance.ownerUserID, lastPrediction.Id, PredictionEndStatus.RESOLVED, lastPrediction.Outcomes[outcomeIndex - 1].Id));
 						decideTask.Wait();
 
 						if (!aSilent)
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionDecideSuccess"), lastPrediction.Outcomes[outcomeIndex - 1].Title));
+							jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionDecideSuccess"), lastPrediction.Outcomes[outcomeIndex - 1].Title));
 					}
 					else
                     {
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDecideFailOutcomeInvalid"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionDecideFailOutcomeInvalid"));
 					}
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDecideFailStatus"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionDecideFailStatus"));
 				}
 			}
 			catch (Exception e)
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionDecideFail") + " : " + e.Message);
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionDecideFail") + " : " + e.Message);
 			}
 		}
 
@@ -163,12 +186,18 @@ namespace JerpDoesBots
 			return (!string.IsNullOrEmpty(aOutcome) && aOutcome.Length > 0 && aOutcome.Length <= 25);
         }
 
+		/// <summary>
+		/// Create a new prediction using the Twitch API.
+		/// </summary>
+		/// <param name="commandUser">User creating the prediction.</param>
+		/// <param name="argumentString">List of arguments (separated by slash [/]) required to start a prediction: duration in seconds/title/outcome 1/outcome 2.</param>
+		/// <param name="aSilent">Whether to output on success.</param>
 		public void create(userEntry commandUser, string argumentString, bool aSilent = false)
         {
 			string[] argArray = argumentString.Split('/');
 			if (argArray.Length >= 5)
             {
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionCreateFail"), m_BotBrain.localizer.getString("predictionCreateFailOutcomeCount")));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionCreateFail"), jerpBot.instance.localizer.getString("predictionCreateFailOutcomeCount")));
 			}
 			else if (argArray.Length == 4)
             {
@@ -179,7 +208,7 @@ namespace JerpDoesBots
 				if (Int32.TryParse(argArray[0], out duration) && duration >= 1 && duration <= 1800)
 					durationValid = true;
 				else
-					failReasons += m_BotBrain.localizer.getString("predictionCreateFailArgCount");
+					failReasons += jerpBot.instance.localizer.getString("predictionCreateFailArgCount");
 
 				string title = argArray[1];
 				bool titleValid = false;
@@ -187,7 +216,7 @@ namespace JerpDoesBots
 				if (!string.IsNullOrEmpty(title) && title.Length > 1 && title.Length <= 45)
 					titleValid = true;
 				else
-					failReasons += m_BotBrain.localizer.getString("predictionCreateFailTitleLength");
+					failReasons += jerpBot.instance.localizer.getString("predictionCreateFailTitleLength");
 
 				string outcome1 = argArray[2];
 				bool outcome1Valid = false;
@@ -195,7 +224,7 @@ namespace JerpDoesBots
 				if (isValidOutcome(outcome1))
 					outcome1Valid = true;
 				else
-					failReasons += string.Format(m_BotBrain.localizer.getString("predictionCreateFailOutcomeInvalid"), 1);
+					failReasons += string.Format(jerpBot.instance.localizer.getString("predictionCreateFailOutcomeInvalid"), 1);
 
 				string outcome2 = argArray[3];
 				bool outcome2Valid = false;
@@ -203,7 +232,7 @@ namespace JerpDoesBots
 				if (isValidOutcome(outcome2))
 					outcome2Valid = true;
 				else
-					failReasons += string.Format(m_BotBrain.localizer.getString("predictionCreateFailOutcomeInvalid"), 2);
+					failReasons += string.Format(jerpBot.instance.localizer.getString("predictionCreateFailOutcomeInvalid"), 2);
 
 				if (durationValid && titleValid && outcome1Valid && outcome2Valid)
                 {
@@ -215,34 +244,38 @@ namespace JerpDoesBots
 
 						CreatePredictionRequest newPredictionRequest = new CreatePredictionRequest()
 						{
-							BroadcasterId = m_BotBrain.ownerUserID,
+							BroadcasterId = jerpBot.instance.ownerUserID,
 							Title = title,
 							PredictionWindowSeconds = duration,
 							Outcomes = outcomeList
 						};
 
-						Task<CreatePredictionResponse> createTask = Task.Run(() => m_BotBrain.twitchAPI.Helix.Predictions.CreatePredictionAsync(newPredictionRequest));
+						Task<CreatePredictionResponse> createTask = Task.Run(() => jerpBot.instance.twitchAPI.Helix.Predictions.CreatePredictionAsync(newPredictionRequest));
 						createTask.Wait();
 
 						if (!aSilent)
-							m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("predictionCreateSuccess"));
+							jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("predictionCreateSuccess"));
 					}
 					catch (Exception e)
                     {
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionCreateFail"), m_BotBrain.localizer.getString("predictionCreateFailUnknown") + " : " +  e.Message));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionCreateFail"), jerpBot.instance.localizer.getString("predictionCreateFailUnknown") + " : " +  e.Message));
 					}
                 }
 				else
                 {
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionCreateFail"), failReasons));
+					jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionCreateFail"), failReasons));
 				}
 			}
 			else
             {
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("predictionCreateFail"), m_BotBrain.localizer.getString("predictionCreateFailArgCount")));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("predictionCreateFail"), jerpBot.instance.localizer.getString("predictionCreateFailArgCount")));
 			}
         }
 
+		/// <summary>
+		/// Module for interacting with Twitch's predictions API (a "gamba"/etc. type system where people vote for outcomes using channel points).
+		/// </summary>
+		/// <param name="aJerpBot">Will eventually be removed - reference to jerpBot.</param>
 		public predictionManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
 		{
 			chatCommandDef tempDef = new chatCommandDef("prediction", null, false, false);
@@ -251,7 +284,7 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("close", close, true, false));
 			tempDef.addSubCommand(new chatCommandDef("cancel", cancel, true, false));
 			tempDef.addSubCommand(new chatCommandDef("decide", decide, true, false));
-			m_BotBrain.addChatCommand(tempDef);
+			jerpBot.instance.addChatCommand(tempDef);
 		}
 	}
 }
