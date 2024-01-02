@@ -5,19 +5,19 @@
 
 		public override void initTable()
 		{
-			outputListMessageSuccess = m_BotBrain.localizer.getString("commandOutputListSuccess");
+			outputListMessageSuccess = jerpBot.instance.localizer.getString("commandOutputListSuccess");
 
 			base.initTable();
 		}
 
-		public customCommand(jerpBot aJerpBot) : base(aJerpBot)
+		public customCommand() : base()
 		{
 			chatCommandDef tempDef = new chatCommandDef("command", null, false, false);
 			tempDef.addSubCommand(new chatCommandDef("add", add, true, false));
 			tempDef.addSubCommand(new chatCommandDef("remove", remove, true, false));
 			tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
 
-			m_BotBrain.addChatCommand(tempDef);
+			jerpBot.instance.addChatCommand(tempDef);
 		}
 	}
 }

@@ -1609,7 +1609,7 @@ namespace JerpDoesBots
             m_LogWarningsErrors = new logger("log_warnings_errors");
             m_LogConnection = new logger("log_connection");
 
-            m_Localizer = new localizer(this);
+            m_Localizer = new localizer();
 
             m_FollowerStaleCheckSeconds = m_CoreConfig.configData.followerStaleCheckSeconds;
 

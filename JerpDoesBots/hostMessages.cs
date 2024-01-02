@@ -28,11 +28,11 @@ namespace JerpDoesBots
             if (loadConfig())
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("hostMessageLoadSuccess"));
             }
                 
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("hostMessageLoadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("hostMessageLoadFail"));
         }
 
         public override void onRaidReceived(string aHostName, int aViewerCount)
@@ -43,14 +43,14 @@ namespace JerpDoesBots
                 {
                     foreach (string curMessage in m_Config.thresholds[i].messages)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(curMessage, aHostName));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(curMessage, aHostName));
                     }
                     break;
                 }
             }
         }
 
-        public hostMessages(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public hostMessages() : base(true, true, false)
 		{
             m_IsLoaded = loadConfig();
 
@@ -59,7 +59,7 @@ namespace JerpDoesBots
                 chatCommandDef tempDef = new chatCommandDef("hostmessages", null, true, true);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadMessages, false, false));
 
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
             }
         }
 	}

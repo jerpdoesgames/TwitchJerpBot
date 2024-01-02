@@ -275,8 +275,7 @@ namespace JerpDoesBots
 		/// <summary>
 		/// Module for interacting with Twitch's predictions API (a "gamba"/etc. type system where people vote for outcomes using channel points).
 		/// </summary>
-		/// <param name="aJerpBot">Will eventually be removed - reference to jerpBot.</param>
-		public predictionManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+		public predictionManager() : base(true, true, false)
 		{
 			chatCommandDef tempDef = new chatCommandDef("prediction", null, false, false);
 			tempDef.addSubCommand(new chatCommandDef("last", displayLast, true, true));

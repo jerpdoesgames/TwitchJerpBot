@@ -13,7 +13,7 @@ namespace JerpDoesBots
 			removeQuery = "DELETE FROM commands_game WHERE command_name=@param1 AND game=@param2";
 			selectAllQuery = "SELECT * FROM commands_game ORDER BY game ASC, command_name ASC";
 			outputListFilename = "jerpdoesbots_commands_game.json";
-			outputListMessageSuccess = m_BotBrain.localizer.getString("commandGameOutputListSuccess");
+			outputListMessageSuccess = jerpBot.instance.localizer.getString("commandGameOutputListSuccess");
 
 			base.initTable();
 		}
@@ -24,16 +24,16 @@ namespace JerpDoesBots
 		}
 
 		// TODO: variant that applies properties before creating table
-		public gameCommand(jerpBot botGeneral) : base(botGeneral)
+		public gameCommand() : base()
 		{
-			formatHint = m_BotBrain.localizer.getString("commandGameFormatHint");
+			formatHint = jerpBot.instance.localizer.getString("commandGameFormatHint");
 			chatCommandDef tempDef = new chatCommandDef("gamecommand", null, false, false);
 			tempDef.addSubCommand(new chatCommandDef("add", add, true, false));
 			tempDef.addSubCommand(new chatCommandDef("remove", remove, true, false));
 			tempDef.addSubCommand(new chatCommandDef("setgame", setGame, true, false));
 			tempDef.addSubCommand(new chatCommandDef("cleargame", clearGame, true, false));
 			tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
-			m_BotBrain.addChatCommand(tempDef);
+			jerpBot.instance.addChatCommand(tempDef);
 
 		}
 	}

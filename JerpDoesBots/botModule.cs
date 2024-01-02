@@ -78,16 +78,14 @@ namespace JerpDoesBots
 		public bool requiresChannel { get { return m_RequiresChannel; } }
 		public bool requiresPM { get { return m_RequiresPM; } }
 
-		protected jerpBot m_BotBrain;
 
-		public botModule(jerpBot aJerpBot, bool aRequiresConnection = true, bool aRequiresChannel = true, bool aRequiresPM = false)
+		public botModule(bool aRequiresConnection = true, bool aRequiresChannel = true, bool aRequiresPM = false)
 		{
-			m_BotBrain				= aJerpBot;
 			m_RequiresConnection	= aRequiresConnection;
 			m_RequiresChannel		= aRequiresChannel;
 			m_RequiresPM			= aRequiresPM;
 
-			m_BotBrain.addModule(this);
+			jerpBot.instance.addModule(this);
 		} 
 	}
 }

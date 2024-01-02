@@ -6,7 +6,6 @@ namespace JerpDoesBots
 {
     class localizer
     {
-        private jerpBot m_BotBrain;
         private localizerConfig m_Config;
         private bool m_Loaded = false;
 
@@ -49,9 +48,8 @@ namespace JerpDoesBots
             return false;
         }
 
-        public localizer(jerpBot aJerpBot)
+        public localizer()
         {
-            m_BotBrain = aJerpBot;
             if (loadConfig())
             {
                 m_Loaded = true;

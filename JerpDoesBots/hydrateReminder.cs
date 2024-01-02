@@ -20,9 +20,9 @@ namespace JerpDoesBots
         private int getHoursPassed()
         {
 
-            if (m_BotBrain.IsLive)
+            if (jerpBot.instance.IsLive)
             {
-                TimeSpan tempTimeSinceLive = m_BotBrain.timeSinceLive;
+                TimeSpan tempTimeSinceLive = jerpBot.instance.timeSinceLive;
                 return (int)tempTimeSinceLive.TotalHours + m_HoursPassedOffset;
             }
             else
@@ -39,10 +39,10 @@ namespace JerpDoesBots
                 int ozToDrink = (int)(m_OzPerHour * hoursPassed);
                 string mlToDrink = string.Format("{0:n0}", (int)(ozToDrink * OZ_TO_ML));
 
-                return string.Format(m_BotBrain.localizer.getString("hydrateReminderAnnounce"), hoursPassed, (m_OzPerHour * hoursPassed), mlToDrink);
+                return string.Format(jerpBot.instance.localizer.getString("hydrateReminderAnnounce"), hoursPassed, (m_OzPerHour * hoursPassed), mlToDrink);
             }
             
-            return m_BotBrain.localizer.getString("hydrateReminderEmpty");
+            return jerpBot.instance.localizer.getString("hydrateReminderEmpty");
         }
 
         public override void onFrame()
@@ -54,14 +54,14 @@ namespace JerpDoesBots
                 if (curHoursPassed > m_LastHoursPassed)
                 {
                     m_LastHoursPassed = curHoursPassed;
-                    m_BotBrain.sendDefaultChannelAnnounce(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
+                    jerpBot.instance.sendDefaultChannelAnnounce(getDrinkMessage(jerpBot.instance.actionTimer.ElapsedMilliseconds));
                 }
             }
         }
 
         public void current(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            m_BotBrain.sendDefaultChannelMessage(getDrinkMessage(m_BotBrain.actionTimer.ElapsedMilliseconds));
+            jerpBot.instance.sendDefaultChannelMessage(getDrinkMessage(jerpBot.instance.actionTimer.ElapsedMilliseconds));
         }
 
         public void setOffset(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -72,13 +72,13 @@ namespace JerpDoesBots
             {
                 m_HoursPassedOffset = offsetVal;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("hydrateReminderHoursPassedOffset"), m_HoursPassedOffset));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("hydrateReminderHoursPassedOffset"), m_HoursPassedOffset));
             }
         }
 
-        public hydrateReminder(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public hydrateReminder() : base(true, true, false)
         {
-            m_Throttler = new throttler(aJerpBot);
+            m_Throttler = new throttler();
             m_Throttler.requiresUserMessages = false;
             m_Throttler.messagesReduceTimer = false;
             m_Throttler.waitTimeMSMax = 30000;
@@ -86,7 +86,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("current", current, true, true));
             tempDef.addSubCommand(new chatCommandDef("offset", setOffset, false, false));
 
-            m_BotBrain.addChatCommand(tempDef);
+            jerpBot.instance.addChatCommand(tempDef);
         }
     }
 

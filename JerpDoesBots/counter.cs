@@ -6,8 +6,6 @@ namespace JerpDoesBots
 {
 	class counterEntry
 	{
-		jerpBot botBrain;
-
 		private string m_Name;
 		private string description;
 		private string m_Game;
@@ -26,7 +24,7 @@ namespace JerpDoesBots
 		{
 			string createViewerRowQuery = "INSERT INTO counters (name, count, game) values (@param1, @param2, @param3)";
 
-			SQLiteCommand createViewerRowCommand = new SQLiteCommand(createViewerRowQuery, botBrain.storageDB);
+			SQLiteCommand createViewerRowCommand = new SQLiteCommand(createViewerRowQuery, jerpBot.instance.storageDB);
 
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param1", newName));
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param2", (object)0));
@@ -49,7 +47,7 @@ namespace JerpDoesBots
 		public bool load(string counterName)
 		{
 			string getViewerRowQuery = "SELECT * FROM counters WHERE name = @param1 AND game=@param2 LIMIT 1";
-			SQLiteCommand getRowCommand = new SQLiteCommand(getViewerRowQuery, botBrain.storageDB);
+			SQLiteCommand getRowCommand = new SQLiteCommand(getViewerRowQuery, jerpBot.instance.storageDB);
 			getRowCommand.Parameters.Add(new SQLiteParameter("@param1", counterName));
 			getRowCommand.Parameters.Add(new SQLiteParameter("@param2", m_Game));
 			SQLiteDataReader rowReader = getRowCommand.ExecuteReader();
@@ -71,7 +69,7 @@ namespace JerpDoesBots
 				count = count + amount;
 				string updateQuery = "UPDATE counters SET count=@param1 where name=@param2 AND game=@param3";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, jerpBot.instance.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", amount));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Name));
@@ -97,7 +95,7 @@ namespace JerpDoesBots
 				description = newDescription;
 				string updateQuery = "UPDATE counters SET description=@param1 WHERE name=@param2 AND game=@param3";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, jerpBot.instance.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", description));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Name));
@@ -118,7 +116,7 @@ namespace JerpDoesBots
 				count = amount;
 				string updateQuery = "UPDATE counters SET count=@param1 WHERE name=@param2 AND game=@param3";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, jerpBot.instance.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", amount));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Name));
@@ -139,7 +137,7 @@ namespace JerpDoesBots
 			{
 				string updateQuery = "DELETE FROM counters WHERE name=@param1 AND game=@param2";
 
-				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, botBrain.storageDB);
+				SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, jerpBot.instance.storageDB);
 
 				updateCommand.Parameters.Add(new SQLiteParameter("@param1", m_Name));
 				updateCommand.Parameters.Add(new SQLiteParameter("@param2", m_Game));
@@ -153,13 +151,12 @@ namespace JerpDoesBots
 			return false;
 		}
 
-		public counterEntry(string newName, string newGame, jerpBot botGeneral, bool autoCreate = true, bool tryLoad = true)
+		public counterEntry(string newName, string newGame, bool autoCreate = true, bool tryLoad = true)
 		{
 			if (!String.IsNullOrEmpty(newName))
 			{
 				m_Name = newName;
 				m_Game = newGame;
-				botBrain = botGeneral;
 
                 if (tryLoad && load(newName))
                     initialized = true;
@@ -179,8 +176,8 @@ namespace JerpDoesBots
             if (!string.IsNullOrEmpty(m_Game))
                 return m_Game;
 
-            if (!string.IsNullOrEmpty(m_BotBrain.game))
-                return m_BotBrain.game;
+            if (!string.IsNullOrEmpty(jerpBot.instance.game))
+                return jerpBot.instance.game;
 
             return GAME_NOGAME;
         }
@@ -194,10 +191,10 @@ namespace JerpDoesBots
             if (gameString != GAME_NOGAME && m_Entries[GAME_NOGAME].ContainsKey(name))
                 return m_Entries[GAME_NOGAME][name];
 
-            counterEntry loadedEntry = new counterEntry(name, gameString, m_BotBrain, false);
+            counterEntry loadedEntry = new counterEntry(name, gameString, false);
 
             if (!loadedEntry.Initialized && gameString != GAME_NOGAME)
-                loadedEntry = new counterEntry(name, GAME_NOGAME, m_BotBrain, false);
+                loadedEntry = new counterEntry(name, GAME_NOGAME, false);
 
             if (loadedEntry.Initialized)
             {
@@ -227,7 +224,7 @@ namespace JerpDoesBots
                 return newCounter;
             else if (doCreate)
             {
-                newCounter = new counterEntry(name, gameString, m_BotBrain, true, false);
+                newCounter = new counterEntry(name, gameString, true, false);
                 if (newCounter.Initialized)
                 {
                     m_Entries[gameString][name] = newCounter;
@@ -292,7 +289,7 @@ namespace JerpDoesBots
 			{
 				m_Game = argumentString;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameSet"), argumentString));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterGameSet"), argumentString));
             }
 		}
 
@@ -302,7 +299,7 @@ namespace JerpDoesBots
 			{
 				m_Game = null;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterGameClear"), getGameString()));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterGameClear"), getGameString()));
             }
 		}
 
@@ -316,7 +313,7 @@ namespace JerpDoesBots
             {
                 if (argCount == 1)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterValueSetEmpty"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterValueSetEmpty"));
                 }
 
                 counterEntry curCounter = checkCreateEntry(countName);
@@ -326,18 +323,18 @@ namespace JerpDoesBots
                     if (curCounter.set(countValue))
                     {
                         if (!aSilent)
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterValueSet"), curCounter.Name, curCounter.Count, curCounter.Game));
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterValueSet"), curCounter.Name, curCounter.Count, curCounter.Game));
                     }
                         
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterValueSetFailOwner"), commandName, curCounter.Owner, curCounter.Name));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterValueSetFailOwner"), commandName, curCounter.Owner, curCounter.Name));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
         }
 
@@ -365,7 +362,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
         }
 
@@ -388,7 +385,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -403,16 +400,16 @@ namespace JerpDoesBots
 
                 if (curCount != null)
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDisplay"), curCount.Name, curCount.Count, curCount.Game));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterDisplay"), curCount.Name, curCount.Count, curCount.Game));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterFailNotFound"), argumentString));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterFailNotFound"), argumentString));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -442,17 +439,17 @@ namespace JerpDoesBots
                     {
                         m_Entries[game].Remove(name);
                         if (!aSilent)
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterRemoveSuccess"), name, game));
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterRemoveSuccess"), name, game));
                     }
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterFailNotFound"), countName));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterFailNotFound"), countName));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -471,7 +468,7 @@ namespace JerpDoesBots
                     if (curCount.describe(argument))
                     {
                         if (aSilent)
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionUpdateSuccess"), curCount.Name));
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterDescriptionUpdateSuccess"), curCount.Name));
                     }
                     else
                     {
@@ -481,12 +478,12 @@ namespace JerpDoesBots
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterDescriptionUpdateFailEmpty"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterDescriptionUpdateFailEmpty"));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -502,18 +499,18 @@ namespace JerpDoesBots
                 if (curCount != null)
                 {
                     if (!string.IsNullOrEmpty(curCount.Description))
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionDisplay"), curCount.Name, curCount.Description));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterDescriptionDisplay"), curCount.Name, curCount.Description));
                     else
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterDescriptionUpdateFailEmpty"), curCount.Name));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterDescriptionUpdateFailEmpty"), curCount.Name));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterFailNotFound"), counterName));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterFailNotFound"), counterName));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -531,16 +528,16 @@ namespace JerpDoesBots
 
                     curCount.Owner = argument;
                     if (!aSilent)
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerSetSuccess"), curCount.Name, argument));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterOwnerSetSuccess"), curCount.Name, argument));
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOwnerSetFailEmpty"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterOwnerSetFailEmpty"));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -556,11 +553,11 @@ namespace JerpDoesBots
 
                 curCount.Owner = null;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("counterOwnerClear"), curCount.Name));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("counterOwnerClear"), curCount.Name));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterNotSpecified"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterNotSpecified"));
             }
 		}
 
@@ -573,7 +570,7 @@ namespace JerpDoesBots
         {
             string getCountersQuery = "SELECT * FROM counters ORDER BY game ASC, name ASC";
 
-            SQLiteCommand getCountersCommand = new SQLiteCommand(getCountersQuery, m_BotBrain.storageDB);
+            SQLiteCommand getCountersCommand = new SQLiteCommand(getCountersQuery, jerpBot.instance.storageDB);
             SQLiteDataReader getCountersReader = getCountersCommand.ExecuteReader();
 
             List<object> rowData = new List<object>();
@@ -586,7 +583,7 @@ namespace JerpDoesBots
                 }
             }
 
-            m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_counters.json");
+            jerpBot.instance.genericSerializeToFile(rowData, "jerpdoesbots_counters.json");
         }
 
         public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -594,13 +591,13 @@ namespace JerpDoesBots
             outputListInternal();
 
             if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("counterOutputListSuccess"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("counterOutputListSuccess"));
         }
 
-        public counter(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public counter() : base(true, true, false)
 		{
 			string createCounterTableQuery = "CREATE TABLE IF NOT EXISTS counters (counterID INTEGER PRIMARY KEY ASC, name TEXT, game TEXT, description TEXT, count INTEGER, UNIQUE(name, game))";
-			SQLiteCommand createCounterTableCommand = new SQLiteCommand(createCounterTableQuery, m_BotBrain.storageDB);
+			SQLiteCommand createCounterTableCommand = new SQLiteCommand(createCounterTableQuery, jerpBot.instance.storageDB);
 			createCounterTableCommand.ExecuteNonQuery();
 
 			m_Entries = new Dictionary<string, Dictionary<string, counterEntry>>();
@@ -620,7 +617,7 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("clearowner", clearOwner, false, false));
 			tempDef.addSubCommand(new chatCommandDef("about", about, true, true));
             tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
-            m_BotBrain.addChatCommand(tempDef);
+            jerpBot.instance.addChatCommand(tempDef);
 		}
 	}
 }

@@ -17,8 +17,6 @@ namespace JerpDoesBots
         private bool m_RequiresUserMessages = true; // Require a minimum amount of chat messages to pass before sending its next message.
         private bool m_MessagesReduceTimer = true;
 
-        private jerpBot m_BotBrain;
-
         /// <summary>Max amount of lines that can reduce the wait time (requires messagesReduceTimer)  Defaults to 15.</summary>
         public int lineCountReductionMax
         {
@@ -84,7 +82,7 @@ namespace JerpDoesBots
         {
             get
             {
-                return (m_BotBrain.actionTimer.ElapsedMilliseconds > (m_MessageTimeLastMS + adjustedThrottleTimeMS));
+                return (jerpBot.instance.actionTimer.ElapsedMilliseconds > (m_MessageTimeLastMS + adjustedThrottleTimeMS));
             }
         }
 
@@ -95,7 +93,7 @@ namespace JerpDoesBots
         {
             get
             {
-                return Math.Min(m_BotBrain.lineCount - m_LastLineCount, m_LineCountReductionMax);
+                return Math.Min(jerpBot.instance.lineCount - m_LastLineCount, m_LineCountReductionMax);
             }
         }
 
@@ -117,7 +115,7 @@ namespace JerpDoesBots
             {
                 if (!m_Initialized)
                 {
-                    m_MessageTimeLastMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                    m_MessageTimeLastMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
                     m_Initialized = true;
                 }
 
@@ -128,13 +126,8 @@ namespace JerpDoesBots
         /// <summary>Logs that the desired throttled action occurred and begins to wait for more lines/time before becoming ready.</summary>
         public void trigger()
         {
-            m_MessageTimeLastMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
-            m_LastLineCount = m_BotBrain.lineCount;
-        }
-
-        public throttler(jerpBot aBotBrain)
-        {
-            m_BotBrain = aBotBrain;
+            m_MessageTimeLastMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
+            m_LastLineCount = jerpBot.instance.lineCount;
         }
     }
 }

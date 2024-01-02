@@ -39,15 +39,15 @@ namespace JerpDoesBots
                         delayMS *= 1000;
                         if (delayMS <= MAX_DELAY_TIME && delayMS >= MIN_DELAY_TIME)
                         {
-                            m_Entries.Add(new delaySendEntry(m_BotBrain.actionTimer.ElapsedMilliseconds + delayMS, commandUser, argumentList[1]));
+                            m_Entries.Add(new delaySendEntry(jerpBot.instance.actionTimer.ElapsedMilliseconds + delayMS, commandUser, argumentList[1]));
                         }
                         else if (delayMS < MIN_DELAY_TIME)
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayTimeShort"), MIN_DELAY_TIME));
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("delayTimeShort"), MIN_DELAY_TIME));
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayTimeLong"), MAX_DELAY_TIME));
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("delayTimeLong"), MAX_DELAY_TIME));
                         }
                         
                     }
@@ -55,7 +55,7 @@ namespace JerpDoesBots
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayQueueMax"), m_Entries.Count));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("delayQueueMax"), m_Entries.Count));
             }
         }
 
@@ -67,18 +67,18 @@ namespace JerpDoesBots
             if (prevEntryCount > 0)
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("delayQueueClearSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("delayQueueClearSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("delayQueueClearFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("delayQueueClearFail"));
             }
 
         }
         
         public void getCount(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("delayQueueCount"), m_Entries.Count));
+            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("delayQueueCount"), m_Entries.Count));
         }
 
         public override void onFrame()
@@ -87,21 +87,21 @@ namespace JerpDoesBots
 
             for (int i = 0; i < m_Entries.Count; i++)
             {
-                if (m_BotBrain.actionTimer.ElapsedMilliseconds >= m_Entries[i].sendTime)
+                if (jerpBot.instance.actionTimer.ElapsedMilliseconds >= m_Entries[i].sendTime)
                 {
                     string messageToSend = m_Entries[i].message;
                     if (!String.IsNullOrEmpty(messageToSend))
                     {
 
-                        if (m_BotBrain.isValidCommandFormat(messageToSend))
+                        if (jerpBot.instance.isValidCommandFormat(messageToSend))
                         {
-                            userEntry botOwnerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
+                            userEntry botOwnerUser = jerpBot.instance.checkCreateUser(jerpBot.instance.ownerUsername);
 
-                            m_BotBrain.processUserCommand(botOwnerUser, messageToSend);
+                            jerpBot.instance.processUserCommand(botOwnerUser, messageToSend);
                         }
                         else
                         {
-                            m_BotBrain.sendDefaultChannelMessage(messageToSend);
+                            jerpBot.instance.sendDefaultChannelMessage(messageToSend);
                         }
                     }
 
@@ -115,7 +115,7 @@ namespace JerpDoesBots
             }
         }
 
-        public delaySender(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public delaySender() : base(true, true, false)
         {
             m_Entries = new List<delaySendEntry>();
 
@@ -123,7 +123,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("purge", purgeEntries, false, false));
             tempDef.addSubCommand(new chatCommandDef("count", getCount, false, false));
             tempDef.useGlobalCooldown = false;
-            m_BotBrain.addChatCommand(tempDef);
+            jerpBot.instance.addChatCommand(tempDef);
         }
 
     }

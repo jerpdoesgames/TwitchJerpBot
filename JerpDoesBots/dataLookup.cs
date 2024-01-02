@@ -43,10 +43,10 @@ namespace JerpDoesBots
             if (loadConfig())
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("dataLookupLoadSuccess"));
             }
             else if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("dataLookupLoadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("dataLookupLoadFail"));
         }
 
 
@@ -85,7 +85,7 @@ namespace JerpDoesBots
             }
             else if (!aSilent)
             {
-                output = string.Format(m_BotBrain.localizer.getString("dataLookupSearchInvalidQueryNumeric"));
+                output = string.Format(jerpBot.instance.localizer.getString("dataLookupSearchInvalidQueryNumeric"));
             }
 
             return output;
@@ -125,7 +125,7 @@ namespace JerpDoesBots
                 }
                 else if (!aSilent)
                 {
-                    output = string.Format(m_BotBrain.localizer.getString("dataLookupSearchInvalidQueryNotFound"));
+                    output = string.Format(jerpBot.instance.localizer.getString("dataLookupSearchInvalidQueryNotFound"));
                 }
             }
 
@@ -140,7 +140,7 @@ namespace JerpDoesBots
                 {
                     dataLookupConfigCatalog useCatalog = m_Config.entries[argumentString];
                     string output = getEntryRandom(useCatalog, aSilent);
-                    m_BotBrain.sendDefaultChannelMessage(output);
+                    jerpBot.instance.sendDefaultChannelMessage(output);
                 }
             }
         }
@@ -161,14 +161,14 @@ namespace JerpDoesBots
                             string catalogKey = argumentList[1];
                             dataLookupConfigCatalog useCatalog = m_Config.entries[catalogName];
                             string output = getEntry(useCatalog, catalogKey, aSilent);
-                            m_BotBrain.sendDefaultChannelMessage(output);
+                            jerpBot.instance.sendDefaultChannelMessage(output);
                         }
                     }
                 }
             }
         }
 
-        public dataLookup(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public dataLookup() : base(true, true, false)
 		{
             m_IsLoaded = loadConfig();
 
@@ -178,7 +178,7 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("random", getEntryRandomCommand, false, false));
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
 
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
             }
         }
 	}

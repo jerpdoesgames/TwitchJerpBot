@@ -18,12 +18,12 @@ namespace JerpDoesBots
 			{
 				string addQuoteQuery = "INSERT INTO quotes (submitter, message, game) values (@param1, @param2, @param3)";
 
-				SQLiteCommand addQuoteCommand = new SQLiteCommand(addQuoteQuery, m_BotBrain.storageDB);
+				SQLiteCommand addQuoteCommand = new SQLiteCommand(addQuoteQuery, jerpBot.instance.storageDB);
 
 				string gameString;
 
-				if (m_BotBrain.game.Length > 0)
-					gameString = m_BotBrain.game;
+				if (jerpBot.instance.game.Length > 0)
+					gameString = jerpBot.instance.game;
 				else
 					gameString = "No Game";
 
@@ -33,18 +33,18 @@ namespace JerpDoesBots
 
 				if (addQuoteCommand.ExecuteNonQuery() > 0)
 				{
-					long lastInsertID = m_BotBrain.storageDB.LastInsertRowId;
+					long lastInsertID = jerpBot.instance.storageDB.LastInsertRowId;
 
 					if (!aSilent)
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteAddSuccess"), lastInsertID));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("quoteAddSuccess"), lastInsertID));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteAddFail"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteAddFail"));
 				}
 			} else
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteAddMissingData")) ;
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteAddMissingData")) ;
 			}
 		}
 
@@ -62,7 +62,7 @@ namespace JerpDoesBots
 			{
 				string getQuoteQuery = "SELECT * FROM quotes WHERE quoteID=" + quoteID + " LIMIT 1";
 
-				SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, m_BotBrain.storageDB);
+				SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, jerpBot.instance.storageDB);
 				SQLiteDataReader getQuoteReader = getQuoteCommand.ExecuteReader();
 
 				if (getQuoteReader.HasRows && getQuoteReader.Read())
@@ -72,10 +72,10 @@ namespace JerpDoesBots
 					string game = Convert.ToString(getQuoteReader["game"]);
 
 
-					m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteDisplay"), quoteID, message, game));
+					jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("quoteDisplay"), quoteID, message, game));
 				} else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteNotFound"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteNotFound"));
 				}
 			} else
 			{
@@ -96,16 +96,16 @@ namespace JerpDoesBots
 			{
 				string removeQuoteQuery = "DELETE FROM quotes WHERE quoteID=" + quoteID;
 
-				SQLiteCommand removeQuoteCommand = new SQLiteCommand(removeQuoteQuery, m_BotBrain.storageDB);
+				SQLiteCommand removeQuoteCommand = new SQLiteCommand(removeQuoteQuery, jerpBot.instance.storageDB);
 
 				if (removeQuoteCommand.ExecuteNonQuery() > 0)
 				{
 					if (!aSilent)
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteRemove"), quoteID));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("quoteRemove"), quoteID));
 				}
 				else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteNotFound"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteNotFound"));
 				}
 			}
 		}
@@ -120,7 +120,7 @@ namespace JerpDoesBots
 		{
 			string getQuoteQuery = "SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1";
 
-			SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, m_BotBrain.storageDB);
+			SQLiteCommand getQuoteCommand = new SQLiteCommand(getQuoteQuery, jerpBot.instance.storageDB);
 			SQLiteDataReader getQuoteReader = getQuoteCommand.ExecuteReader();
 
 			if (getQuoteReader.HasRows && getQuoteReader.Read())
@@ -130,11 +130,11 @@ namespace JerpDoesBots
 				string game = Convert.ToString(getQuoteReader["game"]);
 				string quoteID = Convert.ToString(getQuoteReader["quoteID"]);
 
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteDisplay"), quoteID, message, game));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("quoteDisplay"), quoteID, message, game));
 			}
 			else if (!aSilent)
 			{
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteNoneFound"));
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteNoneFound"));
 			}
 		}
 
@@ -147,7 +147,7 @@ namespace JerpDoesBots
 		{
             string getQuotesQuery = "SELECT * FROM quotes";
 
-            SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, m_BotBrain.storageDB);
+            SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, jerpBot.instance.storageDB);
             SQLiteDataReader getQuotesReader = getQuotesCommand.ExecuteReader();
 
             List<object> rowData = new List<object>();
@@ -160,7 +160,7 @@ namespace JerpDoesBots
                 }
             }
 
-            m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_quotes.json");
+            jerpBot.instance.genericSerializeToFile(rowData, "jerpdoesbots_quotes.json");
         }
 
         public void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -168,7 +168,7 @@ namespace JerpDoesBots
 			outputListInternal();
 
 			if (!aSilent)
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteOutputListSuccess"));
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteOutputListSuccess"));
 		}
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace JerpDoesBots
         /// <param name="aSilent">Unused.</param>
         public void quoteListCommand(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-			m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteList"));
+			jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteList"));
         }
 
         public void edit(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -191,18 +191,18 @@ namespace JerpDoesBots
 				if (Int32.TryParse(argumentList[0], out quoteID))
 				{
 					string editQuoteQuery = "UPDATE quotes SET message=@param1 WHERE quoteID=@param2";
-					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, m_BotBrain.storageDB);
+					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, jerpBot.instance.storageDB);
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param1", argumentList[1]));
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param2", quoteID));
 
 					if (editQuoteCommand.ExecuteNonQuery() > 0)
 					{
 						if (!aSilent)
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteUpdated"), quoteID));
+							jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("quoteUpdated"), quoteID));
 					}
 					else
 					{
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteNotFound"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteNotFound"));
 					}
 				}
 			}
@@ -217,27 +217,27 @@ namespace JerpDoesBots
 				if (Int32.TryParse(argumentList[0], out quoteID))
 				{
 					string editQuoteQuery = "UPDATE quotes SET game=@param1 WHERE quoteID=@param2";
-					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, m_BotBrain.storageDB);
+					SQLiteCommand editQuoteCommand = new SQLiteCommand(editQuoteQuery, jerpBot.instance.storageDB);
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param1", argumentList[1]));
 					editQuoteCommand.Parameters.Add(new SQLiteParameter("@param2", quoteID));
 
 					if (editQuoteCommand.ExecuteNonQuery() > 0)
 					{
 						if (!aSilent)
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("quoteUpdated"), quoteID));
+							jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("quoteUpdated"), quoteID));
 					}
 					else
 					{
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("quoteNotFound"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("quoteNotFound"));
 					}
 				}
 			}
 		}
 
-		public quotes(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+		public quotes() : base(true, true, false)
 		{
 			string createQuoteTableQuery = "CREATE TABLE IF NOT EXISTS quotes (quoteID INTEGER PRIMARY KEY ASC, submitter TEXT, message TEXT, game TEXT)";
-			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, m_BotBrain.storageDB);
+			SQLiteCommand createQuoteTableCommand = new SQLiteCommand(createQuoteTableQuery, jerpBot.instance.storageDB);
 			createQuoteTableCommand.ExecuteNonQuery();
 
 			chatCommandDef tempDef = new chatCommandDef("quote", display, true, true);
@@ -248,7 +248,7 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
             tempDef.addSubCommand(new chatCommandDef("list", quoteListCommand, true, true));
             // TODO: Add command to return total number of quotes.
-            m_BotBrain.addChatCommand(tempDef);
+            jerpBot.instance.addChatCommand(tempDef);
 		}
 	}
 }

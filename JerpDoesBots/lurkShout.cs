@@ -51,10 +51,10 @@ namespace JerpDoesBots
 				shoutEntry = configData.users[i];
 				if (shoutEntry.name.ToLower() == shoutUserEntry.Nickname.ToLower())
 				{
-					if (!shoutEntry.shoutedSinceLoad || m_BotBrain.actionTimer.ElapsedMilliseconds > (shoutEntry.lastShouted + shoutThrottle))
+					if (!shoutEntry.shoutedSinceLoad || jerpBot.instance.actionTimer.ElapsedMilliseconds > (shoutEntry.lastShouted + shoutThrottle))
 					{
 						shoutEntry.shoutedSinceLoad = true;
-						shoutEntry.lastShouted = m_BotBrain.actionTimer.ElapsedMilliseconds;
+						shoutEntry.lastShouted = jerpBot.instance.actionTimer.ElapsedMilliseconds;
 						if (!string.IsNullOrEmpty(shoutEntry.shoutMessage))
 						{
                             switch(shoutEntry.type)
@@ -62,7 +62,7 @@ namespace JerpDoesBots
 
                                 default:
                                 case lurkShoutUserType.defaultType:
-                                    m_BotBrain.sendDefaultChannelAnnounce(shoutEntry.shoutMessage);
+                                    jerpBot.instance.sendDefaultChannelAnnounce(shoutEntry.shoutMessage);
                                     break;
                             }
 						}
@@ -72,7 +72,7 @@ namespace JerpDoesBots
 			}
 		}
 
-		public lurkShoutout(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+		public lurkShoutout() : base(true, true, false)
 		{
 			string configPath = System.IO.Path.Combine(jerpBot.storagePath, "config\\jerpdoesbots_lurkshouts.json");
 			if (File.Exists(configPath))

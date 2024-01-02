@@ -75,11 +75,11 @@ namespace JerpDoesBots
         /// <param name="aCommercialArgs">Information about the commercial being played.</param>
         public override void onCommercialStart(OnCommercialArgs aCommercialArgs)
         {
-            m_CommercialStartTimeMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
+            m_CommercialStartTimeMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
             m_CommercialLengthSeconds = aCommercialArgs.Length;
-            m_CommercialStartGame = m_BotBrain.game;
-            m_CommercialStartViewerCount = m_BotBrain.viewersLast;
-            m_CommercialStartTags = m_BotBrain.tags;
+            m_CommercialStartGame = jerpBot.instance.game;
+            m_CommercialStartViewerCount = jerpBot.instance.viewersLast;
+            m_CommercialStartTags = jerpBot.instance.tags;
             
             m_IsCommercialActive = true;
 
@@ -90,17 +90,17 @@ namespace JerpDoesBots
                 int adTimeSeconds = aCommercialArgs.Length % 60;
                 int adTimeMinutes = aCommercialArgs.Length / 60;    // Truncation is expected
                 string adTimeString = (adTimeMinutes > 0 ? adTimeMinutes + "m" : "") + (adTimeSeconds > 0 ? adTimeSeconds + "s" : "");
-                m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("adManagerCommercialStart"), adTimeString));
+                jerpBot.instance.sendDefaultChannelAnnounce(string.Format(jerpBot.instance.localizer.getString("adManagerCommercialStart"), adTimeString));
             }
 
             if (m_Config.commercialStartCommands != null && m_Config.commercialStartCommands.Count > 0)
             {
-                userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
+                userEntry ownerUser = jerpBot.instance.checkCreateUser(jerpBot.instance.ownerUsername);
                 foreach (adManagerConfigCommandEntry curCommand in m_Config.commercialStartCommands)
                 {
                     if (isValidAdCondition(curCommand.requirements))
                     {
-                        m_BotBrain.processUserCommand(ownerUser, curCommand.commandString);
+                        jerpBot.instance.processUserCommand(ownerUser, curCommand.commandString);
                     }
                 }
             }
@@ -119,13 +119,13 @@ namespace JerpDoesBots
         public override void onFrame()
         {
             // Commercial completed
-            if (m_IsCommercialActive && m_BotBrain.actionTimer.ElapsedMilliseconds - m_CommercialStartTimeMS > commercialLengthMS)
+            if (m_IsCommercialActive && jerpBot.instance.actionTimer.ElapsedMilliseconds - m_CommercialStartTimeMS > commercialLengthMS)
             {
                 m_IsCommercialActive = false;
 
                 if (m_Config.announceCommercialEnd)
                 {
-                    m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("adManagerCommercialEnd"));
+                    jerpBot.instance.sendDefaultChannelAnnounce(jerpBot.instance.localizer.getString("adManagerCommercialEnd"));
                 }
 
                 if (!m_IsCommercialActive && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
@@ -142,7 +142,7 @@ namespace JerpDoesBots
                     {
                         if (isValidAdCondition(curCommand.requirements))
                         {
-                            m_BotBrain.messageOrCommand(curCommand.commandString);
+                            jerpBot.instance.messageOrCommand(curCommand.commandString);
                         }
                     }
                 }
@@ -177,7 +177,7 @@ namespace JerpDoesBots
                                 if (isValidAdCondition(curWarning.requirements))
                                 {
                                     curWarning.setNotifyTriggered();
-                                    m_BotBrain.messageOrCommand(curWarning.commandString);
+                                    jerpBot.instance.messageOrCommand(curWarning.commandString);
                                 }
                             }
                             else if (curWarning.notifiedSinceLastAd && secondsUntilNextAd > curWarning.timeBeforeAdSeconds) // Catches snoozes
@@ -219,11 +219,11 @@ namespace JerpDoesBots
         {
             if (m_AvailableSnoozes >= SNOOZE_COUNT_MAX)
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountOutput"), m_AvailableSnoozes));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("adManagerSnoozeCountOutput"), m_AvailableSnoozes));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeCountOutputMoreIncoming"), m_AvailableSnoozes, getNextSnoozeTimeString()));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("adManagerSnoozeCountOutputMoreIncoming"), m_AvailableSnoozes, getNextSnoozeTimeString()));
             }
         }
 
@@ -233,11 +233,11 @@ namespace JerpDoesBots
             if (m_IsLoaded)
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerReloadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerReloadSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("adManagerReloadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerReloadFail"));
             }
         }
 
@@ -255,7 +255,7 @@ namespace JerpDoesBots
                 {
                     try
                     {
-                        Task<TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd.SnoozeNextAdResponse> snoozeResponse = m_BotBrain.twitchAPI.Helix.Channels.SnoozeNextAd(m_BotBrain.ownerUserID);
+                        Task<TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd.SnoozeNextAdResponse> snoozeResponse = jerpBot.instance.twitchAPI.Helix.Channels.SnoozeNextAd(jerpBot.instance.ownerUserID);
                         snoozeResponse.Wait();
 
                         if (snoozeResponse.Result != null && snoozeResponse.Result.Data.Length > 0)
@@ -266,35 +266,34 @@ namespace JerpDoesBots
                             m_AvailableSnoozes = snoozeData.SnoozeCount;
 
                             if (m_AvailableSnoozes > 0)
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeSuccess"), m_AvailableSnoozes));
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("adManagerSnoozeSuccess"), m_AvailableSnoozes));
                             else
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeSuccessNoneLeft"), getNextSnoozeTimeString()));
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("adManagerSnoozeSuccessNoneLeft"), getNextSnoozeTimeString()));
                         }
                     }
                     catch (Exception e)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerSnoozeFailUnknownReason"));
+                        jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerSnoozeFailUnknownReason"));
                         Console.WriteLine("Unable to snooze ad: " + e.Message);
                     }
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("adManagerSnoozeFailNoSnoozesLeft"), getNextSnoozeTimeString()));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("adManagerSnoozeFailNoSnoozesLeft"), getNextSnoozeTimeString()));
                 }
 
 
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerSnoozeFailCommercialActive"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerSnoozeFailCommercialActive"));
             }
         }
 
         /// <summary>
         /// Initialize command entries for the ad manager.
         /// </summary>
-        /// <param name="aJerpBot"></param>
-        public adManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public adManager() : base(true, true, false)
         {
             m_IsLoaded = loadConfig();
 
@@ -304,7 +303,7 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
                 tempDef.addSubCommand(new chatCommandDef("snooze", snoozeAd, true, false));
                 tempDef.addSubCommand(new chatCommandDef("count", outputSnoozeInfo, true, false));
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
             }
         }
     }

@@ -32,17 +32,17 @@ namespace JerpDoesBots
             if (loadConfig())
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("mediaMonitorLoadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("mediaMonitorLoadSuccess"));
             }
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("mediaMonitorLoadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("mediaMonitorLoadFail"));
         }
 
         public void currentSong(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             if (!string.IsNullOrEmpty(m_LastTrackTitle))
             {
-                m_BotBrain.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("mediaMonitorCurrentTrack"), m_LastTrackTitle));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("mediaMonitorCurrentTrack"), m_LastTrackTitle));
             }
         }
 
@@ -73,8 +73,8 @@ namespace JerpDoesBots
 
                                     if (curTitle != m_LastTrackTitle)
                                     {
-                                        // m_BotBrain.sendDefaultChannelAnnounce("Now Playing: " + curTitle);
-                                        m_BotBrain.logGeneral.writeAndLog("Playing Media: " + curTitle);
+                                        // jerpBot.instance.sendDefaultChannelAnnounce("Now Playing: " + curTitle);
+                                        jerpBot.instance.logGeneral.writeAndLog("Playing Media: " + curTitle);
                                         m_LastTrackTitle = curTitle;
                                     }
                                 }
@@ -88,9 +88,9 @@ namespace JerpDoesBots
 
         }
 
-        public mediaPlayerMonitor(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public mediaPlayerMonitor() : base(true, true, false)
 		{
-            m_Throttler = new throttler(aJerpBot);
+            m_Throttler = new throttler();
             m_Throttler.requiresUserMessages = false;
             m_Throttler.messagesReduceTimer = false;
             m_Throttler.waitTimeMSMax = 3000;
@@ -104,10 +104,10 @@ namespace JerpDoesBots
                 chatCommandDef tempDef = new chatCommandDef("mediamonitor", null, true, true);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
 
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
 
                 tempDef = new chatCommandDef("song", currentSong, true, true);
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
             }
         }
 	}

@@ -79,7 +79,7 @@ namespace JerpDoesBots
             triviaQuestion currentQuestion = getCurrentQuestion();
 
             if (currentQuestion != null)
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle()));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle()));
         }
 
         public string getTopicString()
@@ -130,7 +130,7 @@ namespace JerpDoesBots
                     {
                         newQuestions.Sort(delegate (triviaQuestion a, triviaQuestion b)
                         {
-                            return m_BotBrain.randomizer.Next() - m_BotBrain.randomizer.Next();
+                            return jerpBot.instance.randomizer.Next() - jerpBot.instance.randomizer.Next();
                         });
 
                         m_Questions = newQuestions.GetRange(0, Math.Min(m_TotalQuestions, newQuestions.Count));
@@ -138,22 +138,22 @@ namespace JerpDoesBots
                         m_Scores = new Dictionary<userEntry, int>();
 
 
-                        m_BotBrain.sendDefaultChannelAnnounce(string.Format(m_BotBrain.localizer.getString("triviaStart"), getTopicString(), m_Questions.Count));
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
+                        jerpBot.instance.sendDefaultChannelAnnounce(string.Format(jerpBot.instance.localizer.getString("triviaStart"), getTopicString(), m_Questions.Count));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaQuestionFirst"), getCurrentQuestion().getFormattedTitle()));
 
                         m_Throttler.trigger();
-                        m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                        m_TimeSinceLastAnswer = jerpBot.instance.actionTimer.ElapsedMilliseconds;
                         m_IsActive = true;
                     }
                 }
                 else
                 {
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaNoQuestionsFound"), tagListString));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaNoQuestionsFound"), tagListString));
                 }
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStartNoTags"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("triviaStartNoTags"));
             }
 		}
 
@@ -161,7 +161,7 @@ namespace JerpDoesBots
 		{
 			m_IsActive = false;
             if (!aSilent)
-			    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStopped"));
+			    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("triviaStopped"));
 		}
 
         public void reload(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -172,18 +172,18 @@ namespace JerpDoesBots
             if (m_LoadSuccessful)
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedReloaded"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("triviaStoppedReloaded"));
             }
                 
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaStoppedLoadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("triviaStoppedLoadFail"));
         }
 
         private bool isTagInQuestion(triviaQuestion aQuestion, string aTag)
         {
             foreach (string curTag in aQuestion.tags)
             {
-                if (m_BotBrain.stripPunctuation(curTag.ToLower(), true) == m_BotBrain.stripPunctuation(aTag.ToLower(), true))
+                if (jerpBot.instance.stripPunctuation(curTag.ToLower(), true) == jerpBot.instance.stripPunctuation(aTag.ToLower(), true))
                 {
                     return true;
                 }
@@ -257,7 +257,7 @@ namespace JerpDoesBots
         {
             string scoreString = getTopScoreString();
 
-            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTopContestants"), scoreString));
+            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaTopContestants"), scoreString));
         }
 
         public void setMaxQuestions(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -270,10 +270,10 @@ namespace JerpDoesBots
                 string nextString = "";
 
                 if (m_IsActive)
-                    nextString = "  " + m_BotBrain.localizer.getString("triviaMaxQuestionsSetWhileActive");
+                    nextString = "  " + jerpBot.instance.localizer.getString("triviaMaxQuestionsSetWhileActive");
 
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaMaxQuestionsSet"), m_TotalQuestions) + nextString);
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaMaxQuestionsSet"), m_TotalQuestions) + nextString);
             }
         }
 
@@ -291,7 +291,7 @@ namespace JerpDoesBots
                 hasOne = true;
             }
 
-            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTopics"), m_TotalQuestions) + topicString);
+            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaTopics"), m_TotalQuestions) + topicString);
         }
 
         public override void onUserMessage(userEntry aUser, string aMessage)
@@ -303,8 +303,8 @@ namespace JerpDoesBots
                 {
                     foreach (string curAnswer in currentQuestion.answers)
                     {
-                        string correctAnswer = m_BotBrain.stripPunctuation(curAnswer.ToLower(), true);
-                        string userAttempt = m_BotBrain.stripPunctuation(aMessage.ToLower(), true);
+                        string correctAnswer = jerpBot.instance.stripPunctuation(curAnswer.ToLower(), true);
+                        string userAttempt = jerpBot.instance.stripPunctuation(aMessage.ToLower(), true);
                         if (userAttempt.Contains(correctAnswer))
                         {
                             string addendumString = "";
@@ -314,7 +314,7 @@ namespace JerpDoesBots
                                 addendumString = "  " + currentQuestion.addendum;
                             }
 
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaAnswerSuccess"), aUser.Nickname, curAnswer) + addendumString);
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaAnswerSuccess"), aUser.Nickname, curAnswer) + addendumString);
 
                             checkCreateParticipant(aUser);
                             m_Scores[aUser]++;
@@ -332,22 +332,22 @@ namespace JerpDoesBots
 			{
                 lock (messageLastLock)
                 {
-                    if (m_BotBrain.actionTimer.ElapsedMilliseconds > m_TimeSinceLastAnswer + m_TimeToAnswer)
+                    if (jerpBot.instance.actionTimer.ElapsedMilliseconds > m_TimeSinceLastAnswer + m_TimeToAnswer)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("triviaTimeExpired"));
+                        jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("triviaTimeExpired"));
                         if (m_AnswerOnTimeout)
                         {
                             triviaQuestion currentQuestion = getCurrentQuestion();
                             if (currentQuestion.answers.Count > 1)
                             {
                                 string answerString = string.Join(", ", currentQuestion.answers);
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTimeExpiredAnswerMultiple"), answerString));
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaTimeExpiredAnswerMultiple"), answerString));
                             }
                             else if (currentQuestion.answers.Count == 1)
                             {
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaTimeExpiredAnswer"), currentQuestion.answers[0]));
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaTimeExpiredAnswer"), currentQuestion.answers[0]));
                                 
-                                string.Format(m_BotBrain.localizer.getString("triviaTimeExpiredAnswer"), getCurrentQuestion().getFormattedTitle());
+                                string.Format(jerpBot.instance.localizer.getString("triviaTimeExpiredAnswer"), getCurrentQuestion().getFormattedTitle());
                             }
                         }
                         advanceToNextQuestion(true);
@@ -358,7 +358,7 @@ namespace JerpDoesBots
                         string questionString = "";
                         triviaQuestion currentQuestion = getCurrentQuestion();
                         if (currentQuestion != null)
-                            questionString = string.Format(m_BotBrain.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
+                            questionString = string.Format(jerpBot.instance.localizer.getString("triviaQuestionCurrent"), getCurrentQuestion().getFormattedTitle());
                     }
                 }
 			}
@@ -375,15 +375,15 @@ namespace JerpDoesBots
                 if (fromSuccessOrFail)
                 {
                     string scoreString = getTopScoreString();
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaComplete"), scoreString));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaComplete"), scoreString));
                 }
             }
             else
             {
                 m_Throttler.trigger();
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("triviaQuestionNext"), getCurrentQuestion().getFormattedTitle()));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("triviaQuestionNext"), getCurrentQuestion().getFormattedTitle()));
             }
-            m_TimeSinceLastAnswer = m_BotBrain.actionTimer.ElapsedMilliseconds;
+            m_TimeSinceLastAnswer = jerpBot.instance.actionTimer.ElapsedMilliseconds;
         }
 
         private bool load()
@@ -425,9 +425,9 @@ namespace JerpDoesBots
             return false;
         }
 
-        public trivia(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public trivia() : base(true, true, false)
 		{
-            m_Throttler = new throttler(aJerpBot);
+            m_Throttler = new throttler();
             m_Throttler.waitTimeMSMax = 120000;
             m_Throttler.lineCountReductionMax = 15;
             m_Throttler.lineCountReductionMS = 4000;
@@ -447,7 +447,7 @@ namespace JerpDoesBots
             tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
             tempDef.addSubCommand(new chatCommandDef("question", question, true, true));
             tempDef.useGlobalCooldown = false;
-			m_BotBrain.addChatCommand(tempDef);
+			jerpBot.instance.addChatCommand(tempDef);
 		}
 	}
 }

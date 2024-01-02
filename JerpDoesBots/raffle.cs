@@ -31,17 +31,17 @@ namespace JerpDoesBots
 		private string getJoinString()
         {
 			if (m_UsePointRedemption)
-				return " " + string.Format(m_BotBrain.localizer.getString("raffleHintJoinReward"), m_config.rewardInfo.title);
+				return " " + string.Format(jerpBot.instance.localizer.getString("raffleHintJoinReward"), m_config.rewardInfo.title);
 			else
-				return " " + m_BotBrain.localizer.getString("raffleHintJoin");
+				return " " + jerpBot.instance.localizer.getString("raffleHintJoin");
 		}
 
 		public void about(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(m_Description))
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleDescriptionAnnounce"), m_Description));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleDescriptionAnnounce"), m_Description));
 			else
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleDescriptionEmpty"));
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleDescriptionEmpty"));
 		}
 
 		private void setUseRedemptions(bool aUseRedemptions, bool aAnnounceUpdate = true)
@@ -55,12 +55,12 @@ namespace JerpDoesBots
                 if (aUseRedemptions)
 				{
 					if (aAnnounceUpdate)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionEnabled"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("rafflePointRedemptionEnabled"));
 				}
 				else
 				{
 					if (aAnnounceUpdate)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("rafflePointRedemptionDisabled"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("rafflePointRedemptionDisabled"));
 				}
 			}
 		}
@@ -84,7 +84,7 @@ namespace JerpDoesBots
                 if (m_IsActive)
                 {
 					if (!aSilent)
-						m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleDescriptionSet"));
+						jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleDescriptionSet"));
                 }
 			}
 		}
@@ -106,7 +106,7 @@ namespace JerpDoesBots
 		{
 			if (m_UsePointRedemption)
             {
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAddUserFailNeedRedemption"), commandUser.Nickname, m_config.rewardInfo.title));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleAddUserFailNeedRedemption"), commandUser.Nickname, m_config.rewardInfo.title));
             }
 			else
             {
@@ -124,7 +124,7 @@ namespace JerpDoesBots
 		{
 			resetEntries();
 			if (!aSilent)
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCleared"));
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleCleared"));
 		}
 
 		public void open(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -137,7 +137,7 @@ namespace JerpDoesBots
                 resetEntries();
 
 				if (!aSilent)
-					m_BotBrain.sendDefaultChannelAnnounce(m_BotBrain.localizer.getString("raffleOpenedCleared") + getJoinString());
+					jerpBot.instance.sendDefaultChannelAnnounce(jerpBot.instance.localizer.getString("raffleOpenedCleared") + getJoinString());
 
                 m_Throttler.trigger();
 
@@ -150,7 +150,7 @@ namespace JerpDoesBots
 			m_IsActive = false;
 
 			if (!aSilent)
-				m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleClosed"));
+				jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleClosed"));
 
 			m_config.rewardInfo.enabled = false;
             createUpdateChannelPointRedemptionReward();
@@ -162,9 +162,9 @@ namespace JerpDoesBots
 			int userCount = userList.Count();
 
 			if (m_IsActive)
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserCount"), userCount) + getJoinString());
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleUserCount"), userCount) + getJoinString());
 			else
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserCount"), userCount));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleUserCount"), userCount));
 		}
 
 		public void draw(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -175,7 +175,7 @@ namespace JerpDoesBots
 			{
 				List<string> keyList = Enumerable.ToList(userList.Keys);
 
-				string chosenKey = keyList[m_BotBrain.randomizer.Next(0, userCount - 1)];
+				string chosenKey = keyList[jerpBot.instance.randomizer.Next(0, userCount - 1)];
 				userEntry chosenUser = userList[chosenKey];
 
 				userList.Remove(chosenKey);
@@ -184,14 +184,14 @@ namespace JerpDoesBots
 				if (usersAddedRecently.Count == 0)
 					userAddedRecently = false;
 
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleUserSelected"), chosenUser.Nickname));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleUserSelected"), chosenUser.Nickname));
 			}
 			else
 			{
 				if (m_IsActive)
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCountEmpty") + getJoinString());
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleCountEmpty") + getJoinString());
 				else
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleCountEmpty") + "  " + m_BotBrain.localizer.getString("raffleHintOpen"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleCountEmpty") + "  " + jerpBot.instance.localizer.getString("raffleHintOpen"));
 			}
 		}
 
@@ -213,32 +213,32 @@ namespace JerpDoesBots
 								if (pointRewardManager.updateRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.FULFILLED))
 									addUserInternal(aMessageUser);
 								else
-									m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusFulfilledFail"), aMessageUser.Nickname));
+									jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleRewardRedeemStatusFulfilledFail"), aMessageUser.Nickname));
 							}
 							else
 							{
-								failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailUserExists");
+								failReason = jerpBot.instance.localizer.getString("raffleRewardRedeemFailUserExists");
 								needRefund = true;
 							}
 						}
 						else
 						{
-							failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailInactive");
+							failReason = jerpBot.instance.localizer.getString("raffleRewardRedeemFailInactive");
 							needRefund = true;
 						}
 					}
 					else
 					{
-						failReason = m_BotBrain.localizer.getString("raffleRewardRedeemFailNoRewardRequired");
+						failReason = jerpBot.instance.localizer.getString("raffleRewardRedeemFailNoRewardRequired");
 						needRefund = true;
 					}
 
 					if (needRefund)
 					{
-						m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRefund"),aMessageUser.Nickname , failReason));
+						jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleRewardRefund"),aMessageUser.Nickname , failReason));
 
 						if (!pointRewardManager.updateRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.CANCELED))
-							m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
+							jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
 					}
 				}
 			}
@@ -275,9 +275,9 @@ namespace JerpDoesBots
                         if (userAddedRecently)
 						{
 							if (!string.IsNullOrEmpty(m_Description))
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + " (" + m_Description + ")  " + getJoinString());
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + " (" + m_Description + ")  " + getJoinString());
                             else
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + getJoinString());
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleAnnounceAddedRecently"), usersAddedRecently.Count) + getJoinString());
 
 							usersAddedRecently.Clear();
 							userAddedRecently = false;
@@ -285,9 +285,9 @@ namespace JerpDoesBots
 						else
 						{
                             if (!string.IsNullOrEmpty(m_Description))
-	                            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleAnnounceOpen") + " (" + m_Description + ")  " + getJoinString());
+	                            jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleAnnounceOpen") + " (" + m_Description + ")  " + getJoinString());
                             else
-                                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("raffleAnnounceOpen") + getJoinString());
+                                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("raffleAnnounceOpen") + getJoinString());
                         }
 
 						m_Throttler.trigger();
@@ -296,9 +296,9 @@ namespace JerpDoesBots
 			}
 		}
 
-		public raffle(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+		public raffle() : base(true, true, false)
 		{
-			m_Throttler = new throttler(aJerpBot);
+			m_Throttler = new throttler();
 			m_Throttler.waitTimeMSMax = 15000;
 			m_Throttler.lineCountMinimum = 8;
 			m_Throttler.messagesReduceTimer = false;
@@ -318,7 +318,7 @@ namespace JerpDoesBots
 			tempDef.addSubCommand(new chatCommandDef("about", about, true, true));
 			tempDef.addSubCommand(new chatCommandDef("useredemptions", toggleUseRedemptions, false, false));
 			tempDef.useGlobalCooldown = false;
-			m_BotBrain.addChatCommand(tempDef);
+			jerpBot.instance.addChatCommand(tempDef);
 
 		}
 	}

@@ -40,12 +40,12 @@ namespace JerpDoesBots
             if (m_IsLoaded)
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("autoExecReloadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("autoExecReloadSuccess"));
             }
             else
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("autoExecReloadFail"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("autoExecReloadFail"));
             }
         }
 
@@ -59,7 +59,7 @@ namespace JerpDoesBots
                     {
                         foreach (string curCommandString in curEntry.commands)
                         {
-                            m_BotBrain.messageOrCommand(curCommandString);
+                            jerpBot.instance.messageOrCommand(curCommandString);
                         }
                     }
                 }
@@ -76,7 +76,7 @@ namespace JerpDoesBots
                     {
                         foreach (string curCommandString in curEntry.commands)
                         {
-                            m_BotBrain.messageOrCommand(curCommandString);
+                            jerpBot.instance.messageOrCommand(curCommandString);
                         }
                     }
                 }
@@ -93,7 +93,7 @@ namespace JerpDoesBots
                     {
                         foreach (string curCommandString in curEntry.commands)
                         {
-                            m_BotBrain.messageOrCommand(curCommandString);
+                            jerpBot.instance.messageOrCommand(curCommandString);
                         }
                     }
                 }
@@ -110,7 +110,7 @@ namespace JerpDoesBots
                     {
                         foreach (string curCommandString in curEntry.commands)
                         {
-                            m_BotBrain.messageOrCommand(curCommandString);
+                            jerpBot.instance.messageOrCommand(curCommandString);
                         }
                     }
                 }
@@ -125,7 +125,7 @@ namespace JerpDoesBots
                 {
                     foreach (autoExecConfigEntry curEntry in m_Config.entries)
                     {
-                        if (curEntry.activateOnMessageTerm && (curEntry.requirements == null || curEntry.requirements.isMet()) && (curEntry.lastActivationTimeMS == -1 || m_BotBrain.actionTimer.ElapsedMilliseconds >= curEntry.lastActivationTimeMS + (curEntry.cooldownTimeSeconds * 1000)))
+                        if (curEntry.activateOnMessageTerm && (curEntry.requirements == null || curEntry.requirements.isMet()) && (curEntry.lastActivationTimeMS == -1 || jerpBot.instance.actionTimer.ElapsedMilliseconds >= curEntry.lastActivationTimeMS + (curEntry.cooldownTimeSeconds * 1000)))
                         {
                             if (curEntry.messageTermsToCheck != null && curEntry.messageTermsToCheck.Count > 0)
                             {
@@ -151,10 +151,10 @@ namespace JerpDoesBots
                                 {
                                     foreach (string curCommandString in curEntry.commands)
                                     {
-                                        m_BotBrain.messageOrCommand(curCommandString);
+                                        jerpBot.instance.messageOrCommand(curCommandString);
                                     }
 
-                                    curEntry.lastActivationTimeMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                                    curEntry.lastActivationTimeMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
                                 }
                             }
                         }
@@ -169,14 +169,14 @@ namespace JerpDoesBots
             {
                 foreach (autoExecConfigEntry curEntry in m_Config.entries)
                 {
-                    if (curEntry.activateOnTimer && (curEntry.requirements == null || curEntry.requirements.isMet()) && m_BotBrain.actionTimer.ElapsedMilliseconds >= curEntry.lastActivationTimeMS + (curEntry.cooldownTimeSeconds * 1000))
+                    if (curEntry.activateOnTimer && (curEntry.requirements == null || curEntry.requirements.isMet()) && jerpBot.instance.actionTimer.ElapsedMilliseconds >= curEntry.lastActivationTimeMS + (curEntry.cooldownTimeSeconds * 1000))
                     {
                         foreach(string curCommandString in curEntry.commands)
                         {
-                            m_BotBrain.messageOrCommand(curCommandString);
+                            jerpBot.instance.messageOrCommand(curCommandString);
                         }
 
-                        curEntry.lastActivationTimeMS = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                        curEntry.lastActivationTimeMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
                     }
                 }    
 
@@ -187,21 +187,20 @@ namespace JerpDoesBots
         /// <summary>
         /// Automatic command executor - can output messages and commands in response to specific events and on specific intervals.
         /// </summary>
-        /// <param name="aJerpBot"></param>
-        public autoExec(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public autoExec() : base(true, true, false)
         {
             m_IsLoaded = loadConfig();
 
             if (m_IsLoaded)
             {
-                m_Throttler = new throttler(aJerpBot);
+                m_Throttler = new throttler();
                 m_Throttler.waitTimeMSMax = 5000;
                 m_Throttler.messagesReduceTimer = false;
                 m_Throttler.requiresUserMessages = false;
 
                 chatCommandDef tempDef = new chatCommandDef("autoexec", null, false, false);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
             }
         }
     }

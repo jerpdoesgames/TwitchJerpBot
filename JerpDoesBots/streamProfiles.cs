@@ -99,16 +99,16 @@ namespace JerpDoesBots
 
                     TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest newChannelInfoRequest = new TwitchLib.Api.Helix.Models.Channels.ModifyChannelInformation.ModifyChannelInformationRequest();
 
-                    if (!string.IsNullOrEmpty(useProfile.title) && useProfile.title != m_BotBrain.Title)
+                    if (!string.IsNullOrEmpty(useProfile.title) && useProfile.title != jerpBot.instance.Title)
                         newChannelInfoRequest.Title = useProfile.title;
 
-                    if (!string.IsNullOrEmpty(useProfile.category) && useProfile.category != m_BotBrain.CategoryID)
+                    if (!string.IsNullOrEmpty(useProfile.category) && useProfile.category != jerpBot.instance.CategoryID)
                         newChannelInfoRequest.GameId = useProfile.category;
 
                     if (useProfile.tags != null)
                         newChannelInfoRequest.Tags = newTags.ToArray();
 
-                    m_BotBrain.updateChannelInfo(newChannelInfoRequest, newTags, aSilent);
+                    jerpBot.instance.updateChannelInfo(newChannelInfoRequest, newTags, aSilent);
                 }
 
                 if (!string.IsNullOrEmpty(useProfile.rewardGroup))
@@ -137,7 +137,7 @@ namespace JerpDoesBots
                 }
                 else
 				{
-					m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("modifyChannelInfoFailProfileNotFound"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("modifyChannelInfoFailProfileNotFound"));
 				}
 			}
 		}
@@ -151,7 +151,7 @@ namespace JerpDoesBots
             bool hasGameDefaultProfile = false;
             foreach (defaultProfileEntry curProfile in m_Config.gameDefaultProfiles)
             {
-                if (((aActivateViaCategoryChange && curProfile.activateOnCategoryChange) || (!aActivateViaCategoryChange && curProfile.activateOnBotLoad)) && (string.IsNullOrEmpty(curProfile.categoryID) || curProfile.categoryID == m_BotBrain.CategoryID) && (curProfile.requirements == null || curProfile.requirements.isMet()))
+                if (((aActivateViaCategoryChange && curProfile.activateOnCategoryChange) || (!aActivateViaCategoryChange && curProfile.activateOnBotLoad)) && (string.IsNullOrEmpty(curProfile.categoryID) || curProfile.categoryID == jerpBot.instance.CategoryID) && (curProfile.requirements == null || curProfile.requirements.isMet()))
                 {
                     applyProfileInternal(curProfile.useProfile, true);
                     hasGameDefaultProfile = true;
@@ -201,7 +201,7 @@ namespace JerpDoesBots
 			pointRewardManager.updateRemoteRewardsFromLocalData();
 
 			if (!aSilentMode && (pointRewardManager.lastUpdateRewardsAdded > 0 || pointRewardManager.lastUpdateRewardsRemoved > 0 || pointRewardManager.lastUpdateRewardsUpdated > 0))
-				m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("channelPointRewardsCreatedRemoved"), pointRewardManager.lastUpdateRewardsAdded, pointRewardManager.lastUpdateRewardsRemoved, pointRewardManager.lastUpdateRewardsUpdated));
+				jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("channelPointRewardsCreatedRemoved"), pointRewardManager.lastUpdateRewardsAdded, pointRewardManager.lastUpdateRewardsRemoved, pointRewardManager.lastUpdateRewardsUpdated));
         }
 
 		public void applyRewardGroup(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -256,19 +256,18 @@ namespace JerpDoesBots
 			if (m_IsLoaded)
             {
 				if (!aSilent)
-					m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("streamProfileReloadSuccess"));
+					jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("streamProfileReloadSuccess"));
             }
 			else
             {
-                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("streamProfileReloadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("streamProfileReloadFail"));
             }
         }
 
 		/// <summary>
 		/// Initialize command entries for Stream Profiles.
 		/// </summary>
-		/// <param name="aJerpBot">Would-be singleton for the main jerpBot brain.</param>
-		public streamProfiles(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+		public streamProfiles() : base(true, true, false)
 		{
 			load();
 
@@ -279,7 +278,7 @@ namespace JerpDoesBots
 				tempDef.addSubCommand(new chatCommandDef("apply", applyProfile, false, false));
 				tempDef.addSubCommand(new chatCommandDef("setrewards", applyRewardGroup, false, false));
 
-				m_BotBrain.addChatCommand(tempDef);
+				jerpBot.instance.addChatCommand(tempDef);
 			}
 		}
 	}

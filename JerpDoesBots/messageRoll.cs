@@ -89,17 +89,17 @@ namespace JerpDoesBots
 
             if (messageToSend != null && !String.IsNullOrEmpty(messageToSend.text))
             {
-                if (m_BotBrain.isValidCommandFormat(messageToSend.text))
+                if (jerpBot.instance.isValidCommandFormat(messageToSend.text))
                 {
-                    userEntry ownerUser = m_BotBrain.checkCreateUser(m_BotBrain.ownerUsername);
-                    m_BotBrain.processUserCommand(ownerUser, messageToSend.text);
+                    userEntry ownerUser = jerpBot.instance.checkCreateUser(jerpBot.instance.ownerUsername);
+                    jerpBot.instance.processUserCommand(ownerUser, messageToSend.text);
                 }
                 else
                 {
                     if (messageToSend.isAnnounce)
-                        m_BotBrain.sendDefaultChannelAnnounce(messageToSend.text);
+                        jerpBot.instance.sendDefaultChannelAnnounce(messageToSend.text);
                     else
-                        m_BotBrain.sendDefaultChannelMessage(messageToSend.text);
+                        jerpBot.instance.sendDefaultChannelMessage(messageToSend.text);
                 }
             }
 
@@ -119,20 +119,20 @@ namespace JerpDoesBots
             {
                 m_MessageIndex = -1;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("messageRollReloadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("messageRollReloadSuccess"));
             }
             else
-                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("messageRollReloadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("messageRollReloadFail"));
 
         }
 
-        public messageRoll(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public messageRoll() : base(true, true, false)
 		{
             if (loadConfig())
             {
                 m_IsLoaded = true;
 
-                m_Throttler = new throttler(aJerpBot);
+                m_Throttler = new throttler();
                 m_Throttler.waitTimeMSMax = 900000;
                 m_Throttler.lineCountReductionMS = 23333;
                 m_Throttler.lineCountReductionMax = 30;
@@ -141,7 +141,7 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("next", forceNext, false, false));
                 tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
 
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
 
             }
 		}

@@ -70,13 +70,13 @@ namespace JerpDoesBots
 
                     if (getCommandReader.HasRows)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddFailExists"), commandName));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("aliasAddFailExists"), commandName));
                     }
                     else
                     {
                         string addCommandQuery = insertQuery;
 
-                        SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, m_BotBrain.storageDB);
+                        SQLiteCommand addCommandCommand = new SQLiteCommand(addCommandQuery, jerpBot.instance.storageDB);
 
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param1", commandUser.Nickname));     // Submitter
                         addCommandCommand.Parameters.Add(new SQLiteParameter("@param2", commandUser.Nickname));     // Modifier (same)
@@ -87,19 +87,19 @@ namespace JerpDoesBots
                         if (addCommandCommand.ExecuteNonQuery() > 0)
                         {
                             if (!aSilent)
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddSuccess"), argumentList[0]));
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("aliasAddSuccess"), argumentList[0]));
                         }
                         else
-                            m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("aliasAddFail"), argumentList[0]));
+                            jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("aliasAddFail"), argumentList[0]));
                     }
                 }
                 else
-                    m_BotBrain.sendDefaultChannelMessage(formatHint);
+                    jerpBot.instance.sendDefaultChannelMessage(formatHint);
 
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasAddFailLoop"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("aliasAddFailLoop"));
             }
         }
 
@@ -112,7 +112,7 @@ namespace JerpDoesBots
         {
             string getQuotesQuery = "SELECT * FROM command_alias ORDER BY command_name ASC";
 
-            SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, m_BotBrain.storageDB);
+            SQLiteCommand getQuotesCommand = new SQLiteCommand(getQuotesQuery, jerpBot.instance.storageDB);
             SQLiteDataReader getQuotesReader = getQuotesCommand.ExecuteReader();
 
             List<object> rowData = new List<object>();
@@ -125,7 +125,7 @@ namespace JerpDoesBots
                 }
             }
 
-            m_BotBrain.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
+            jerpBot.instance.genericSerializeToFile(rowData, "jerpdoesbots_aliases.json");
         }
 
         public override void outputList(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -133,16 +133,16 @@ namespace JerpDoesBots
             outputListInternal();
 
             if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("aliasOutputListSuccess"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("aliasOutputListSuccess"));
         }
 
-        public commandAlias(jerpBot botGeneral) : base(botGeneral)
+        public commandAlias() : base()
         {
             chatCommandDef tempDef = new chatCommandDef("alias", null, false, false);
             tempDef.addSubCommand(new chatCommandDef("add", add, false, false));
             tempDef.addSubCommand(new chatCommandDef("remove", remove, false, false));
             tempDef.addSubCommand(new chatCommandDef("outputlist", outputList, false, false));
-            m_BotBrain.addChatCommand(tempDef);
+            jerpBot.instance.addChatCommand(tempDef);
 
         }
     }

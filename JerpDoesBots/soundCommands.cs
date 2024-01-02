@@ -111,8 +111,8 @@ namespace JerpDoesBots
                 return false;
 
             if (
-                (m_BotBrain.actionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_ALL > aSound.lastUsed) &&
-                (aSound != m_lastSound || m_BotBrain.actionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_PERSOUND > aSound.lastUsed)
+                (jerpBot.instance.actionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_ALL > aSound.lastUsed) &&
+                (aSound != m_lastSound || jerpBot.instance.actionTimer.ElapsedMilliseconds + COOLDOWN_GLOBAL_PERSOUND > aSound.lastUsed)
             )
             {
                 return false;
@@ -132,7 +132,7 @@ namespace JerpDoesBots
                 {
                     if (playSoundInternal(aMessageUser, foundSound))
                     {
-                        m_BotBrain.logGeneral.writeAndLog("Sound reward redemption by " + aMessageUser.Nickname + " - " + foundSound.name);
+                        jerpBot.instance.logGeneral.writeAndLog("Sound reward redemption by " + aMessageUser.Nickname + " - " + foundSound.name);
                         if (!pointRewardManager.updateRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.FULFILLED))
                         {
                             //Error state since I couldn't mark fulfilled
@@ -150,7 +150,7 @@ namespace JerpDoesBots
                 // TODO: Fail reason/output (see raffle)
                 if (!pointRewardManager.updateRewardRedemptionStatus(aRewardID, aRedemptionID, TwitchLib.Api.Core.Enums.CustomRewardRedemptionStatus.CANCELED))
                 {
-                    // m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
+                    // jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("raffleRewardRedeemStatusCanceledFail"), aMessageUser.Nickname));
                 }
             }
         }
@@ -169,7 +169,7 @@ namespace JerpDoesBots
                             string baseSoundPath;
                             if (pathCount > 1)
                             {
-                                int soundIndex = m_BotBrain.randomizer.Next(0, pathCount);
+                                int soundIndex = jerpBot.instance.randomizer.Next(0, pathCount);
 
                                 baseSoundPath = curSound.paths[soundIndex];
                             }
@@ -193,11 +193,11 @@ namespace JerpDoesBots
                                 m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
                                 m_OutputEvent.Play();
 
-                                curSound.lastUsed = m_BotBrain.actionTimer.ElapsedMilliseconds;
+                                curSound.lastUsed = jerpBot.instance.actionTimer.ElapsedMilliseconds;
                                 m_lastSound = curSound;
 
                                 if (aIsRandom && !aSilentMode)
-                                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayRandom"), curSound.name));
+                                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundPlayRandom"), curSound.name));
 
                                 return true;
                             }
@@ -206,20 +206,20 @@ namespace JerpDoesBots
                         {
                             if (aOutputErrors)
                             {
-                                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorOnCooldown"), curSound.name));
+                                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundPlayErrorOnCooldown"), curSound.name));
                             }
                         }
                     }
                     else
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorInvalidTags"), curSound.name));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundPlayErrorInvalidTags"), curSound.name));
                     }
                 }
                 else
                 {
                     if (aOutputErrors)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundPlayErrorInvalidGame"), curSound.name, m_BotBrain.game));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundPlayErrorInvalidGame"), curSound.name, jerpBot.instance.game));
                     }
                     
                 }
@@ -275,14 +275,14 @@ namespace JerpDoesBots
                     m_DeviceNumber = deviceNumber;
                     if (!aSilent)
                     {
-                        m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
+                        jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundSetDeviceNumberSuccess"), deviceNumber, WaveOut.GetCapabilities(deviceNumber).ProductName));
                     }
                     success = true;
                 }
             }
 
             if (!success)
-                m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
+                jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundSetDeviceNumberFailRange"), WaveOut.DeviceCount - 1));
         }
 
         public void getDeviceList(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -291,11 +291,11 @@ namespace JerpDoesBots
             {
                 WaveOutCapabilities curDevice = WaveOut.GetCapabilities(i);
 
-                Console.WriteLine(string.Format(m_BotBrain.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
+                Console.WriteLine(string.Format(jerpBot.instance.localizer.getString("soundDeviceListEntry"), i, curDevice.ProductName));
             }
 
             if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundDeviceListOutput"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundDeviceListOutput"));
         }
 
         public void setVolume(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -306,7 +306,7 @@ namespace JerpDoesBots
                 newVolume = Math.Min(newVolume, 1.0f);
                 m_GlobalVolume = newVolume;
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(string.Format(m_BotBrain.localizer.getString("soundSetGlobalVolume"), newVolume));
+                    jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("soundSetGlobalVolume"), newVolume));
             }
         }
 
@@ -315,7 +315,7 @@ namespace JerpDoesBots
             m_IsEnabled = true;
 
             if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundEnabled"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundEnabled"));
         }
 
         public void disable(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -323,12 +323,12 @@ namespace JerpDoesBots
             m_IsEnabled = false;
 
             if (!aSilent)
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundDisabled"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundDisabled"));
         }
 
         public void getList(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundList"));
+            jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundList"));
         }
 
         private bool loadSounds()
@@ -361,7 +361,7 @@ namespace JerpDoesBots
                     // Randomize before collecting non-mandatory sounds
                     m_Config.soundList.Sort(delegate (soundCommandDef a, soundCommandDef b)
                     {
-                        return m_BotBrain.randomizer.Next() - m_BotBrain.randomizer.Next();
+                        return jerpBot.instance.randomizer.Next() - jerpBot.instance.randomizer.Next();
                     });
 
                     foreach (soundCommandDef curSound in m_Config.soundList)    // Collect a set of non-mandatory sounds
@@ -397,11 +397,11 @@ namespace JerpDoesBots
             if (loadSounds())
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundReloadSuccess"));
             }
                 
             else
-                m_BotBrain.sendDefaultChannelMessage(m_BotBrain.localizer.getString("soundReloadFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("soundReloadFail"));
         }
 
 
@@ -413,11 +413,11 @@ namespace JerpDoesBots
         public void playRandom(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             List<soundCommandDef> validSounds = getValidCommandSounds();
-            int soundID = m_BotBrain.randomizer.Next(0, validSounds.Count - 1);
+            int soundID = jerpBot.instance.randomizer.Next(0, validSounds.Count - 1);
             playSoundInternal(commandUser, validSounds[soundID], true, false, aSilent);
         }
 
-        public soundCommands(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public soundCommands() : base(true, true, false)
         {
             if (loadSounds())
             {
@@ -433,7 +433,7 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("getdevices", getDeviceList, false, false));
                 tempDef.addSubCommand(new chatCommandDef("setdevice", setDevice, false, false));
 
-                m_BotBrain.addChatCommand(tempDef);
+                jerpBot.instance.addChatCommand(tempDef);
                 m_OutputEvent = new WaveOutEvent();
             }
         }

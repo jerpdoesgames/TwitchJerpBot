@@ -18,29 +18,29 @@
 			jerpBot botGeneral					= new jerpBot(tempConfig);
 			jerpBot.instance = botGeneral;
 
-			pointRewardManager pointRewardsModule     = new pointRewardManager(botGeneral); // Keep this early as other modules will be dependent on the fist rewards list update.
-			raffle raffleModule						  = new raffle(botGeneral);
-			quotes quoteModule						  = new quotes(botGeneral);
-			customCommand customCommandModule		  = new customCommand(botGeneral);
-			gameCommand gameCommandModule			  = new gameCommand(botGeneral);
-			counter counterModule					  = new counter(botGeneral);
-			queueSystem queueModule					  = new queueSystem(botGeneral);
-			autoShoutout shoutoutModule				  = new autoShoutout(botGeneral);
-            lurkShoutout lurkShoutModule			  = new lurkShoutout(botGeneral);
-            messageRoll rollModule					  = new messageRoll(botGeneral);
-			pollManager pollModule					  = new pollManager(botGeneral);
-            soundCommands soundManager				  = new soundCommands(botGeneral);
-            commandAlias aliasManager				  = new commandAlias(botGeneral);
-            trivia triviaManager					  = new trivia(botGeneral);
-            hydrateReminder hydrateManager			  = new hydrateReminder(botGeneral);
-            delaySender delaySendManager			  = new delaySender(botGeneral);
-			hostMessages hostMessageModule			  = new hostMessages(botGeneral);
-			streamProfiles streamProfileManager		  = new streamProfiles(botGeneral);
-			predictionManager streamPredictionManager = new predictionManager(botGeneral);
-			mediaPlayerMonitor mediaMonitor           = new mediaPlayerMonitor(botGeneral);
-			dataLookup dataLookupManager              = new dataLookup(botGeneral);
-			adManager adManagerModule                 = new adManager(botGeneral);
-            autoExec autoExecModule                   = new autoExec(botGeneral);
+			pointRewardManager pointRewardsModule     = new pointRewardManager(); // Keep this early as other modules will be dependent on the fist rewards list update.
+			raffle raffleModule						  = new raffle();
+			quotes quoteModule						  = new quotes();
+			customCommand customCommandModule		  = new customCommand();
+			gameCommand gameCommandModule			  = new gameCommand();
+			counter counterModule					  = new counter();
+			queueSystem queueModule					  = new queueSystem();
+			autoShoutout shoutoutModule				  = new autoShoutout();
+            lurkShoutout lurkShoutModule			  = new lurkShoutout();
+            messageRoll rollModule					  = new messageRoll();
+			pollManager pollModule					  = new pollManager();
+            soundCommands soundManager				  = new soundCommands();
+            commandAlias aliasManager				  = new commandAlias();
+            trivia triviaManager					  = new trivia();
+            hydrateReminder hydrateManager			  = new hydrateReminder();
+            delaySender delaySendManager			  = new delaySender();
+			hostMessages hostMessageModule			  = new hostMessages();
+			streamProfiles streamProfileManager		  = new streamProfiles();
+			predictionManager streamPredictionManager = new predictionManager();
+			mediaPlayerMonitor mediaMonitor           = new mediaPlayerMonitor();
+			dataLookup dataLookupManager              = new dataLookup();
+			adManager adManagerModule                 = new adManager();
+            autoExec autoExecModule                   = new autoExec();
 
             customCommandModule.initTable();
 			gameCommandModule.initTable();

@@ -356,20 +356,20 @@ namespace JerpDoesBots
             if (updateLocalRewardsFromRemoteData())
             {
                 if (!aSilent)
-                    m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("channelPointRewardsUpdateLocalFromRemoteSuccess"));
+                    jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("channelPointRewardsUpdateLocalFromRemoteSuccess"));
             }
             else
             {
-                m_BotBrain.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("channelPointRewardsUpdateLocalFromRemoteFail"));
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("channelPointRewardsUpdateLocalFromRemoteFail"));
             }
         }
 
-        public pointRewardManager(jerpBot aJerpBot) : base(aJerpBot, true, true, false)
+        public pointRewardManager() : base(true, true, false)
         {
             m_Rewards = new List<pointReward>();
             chatCommandDef tempDef = new chatCommandDef("points", null, false, false);
             tempDef.addSubCommand(new chatCommandDef("updatelocal", updatelocal, false, false));
-            m_BotBrain.addChatCommand(tempDef);
+            jerpBot.instance.addChatCommand(tempDef);
 
             updateLocalRewardsFromRemoteData();
         }
