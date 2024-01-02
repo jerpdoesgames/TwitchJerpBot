@@ -27,6 +27,12 @@ namespace JerpDoesBots
 				return m_BotBrain.game;
 		}
 
+		/// <summary>
+		/// Force the game used for the GameCommand module.  Not used for regular commands or aliases.
+		/// </summary>
+		/// <param name="commandUser">User setting the game to use.</param>
+		/// <param name="argumentString">Game to use (or </param>
+		/// <param name="aSilent"></param>
 		public void setGame(userEntry commandUser, string argumentString, bool aSilent = false)
 		{
 			if (!string.IsNullOrEmpty(argumentString))

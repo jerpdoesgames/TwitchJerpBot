@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TwitchLib.Api;
+using TwitchLib.Api.Helix.Models.Channels.GetChannelFollowers;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.Client;
@@ -46,28 +48,55 @@ namespace JerpDoesBots
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
 
-        private logger m_LogGeneral;            // Internal housekeeping to keep track of.
-        private logger m_LogEvents;             // Subs, raids, follows, etc.
-        private logger m_LogChat;               // Chat from Twitch users.
-        private logger m_LogWarningsErrors;     // Warnings and errors, of course.
-        private logger m_LogConnection;         // General connection output
+        private logger m_LogGeneral;
+        private logger m_LogEvents;
+        private logger m_LogChat;
+        private logger m_LogWarningsErrors;
+        private logger m_LogConnection;
 
+        /// <summary>
+        /// Primarily internal housekeeping and non-error/warning messages.
+        /// </summary>
         public logger logGeneral { get { return m_LogGeneral; } }
+        /// <summary>
+        /// Channel events mostly visible to the public, such as raids, follows, and subscriptions.
+        /// </summary>
         public logger logEvents { get { return m_LogEvents; } }
+        /// <summary>
+        /// Chat messages from users.
+        /// </summary>
         public logger logChat { get { return m_LogChat; } }
+        /// <summary>
+        /// Warnings and errors only.
+        /// </summary>
         public logger logWarningsErrors { get { return m_LogWarningsErrors; } }
+        /// <summary>
+        /// General connection output (somewhat raw output for the bot).
+        /// </summary>
         public logger logConnection { get { return m_LogConnection; } }
 
         public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
 
+        /// <summary>
+        /// Username considered to be the "owner" for the bot.  Has full admin privileges.  Used to verify whether some commands are allowed.
+        /// </summary>
         public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
+        /// <summary>
+        /// Twitch user ID of the user considered to be the "owner" for the bot.  Used in cases where some Twitch API calls must be called on the broadcaster's ID.
+        /// </summary>
         public string ownerUserID { get { return m_CoreConfig.configData.twitch_api.channel_id.ToString(); } }
+        /// <summary>
+        /// Twitch user ID of the bot itself.  Used in cases where a moderator's ID will suffice for Twitch API calls.
+        /// </summary>
         public string botUserID { get { return m_CoreConfig.configData.connections[0].channel_id.ToString(); } }
+        /// <summary>
+        /// Username for the bot itself.  Primarily used to either allow commands or filter out messages that would otherwise trigger behavior from the bot itself.
+        /// </summary>
         public string botUsername { get { return m_CoreConfig.configData.connections[0].username; } }
 
         private DateTime m_LiveStartTime;
         private SQLiteConnection m_StorageDB;
-        public SQLiteConnection storageDB { get { return m_StorageDB; } }
+        public SQLiteConnection storageDB { get { return m_StorageDB; } }   // TODO: Should probably set something up where bot modules have independent storage / possibly not SQLite.
         private Stopwatch m_ActionTimer;
         private readonly Queue<connectionCommand> actionQueue;
         private bool m_IsDone = false;
@@ -85,11 +114,11 @@ namespace JerpDoesBots
         private bool m_IsReadyToClose = false; // Ready to completely end the program
         private int m_SubsThisSession = 0;
         private long m_FollowerStaleCheckSeconds = 360;  // Amount of time that must pass before checking to see if someone's following
+
+        const int TWITCH_API_GET_USERS_MAX = 100;
+
         private localizer m_Localizer;
         public localizer localizer { get { return m_Localizer; } }
-
-        public int subsThisSession { get { return m_SubsThisSession; } }
-
 
         public void setLoadComplete()
         {
@@ -133,12 +162,15 @@ namespace JerpDoesBots
 
         private List<botModule> m_Modules;
 
+        /// <summary>
+        /// Amount of time since the bot was loaded.  Ideally this should be something 
+        /// </summary>
         public Stopwatch actionTimer { get { return m_ActionTimer; } }
 
         public static string storagePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JerpBot");
 
-        private long m_UserUpdateLast = 0;
-        private long m_UserUpdateThrottle = 5000;
+        private long m_UserUpdateLast = -1;
+        private long m_UserUpdateThrottle = 180000;
 
         private long m_SendTimeLast = 0;
         private static long m_SendThrottleMin = 1000;
@@ -416,11 +448,20 @@ namespace JerpDoesBots
                 executeAndLog(newCommand);
         }
 
-        public void processUserUpdates(bool forceUpdate = false)    // For any users who needs anything written to DB
+        /// <summary>
+        /// Periodic updates like writing user data to the database or grabbing IDs from Twitch users (to check follow status, etc.)
+        /// </summary>
+        /// <param name="forceUpdate"></param>
+        public void processPeriodicUpdates(bool forceUpdate = false)
         {
-            bool userWasUpdated = false;
-            if (forceUpdate || m_ActionTimer.ElapsedMilliseconds > m_UserUpdateLast + m_UserUpdateThrottle)
+            if (forceUpdate || m_UserUpdateLast == -1 || m_ActionTimer.ElapsedMilliseconds > m_UserUpdateLast + m_UserUpdateThrottle)
             {
+                m_UserUpdateLast = m_ActionTimer.ElapsedMilliseconds;
+
+                fillMissingUserIDs();
+                /*
+                bool userWasUpdated = false;
+
                 if (m_UserList.Count > 0)
                 {
                     foreach (userEntry user in m_UserList.Values)
@@ -436,6 +477,7 @@ namespace JerpDoesBots
                         m_UserUpdateLast = m_ActionTimer.ElapsedMilliseconds;
                     }
                 }
+                */
             }
         }
 
@@ -740,15 +782,19 @@ namespace JerpDoesBots
             }
             else
             {
-                TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getFollowsResponse = getUserFollowsResult(checkUser);
-                if (getFollowsResponse != null && getFollowsResponse.Follows.Length > 0)
+                GetChannelFollowersResponse getFollowsResponse = getUserFollowsResult(checkUser);
+                if (getFollowsResponse != null)
                 {
-                    checkUser.isFollower = (getFollowsResponse.TotalFollows > 0);
+                    checkUser.isFollower = (getFollowsResponse.Data.Length > 0);
                     checkUser.lastFollowCheckTime = DateTime.Now;
 
                     if (checkUser.isFollower)
                     {
-                        string followDurationString = simpleDurationString(DateTime.Now.Subtract(getFollowsResponse.Follows[0].FollowedAt));
+                        string followDurationString = simpleDurationString(
+                            DateTime.Now.Subtract(
+                                DateTime.Parse(getFollowsResponse.Data[0].FollowedAt)
+                            )
+                        );
                         sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), checkUser.Nickname, followDurationString));
                     }
                     else
@@ -866,6 +912,12 @@ namespace JerpDoesBots
             return true;    // TODO: Return actual command output
         }
 
+        /// <summary>
+        /// Attempts to retrieve a user from the bot's internal list (or create and return the user if it doesn't exist).
+        /// </summary>
+        /// <param name="aUsername">Nickname of the user to retrieve.  Internally forced to lowercase when searching.</param>
+        /// <param name="aCanCreate">Whether a new entry can be created for this user or to return null when the user is not found.  Defaults to true.</param>
+        /// <returns></returns>
         public userEntry checkCreateUser(string aUsername, bool aCanCreate = true)
         {
             userEntry userEntry;
@@ -890,11 +942,25 @@ namespace JerpDoesBots
             return userEntry;
         }
 
-        private TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse getUserFollowsResult(userEntry aUser)
+        private GetChannelFollowersResponse getUserFollowsResult(userEntry aUser)
         {
-            Task<TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse> userFollowsTask = m_TwitchAPI.Helix.Users.GetUsersFollowsAsync(null, null, 1, aUser.twitchUserID, ownerUserID);
-            userFollowsTask.Wait();
-            return userFollowsTask.Result;
+
+            if (!string.IsNullOrEmpty(aUser.twitchUserID))
+            {
+                try
+                {
+                    Task<GetChannelFollowersResponse> followedChannelsTask = m_TwitchAPI.Helix.Channels.GetChannelFollowersAsync(ownerUserID, aUser.twitchUserID, 1);
+                    followedChannelsTask.Wait();
+
+                    return followedChannelsTask.Result;
+                }
+                catch (Exception e)
+                {
+                    logWarningsErrors.writeAndLog("getUserFollowsResult error: " + e.Message);
+                }
+            }
+
+            return null;
         }
 
         public bool checkUpdateIsFollower(userEntry aUser)
@@ -910,11 +976,11 @@ namespace JerpDoesBots
                     {
                         try
                         {
-                            TwitchLib.Api.Helix.Models.Users.GetUserFollows.GetUsersFollowsResponse userFollowsResponse = getUserFollowsResult(aUser);
+                            GetChannelFollowersResponse userFollowsResponse = getUserFollowsResult(aUser);
 
                             if (userFollowsResponse != null)
                             {
-                                aUser.isFollower = (userFollowsResponse.TotalFollows > 0);
+                                aUser.isFollower = (userFollowsResponse.Data.Length >= 1);
                                 aUser.lastFollowCheckTime = DateTime.Now;
                             }
                         }
@@ -934,12 +1000,11 @@ namespace JerpDoesBots
             return aUser.isFollower;
         }
 
-        public void processJoinPart(string aNickname, bool aHasJoined)
-        {
-            userEntry messageUser = checkCreateUser(aNickname);
-            messageUser.inChannel = aHasJoined;
-        }
-
+        /// <summary>
+        /// Basic helper to confirm the message is in a valid format to be considered as a !command.
+        /// </summary>
+        /// <param name="aMessage">The message to evaluate.</param>
+        /// <returns></returns>
         public bool isValidCommandFormat(string aMessage)
         {
             return ((aMessage[0] == '@' && aMessage[1] == '!') || aMessage[0] == '!');
@@ -976,6 +1041,15 @@ namespace JerpDoesBots
             }
         }
 
+        /// <summary>
+        /// Occurs when a channel point redemption occurs - passes redemption data to all modules to evaluate.
+        /// </summary>
+        /// <param name="aNickname">Nickname of the user redeeming a reward.</param>
+        /// <param name="aRewardTitle">Title/display name of the reward.</param>
+        /// <param name="aRewardCost">Channel point cost for the reward.</param>
+        /// <param name="aRewardUserInput">Any user input (if required) for the reward.</param>
+        /// <param name="aRewardID">ID of the reward that can be redeemed.</param>
+        /// <param name="aRedemptionID">ID of this specific redemption instance for the reward.</param>
         public void processChannelPointRedemption(string aNickname, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
         {
             userEntry messageUser = checkCreateUser(aNickname);
@@ -1004,6 +1078,9 @@ namespace JerpDoesBots
             return false;
         }
 
+        /// <summary>
+        /// Actions that occur every frame - this includes all bot module actions that can occur per frame.
+        /// </summary>
         public void onFrame()
         {
             if (m_TwitchClientBot.IsConnected)
@@ -1024,6 +1101,7 @@ namespace JerpDoesBots
                         curModule.onFrame();
                 }
 
+                processPeriodicUpdates();
                 processActionQueue();
             }
         }
@@ -1081,22 +1159,6 @@ namespace JerpDoesBots
                         sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserSubCheckPass"), checkUser.Nickname));
                     else
                         sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserSubCheckFail"), checkUser.Nickname));
-                }
-            }
-        }
-
-        public void checkFollower(userEntry commandUser, string argumentString, bool aSilent = false)
-        {
-            if (!string.IsNullOrEmpty(argumentString))
-            {
-                userEntry checkUser = checkCreateUser(argumentString, false);
-
-                if (checkUser != null)
-                {
-                    if (checkUpdateIsFollower(checkUser))
-                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserFollowCheckPass"), checkUser.Nickname));
-                    else
-                        sendDefaultChannelMessage(string.Format(m_Localizer.getString("infoUserFollowCheckFail"), checkUser.Nickname));
                 }
             }
         }
@@ -1183,8 +1245,6 @@ namespace JerpDoesBots
                     return totalFollowers;
                 }
             }
-
-
         }
 
         public void announce(userEntry commandUser, string argumentString, bool aSilent = false)
@@ -1340,32 +1400,65 @@ namespace JerpDoesBots
             m_LogWarningsErrors.writeAndLog($"{e.BotUsername} - {e.Error}");
         }
 
-        private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
+        /// <summary>
+        /// Grab up to 100 entries missing Twitch user IDs from m_UserList and try to request those IDs.
+        /// </summary>
+        private void fillMissingUserIDs()
         {
-            userEntry joinedUser = checkCreateUser(e.Username);
-            joinedUser.inChannel = true;
+            List<userEntry> usersToUpdate = new List<userEntry>();
 
-            // This is a massive rate limit risk, disabled by default
-            if (m_CoreConfig.configData.updateTwitchIDsOnUserJoins)
+            foreach(KeyValuePair<string, userEntry> curUser in m_UserList)
             {
-                List<string> userList = new List<string>();
-                userList.Add(e.Username.ToLower());
+                if (usersToUpdate.Count < TWITCH_API_GET_USERS_MAX)
+                {
+                    if (string.IsNullOrEmpty(curUser.Value.twitchUserID))
+                    {
+                        usersToUpdate.Add(curUser.Value);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (usersToUpdate.Count > 0)
+            {
+                List<string> userNames = new List<string>();
+                foreach (userEntry curUser in usersToUpdate)
+                {
+                    userNames.Add(curUser.Nickname.ToLower());
+                }
 
                 try
                 {
-                    Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> getUserIDTask = m_TwitchAPI.Helix.Users.GetUsersAsync(null, userList);
+                    Task<TwitchLib.Api.Helix.Models.Users.GetUsers.GetUsersResponse> getUserIDTask = m_TwitchAPI.Helix.Users.GetUsersAsync(null, userNames);
                     getUserIDTask.Wait();
 
                     if (getUserIDTask.Result != null && getUserIDTask.Result.Users.Length >= 1)
                     {
-                        joinedUser.twitchUserID = getUserIDTask.Result.Users[0].Id;
+                        foreach (User curUser in getUserIDTask.Result.Users)
+                        {
+                            userEntry tempUser = checkCreateUser(curUser.DisplayName);
+                            if (tempUser != null)
+                            {
+                                tempUser.twitchUserID = curUser.Id;
+                            }
+                        }
                     }
                 }
                 catch (Exception exceptionInfo)
                 {
-                    m_LogWarningsErrors.writeAndLog("Client_OnUserJoined - Could not grab user ID for user " + e.Username + ": " + exceptionInfo.Message);
+                    m_LogWarningsErrors.writeAndLog("fillMissingUserIDs - Exception / no user data received: " + exceptionInfo.Message);
                 }
             }
+
+        }
+
+        private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
+        {
+            userEntry joinedUser = checkCreateUser(e.Username);
+            joinedUser.inChannel = true;
 
             botModule tempModule;
             for (int i = 0; i < m_Modules.Count; i++)
@@ -1598,7 +1691,6 @@ namespace JerpDoesBots
 			m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
 			m_CommandList.Add(new chatCommandDef("help", getHelpString, true, true));
             m_CommandList.Add(new chatCommandDef("random", randomNumber, true, true));
-            m_CommandList.Add(new chatCommandDef("follower", checkFollower, true, true));
             m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
             m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
             m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));

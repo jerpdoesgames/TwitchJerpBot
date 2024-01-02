@@ -140,26 +140,31 @@ namespace JerpDoesBots
         /// <returns></returns>
         private bool isValidFollowPercentage()
         {
-            int totalChatters;
-            int totalFollowers = jerpBot.instance.getNumChattersFollowing(out totalChatters);
-            float followPercent = totalChatters > 0 && totalFollowers > 0 ? (totalFollowers / totalChatters) : 0f;
-
-            if (followPercentMin >= 0 && followPercentMax >= 0)
-            {
-                return followPercent <= followPercentMax && followPercent >= followPercentMin;
-            }
-            else if (followPercentMin >= 0)
-            {
-                return followPercent >= followPercentMin;
-            }
-            else if (followPercentMax >= 0)
-            {
-                return followPercent <= followPercentMax;
-            }
-            else
+            if (followPercentMin == -1 && followPercentMax == -1)
             {
                 return true;
             }
+            else
+            {
+                int totalChatters;
+                int totalFollowers = jerpBot.instance.getNumChattersFollowing(out totalChatters);
+                float followPercent = totalChatters > 0 && totalFollowers > 0 ? (totalFollowers / totalChatters) : 0f;
+
+                if (followPercentMin >= 0 && followPercentMax >= 0)
+                {
+                    return followPercent <= followPercentMax && followPercent >= followPercentMin;
+                }
+                else if (followPercentMin >= 0)
+                {
+                    return followPercent >= followPercentMin;
+                }
+                else if (followPercentMax >= 0)
+                {
+                    return followPercent <= followPercentMax;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>

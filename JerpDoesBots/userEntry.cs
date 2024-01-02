@@ -15,8 +15,8 @@ namespace JerpDoesBots
 		private string m_Nickname;                  // ^[a-zA-Z0-9_]{4,25}$
 		public string Nickname { get { return m_Nickname; } }
 
-		private int m_Loyalty = 0;
-		private int m_Points = 0;
+		private int m_Loyalty = 0;	// TODO: Unused
+		private int m_Points = 0;	// TODO: Unused
 		private bool m_IsFollower = false;
 		private bool m_isVIP = false;
 		private bool m_isPartner = false;
@@ -62,27 +62,11 @@ namespace JerpDoesBots
 
 		public string twitchUserID { get { return m_TwitchUserID; } set { m_TwitchUserID = value; } }
 
-		private DateTime m_LastFollowCheckTime;
 		public DateTime lastFollowCheckTime { get; set; }
- 
-		public bool isHosting		{
-			get { return m_IsHosting; }
-			set { m_IsHosting = value; }
-		}
 
 		public bool isBroadcaster {
 			get { return m_IsBroadcaster; }
 			set { m_IsBroadcaster = value; }
-		}
-
-		public void addPoints(int pointsToAdd)
-		{
-			m_Points += pointsToAdd;
-		}
-
-		public void addLoyalty(int loyaltyToAdd)
-		{
-			m_Loyalty += loyaltyToAdd;
 		}
 
 		public void doUpdate(long updateTime)

@@ -79,7 +79,7 @@ namespace JerpDoesBots
         /// <param name="aProfileName">Name of the profile to apply.</param>
         /// <param name="aSilent">Whether to have output on success.</param>
         /// <returns>Whether the profile was successfully applied.</returns>
-        private bool applyProfileInternal(string aProfileName, bool aSilentMode = false)
+        private bool applyProfileInternal(string aProfileName, bool aSilent = false)
 		{
 			if (m_Config.entries.ContainsKey(aProfileName))
 			{
@@ -108,11 +108,11 @@ namespace JerpDoesBots
                     if (useProfile.tags != null)
                         newChannelInfoRequest.Tags = newTags.ToArray();
 
-                    m_BotBrain.updateChannelInfo(newChannelInfoRequest, newTags, aSilentMode);
+                    m_BotBrain.updateChannelInfo(newChannelInfoRequest, newTags, aSilent);
                 }
 
                 if (!string.IsNullOrEmpty(useProfile.rewardGroup))
-                    applyRewardGroupInternal(useProfile.rewardGroup, aSilentMode);
+                    applyRewardGroupInternal(useProfile.rewardGroup, aSilent);
 
 				return true;
             }
