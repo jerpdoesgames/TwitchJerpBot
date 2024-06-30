@@ -291,6 +291,29 @@ namespace JerpDoesBots
         }
 
         /// <summary>
+        /// Attempt to run an ad on Twitch
+        /// </summary>
+        /// <param name="commandUser">Unused.</param>
+        /// <param name="argumentString">Unused.</param>
+        /// <param name="aSilent">Whether to output on success.</param>
+        public void run(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            TwitchLib.Api.Helix.Models.Ads.StartCommercialRequest startCommercialRequest = new TwitchLib.Api.Helix.Models.Ads.StartCommercialRequest();
+            startCommercialRequest.Length = 60 * 3; // I'm so fuckin lazy
+
+            try
+            {
+                Task<TwitchLib.Api.Helix.Models.Ads.StartCommercialResponse> adResponse = jerpBot.instance.twitchAPI.Helix.Ads.StartCommercialAsync(startCommercialRequest);
+                adResponse.Wait();
+            }
+            catch (Exception e)
+            {
+                jerpBot.instance.sendDefaultChannelMessage(jerpBot.instance.localizer.getString("adManagerRunFailUnknown"));
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        /// <summary>
         /// Initialize command entries for the ad manager.
         /// </summary>
         public adManager() : base(true, true, false)
@@ -303,6 +326,7 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
                 tempDef.addSubCommand(new chatCommandDef("snooze", snoozeAd, true, false));
                 tempDef.addSubCommand(new chatCommandDef("count", outputSnoozeInfo, true, false));
+                tempDef.addSubCommand(new chatCommandDef("run", run, false, false));
                 jerpBot.instance.addChatCommand(tempDef);
             }
         }
