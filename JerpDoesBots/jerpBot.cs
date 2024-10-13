@@ -81,6 +81,11 @@ namespace JerpDoesBots
         /// Username considered to be the "owner" for the bot.  Has full admin privileges.  Used to verify whether some commands are allowed.
         /// </summary>
         public string ownerUsername { get { return m_TwitchCredentialsOwner.TwitchUsername; } }
+
+        /// <summary>
+        /// Oauth key for the owner account
+        /// </summary>
+        public string ownerAuth { get { return m_TwitchCredentialsOwner.TwitchOAuth; } }
         /// <summary>
         /// Twitch user ID of the user considered to be the "owner" for the bot.  Used in cases where some Twitch API calls must be called on the broadcaster's ID.
         /// </summary>

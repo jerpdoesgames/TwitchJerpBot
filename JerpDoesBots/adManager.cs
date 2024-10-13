@@ -303,7 +303,7 @@ namespace JerpDoesBots
 
             try
             {
-                Task<TwitchLib.Api.Helix.Models.Ads.StartCommercialResponse> adResponse = jerpBot.instance.twitchAPI.Helix.Ads.StartCommercialAsync(startCommercialRequest);
+                Task<TwitchLib.Api.Helix.Models.Ads.StartCommercialResponse> adResponse = jerpBot.instance.twitchAPI.Helix.Ads.StartCommercialAsync(startCommercialRequest, jerpBot.instance.ownerAuth.Substring(6));
                 adResponse.Wait();
             }
             catch (Exception e)
