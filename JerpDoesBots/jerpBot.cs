@@ -728,7 +728,7 @@ namespace JerpDoesBots
 
                     if (createMarkerTask.Result != null)
                     {
-                        TimeSpan markerPos = TimeSpan.FromSeconds(createMarkerTask.Result.Data[0].PositionSeconds);
+                        TimeSpan markerPos = TimeSpan.FromSeconds(createMarkerTask.Result.Marker[0].PositionSeconds);
 
                         if (!aSilent)
                             sendDefaultChannelMessage(string.Format(localizer.getString("markerCreateSuccess"), simpleDurationString(markerPos)));

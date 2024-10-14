@@ -255,7 +255,7 @@ namespace JerpDoesBots
                 {
                     try
                     {
-                        Task<TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd.SnoozeNextAdResponse> snoozeResponse = jerpBot.instance.twitchAPI.Helix.Channels.SnoozeNextAd(jerpBot.instance.ownerUserID);
+                        Task<TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd.SnoozeNextAdResponse> snoozeResponse = jerpBot.instance.twitchAPI.Helix.Channels.SnoozeNextAdAsync(jerpBot.instance.ownerUserID);
                         snoozeResponse.Wait();
 
                         if (snoozeResponse.Result != null && snoozeResponse.Result.Data.Length > 0)
@@ -298,12 +298,12 @@ namespace JerpDoesBots
         /// <param name="aSilent">Whether to output on success.</param>
         public void run(userEntry commandUser, string argumentString, bool aSilent = false)
         {
-            TwitchLib.Api.Helix.Models.Ads.StartCommercialRequest startCommercialRequest = new TwitchLib.Api.Helix.Models.Ads.StartCommercialRequest();
+            TwitchLib.Api.Helix.Models.Channels.StartCommercial.StartCommercialRequest startCommercialRequest = new TwitchLib.Api.Helix.Models.Channels.StartCommercial.StartCommercialRequest();
             startCommercialRequest.Length = 60 * 3; // I'm so fuckin lazy
 
             try
             {
-                Task<TwitchLib.Api.Helix.Models.Ads.StartCommercialResponse> adResponse = jerpBot.instance.twitchAPI.Helix.Ads.StartCommercialAsync(startCommercialRequest, jerpBot.instance.ownerAuth.Substring(6));
+                Task<TwitchLib.Api.Helix.Models.Channels.StartCommercial.StartCommercialResponse> adResponse = jerpBot.instance.twitchAPI.Helix.Channels.StartCommercialAsync(startCommercialRequest, jerpBot.instance.ownerAuth.Substring(6));
                 adResponse.Wait();
             }
             catch (Exception e)
