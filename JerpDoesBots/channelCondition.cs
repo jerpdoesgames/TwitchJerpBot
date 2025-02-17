@@ -133,6 +133,8 @@ namespace JerpDoesBots
         public float followPercentMax { get; set; }
         public float subPercentMin { get; set; }
         public float subPercentMax { get; set; }
+        public float secondsSinceLiveMin { get; set; }
+        public float secondsSinceLiveMax { get; set; }
 
         /// <summary>
         /// Whether the specified min/max follower count is true for the stream.
@@ -165,6 +167,32 @@ namespace JerpDoesBots
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Whether the specified min/max seconds since live is true for the stream.
+        /// </summary>
+        /// <returns></returns>
+        private bool isValidSecondsSinceLive()
+        {
+            double secondsSinceLive = jerpBot.instance.timeSinceLive.TotalSeconds;
+
+            if (secondsSinceLiveMin >= 0 && secondsSinceLiveMax >= 0)
+            {
+                return secondsSinceLive <= secondsSinceLiveMax && secondsSinceLive >= secondsSinceLiveMin;
+            }
+            else if (secondsSinceLiveMin >= 0)
+            {
+                return secondsSinceLive >= secondsSinceLiveMin;
+            }
+            else if (secondsSinceLiveMax >= 0)
+            {
+                return secondsSinceLive <= secondsSinceLiveMax;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         /// <summary>
@@ -210,6 +238,9 @@ namespace JerpDoesBots
             {
                 return false;
             }
+
+            if (!isValidSecondsSinceLive())
+                return false;
 
             if (!isValidFollowPercentage())
                 return false;
