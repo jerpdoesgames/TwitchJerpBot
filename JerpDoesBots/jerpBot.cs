@@ -325,43 +325,47 @@ namespace JerpDoesBots
                 case connectionCommand.types.channelMessage:
                     if (isValidPrivMsg(commandToExecute))
                     {
+                        // TODO: Actually use channel ID for target channel rather than just all messages being in one channel
                         m_LogGeneral.writeAndLog($"Channel Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
-                        m_TwitchClientBot.SendMessage(commandToExecute.getTarget(), commandToExecute.getMessage());
+                        Task sendMessageTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatMessage(ownerUserID, botUserID, commandToExecute.getMessage()));
+                        sendMessageTask.Wait();
                     }
                     break;
 
                 case connectionCommand.types.joinChannel:
                     if (!String.IsNullOrEmpty(commandToExecute.getTarget()))
                     {
-                        m_TwitchClientBot.JoinChannel(commandToExecute.getTarget());
+                        m_TwitchClientBot.JoinChannelAsync(commandToExecute.getTarget());  // TODO: Async
                     }
                     break;
 
                 case connectionCommand.types.partAllChannels:
                     for (int i = 0; i < m_TwitchClientBot.JoinedChannels.Count; i++)
                     {
-                        m_TwitchClientBot.LeaveChannel(m_TwitchClientBot.JoinedChannels[i]);
+                        m_TwitchClientBot.LeaveChannelAsync(m_TwitchClientBot.JoinedChannels[i]);  // TODO: Async
                     }
                     break;
 
                 case connectionCommand.types.partChannel:
                     if (!String.IsNullOrEmpty(commandToExecute.getTarget()))
                     {
-                        m_TwitchClientBot.LeaveChannel(commandToExecute.getTarget());
+                        m_TwitchClientBot.LeaveChannelAsync(commandToExecute.getTarget());  // TODO: Async
                     }
                     break;
 
                 case connectionCommand.types.privateMessage:
                     if (isValidPrivMsg(commandToExecute))
                     {
+                        // TODO: Actually send private message instead of channel message (going to use channel messages for now until I can confirm private messages will be properly throttled)
                         m_LogGeneral.writeAndLog($"Private Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
-                        m_TwitchClientBot.SendWhisper(commandToExecute.getTarget(), commandToExecute.getMessage());
+                        Task sendMessageTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatMessage(ownerUserID, botUserID, commandToExecute.getMessage()));
+                        sendMessageTask.Wait();
                     }
                     break;
 
                 case connectionCommand.types.quit:
-                    m_TwitchClientBot.Disconnect();
-                    m_TwitchClientOwner.Disconnect();
+                    m_TwitchClientBot.DisconnectAsync();  // TODO: Async
+                    m_TwitchClientOwner.DisconnectAsync();  // TODO: Async
                     m_IsReadyToClose = true;
                     isDone = true;
                     break;
@@ -445,7 +449,7 @@ namespace JerpDoesBots
         {
             connectionCommand newCommand = new connectionCommand(connectionCommand.types.channelMessage);
             newCommand.setTarget(targetChannel);
-            newCommand.setMessage(messageToSend);
+           newCommand.setMessage(messageToSend);
 
             if (!m_IsFullyLoaded || !m_HasJoinedChannel || doQueue)
                 queueAction(newCommand);
@@ -825,11 +829,11 @@ namespace JerpDoesBots
             {
                 if (actionQueue.Count > 0)
                 {
-                    m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuitMessagesQueued"), false);
+                    sendDefaultChannelMessage(m_Localizer.getString("announceQuitMessagesQueued"), false);
                 }
                 else
                 {
-                    m_TwitchClientBot.SendMessage(m_DefaultChannel, m_Localizer.getString("announceQuit"), false);
+                    sendDefaultChannelMessage(m_Localizer.getString("announceQuit"), false);
                 }
             }
 
@@ -1339,17 +1343,19 @@ namespace JerpDoesBots
             m_LogConnection.writeAndLog($"Owner account joined channel {e.Channel}");
         }
 
-        private void Client_OnConnected(object sender, OnConnectedArgs e)
+        private void Client_OnConnected(object sender, OnConnectedEventArgs eConnectedEvent)
         {
             m_HasChatConnection = true;
-            m_LogConnection.writeAndLog($"Connected to {e.AutoJoinChannel}");
-            m_TwitchClientBot.JoinChannel(m_DefaultChannel);
+            m_LogConnection.writeAndLog($"Connected to {eConnectedEvent.BotUsername}");
+            Task onConnectedTask = Task.Run(() => m_TwitchClientBot.JoinChannelAsync(m_DefaultChannel));
+            onConnectedTask.Wait();
         }
 
-        private void Client_OnConnectedOwner(object sender, OnConnectedArgs e)
+        private void Client_OnConnectedOwner(object sender, OnConnectedEventArgs eConnectedEvent)
         {
-            m_LogConnection.writeAndLog($"jerpBot owner account connected to {e.AutoJoinChannel}");
-            m_TwitchClientOwner.JoinChannel(m_DefaultChannel);
+            m_LogConnection.writeAndLog($"jerpBot owner account connected to {eConnectedEvent.BotUsername}");
+            Task onConnectedTask = Task.Run(() => m_TwitchClientOwner.JoinChannelAsync(m_DefaultChannel));
+            onConnectedTask.Wait();
         }
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
@@ -1360,9 +1366,9 @@ namespace JerpDoesBots
 
                 messageUser.isBroadcaster = e.ChatMessage.IsBroadcaster;
                 messageUser.isModerator = e.ChatMessage.IsModerator;
-                messageUser.isSubscriber = e.ChatMessage.IsSubscriber;
-                messageUser.isVIP = e.ChatMessage.IsVip;
-                messageUser.isPartner = e.ChatMessage.IsPartner;
+                messageUser.isSubscriber = (e.ChatMessage.SubscribedMonthCount >= 0);
+                // messageUser.isVIP = e.ChatMessage.IsVip;
+                // messageUser.isPartner = e.ChatMessage.IsPartner;
                 messageUser.inChannel = true;
                 messageUser.twitchUserID = e.ChatMessage.UserId;
 
@@ -1621,7 +1627,7 @@ namespace JerpDoesBots
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
 
             m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
-            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, null, true);  // TODO: Remove when updating to TwitchLib.Connection 2.0 or later.
+            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
 
             TwitchLib.Client.Enums.ClientProtocol useClientProtocol = webSocketsSupported ? TwitchLib.Client.Enums.ClientProtocol.WebSocket : TwitchLib.Client.Enums.ClientProtocol.TCP;
 
@@ -1663,8 +1669,8 @@ namespace JerpDoesBots
             m_TwitchClientBot.OnReSubscriber += Client_OnReSubscribe;
             m_TwitchClientBot.OnGiftedSubscription += Client_OnGiftedSubscription;
 
-            m_TwitchClientBot.Connect();
-            m_TwitchClientOwner.Connect();
+            m_TwitchClientBot.ConnectAsync();  // TODO: Async
+            m_TwitchClientOwner.ConnectAsync();  // TODO: Async
 
             m_TwitchPubSubBot = new TwitchPubSub();
 
