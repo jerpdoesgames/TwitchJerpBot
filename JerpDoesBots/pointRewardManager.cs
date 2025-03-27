@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TwitchLib.Api.Helix.Models.ChannelPoints;
-using TwitchLib.PubSub.Models.Responses.Messages.Redemption;
 
 namespace JerpDoesBots
 {

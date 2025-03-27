@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Hosting;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -14,8 +15,10 @@ using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
-using TwitchLib.PubSub;
-using TwitchLib.PubSub.Events;
+using TwitchLib.EventSub.Core.SubscriptionTypes.Channel;
+using TwitchLib.EventSub.Websockets.Core.EventArgs;
+using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
+using TwitchLib.EventSub.Websockets.Core.EventArgs.Stream;
 
 namespace JerpDoesBots
 {
@@ -43,8 +46,11 @@ namespace JerpDoesBots
         ConnectionCredentials m_TwitchCredentialsOwner;
         botConfig m_CoreConfig;
         TwitchClient m_TwitchClientBot;
-        TwitchPubSub m_TwitchPubSubBot;
         TwitchClient m_TwitchClientOwner;
+        private IHost m_TwitchEventHost;
+        public IHost TwitchEventHost { set { m_TwitchEventHost = value; } }
+        
+
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
 
@@ -86,6 +92,10 @@ namespace JerpDoesBots
         /// Oauth key for the owner account
         /// </summary>
         public string ownerAuth { get { return m_TwitchCredentialsOwner.TwitchOAuth; } }
+        /// <summary>
+        /// Oauth key for the bot account
+        /// </summary>
+        public string botAuth { get { return m_TwitchCredentialsBot.TwitchOAuth; } }
         /// <summary>
         /// Twitch user ID of the user considered to be the "owner" for the bot.  Used in cases where some Twitch API calls must be called on the broadcaster's ID.
         /// </summary>
@@ -326,8 +336,9 @@ namespace JerpDoesBots
                     if (isValidPrivMsg(commandToExecute))
                     {
                         // TODO: Actually use channel ID for target channel rather than just all messages being in one channel
+                        // TOOD: Get a new token for the bot with at least user.write.chat and whatever else
                         m_LogGeneral.writeAndLog($"Channel Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
-                        Task sendMessageTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatMessage(ownerUserID, botUserID, commandToExecute.getMessage()));
+                        Task sendMessageTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatMessage(ownerUserID, botUserID, commandToExecute.getMessage(), null, botAuth.Substring(6)));
                         sendMessageTask.Wait();
                     }
                     break;
@@ -1332,18 +1343,18 @@ namespace JerpDoesBots
 
         // ==========================================================
 
-        private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
+        private async Task Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             m_HasJoinedChannel = true;
             m_LogConnection.writeAndLog($"Bot account joined channel {e.Channel}");
         }
 
-        private void Client_OnJoinedChannelJerp(object sender, OnJoinedChannelArgs e)
+        private async Task Client_OnJoinedChannelJerp(object sender, OnJoinedChannelArgs e)
         {
             m_LogConnection.writeAndLog($"Owner account joined channel {e.Channel}");
         }
 
-        private void Client_OnConnected(object sender, OnConnectedEventArgs eConnectedEvent)
+        private async Task Client_OnConnected(object sender, OnConnectedEventArgs eConnectedEvent)
         {
             m_HasChatConnection = true;
             m_LogConnection.writeAndLog($"Connected to {eConnectedEvent.BotUsername}");
@@ -1351,62 +1362,111 @@ namespace JerpDoesBots
             onConnectedTask.Wait();
         }
 
-        private void Client_OnConnectedOwner(object sender, OnConnectedEventArgs eConnectedEvent)
+        private async Task Client_OnConnectedOwner(object sender, OnConnectedEventArgs eConnectedEvent)
         {
             m_LogConnection.writeAndLog($"jerpBot owner account connected to {eConnectedEvent.BotUsername}");
             Task onConnectedTask = Task.Run(() => m_TwitchClientOwner.JoinChannelAsync(m_DefaultChannel));
             onConnectedTask.Wait();
         }
 
-        private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
+        public async Task Twitch_ChannelPointsCustomRewardRedemptionAdd(object sender, ChannelPointsCustomRewardRedemptionArgs e)
         {
-            if (e.ChatMessage.Channel == m_DefaultChannel)
+            ChannelPointsCustomRewardRedemption redeemEvent = e.Notification.Payload.Event;
+            
+            processChannelPointRedemption(redeemEvent.UserName, redeemEvent.Reward.Title, redeemEvent.Reward.Cost, redeemEvent.UserInput, redeemEvent.Reward.Id, redeemEvent.Id);
+        }
+
+        public async Task Twitch_ChannelAdBreakBegin(object sender, ChannelAdBreakBeginArgs e)
+        {
+            m_LogEvents.writeAndLog("Commercial Started with Length:" + e.Notification.Payload.Event.DurationSeconds + " seconds.");
+
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
             {
-                userEntry messageUser = checkCreateUser(e.ChatMessage.Username);
+                tempModule = m_Modules[i];
 
-                messageUser.isBroadcaster = e.ChatMessage.IsBroadcaster;
-                messageUser.isModerator = e.ChatMessage.IsModerator;
-                messageUser.isSubscriber = (e.ChatMessage.SubscribedMonthCount >= 0);
-                // messageUser.isVIP = e.ChatMessage.IsVip;
-                // messageUser.isPartner = e.ChatMessage.IsPartner;
-                messageUser.inChannel = true;
-                messageUser.twitchUserID = e.ChatMessage.UserId;
-
-                processUserMessage(e.ChatMessage.Username, e.ChatMessage.Message);
+                if (isModuleValidForUserAction(tempModule))
+                    tempModule.onCommercialStart(e);
             }
         }
 
-        private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
+        public async Task Twitch_ChannelSubscriptionGift(object sender, ChannelSubscriptionGiftArgs e)
         {
             m_SubsThisSession++;
-            m_LogEvents.writeAndLog("User Subscribed - " + e.Subscriber.DisplayName);
+            if (e.Notification.Payload.Event.IsAnonymous)
+            {
+                m_LogEvents.writeAndLog($"User Gifted a Subscription - [anonymous] ({e.Notification.Payload.Event.Total} total so far)");
+            }
+            else
+            {
+                m_LogEvents.writeAndLog($"User Gifted a Subscription - {e.Notification.Payload.Event.UserName} ({e.Notification.Payload.Event.Total} total so far)");
+            }
         }
 
-        private void Client_OnCommunitySubscription(object sender, OnCommunitySubscriptionArgs e)
+
+        // TODO: Possibly keep on StreamMonitor until stuff like viewer count comes in
+        public async Task Twitch_StreamOnline(object sender, StreamOnlineArgs e)
+        {
+            if (e.Notification.Payload.Event != null)
+            {
+                // IsLive = true;
+                // m_ViewersLast = aStream.ViewerCount;
+                // m_LiveStartTime = aStream.StartedAt;
+                // m_Game = aStream.GameName;
+                // m_Title = aStream.Title;
+                // m_Tags = aStream.Tags;
+                // setCategoryID(aStream.GameId);
+                // m_HasReceivedChannelInfo = true;
+            }
+        }
+
+
+        public async Task Twitch_StreamOffline(object sender, StreamOfflineArgs e)
+        {
+            IsLive = false;
+        }
+
+        public async Task Twitch_ChannelRaid(object sender, ChannelRaidArgs e)
+        {
+            ChannelRaid raidEvent = e.Notification.Payload.Event;
+            m_LogEvents.writeAndLog("Raid from " + raidEvent.FromBroadcasterUserName + " with " + raidEvent.Viewers + " viewers.");
+
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
+            {
+                tempModule = m_Modules[i];
+
+                if (isModuleValidForUserAction(tempModule))
+                    tempModule.onRaidReceived(raidEvent.FromBroadcasterUserName, raidEvent.Viewers);
+            }
+        }
+
+        public async Task Twitch_ChannelFollow(object sender, ChannelFollowArgs e)
+        {
+            userEntry messageUser = checkCreateUser(e.Notification.Payload.Event.UserName);
+            messageUser.isFollower = true;
+            messageUser.twitchUserID = e.Notification.Payload.Event.UserId;
+            messageUser.lastFollowCheckTime = DateTime.Now;
+            if (m_CoreConfig.configData.announceFollowEvents)
+            {
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), e.Notification.Payload.Event.UserName));
+            }
+        }
+
+        public async Task Twitch_ChannelSubscribe(object sender, ChannelSubscribeArgs e)
         {
             m_SubsThisSession++;
-            // Need to figure out what these params actually are
-            m_LogEvents.writeAndLog("Community Subscription - " + e.GiftedSubscription.DisplayName + " | MsgParamSenderCount: " + e.GiftedSubscription.MsgParamSenderCount + " | MsgParamMassGiftCount: " + e.GiftedSubscription.MsgParamMassGiftCount);
+            m_LogEvents.writeAndLog("User Subscribed - " + e.Notification.Payload.Event.UserName);
         }
 
-        private void Client_OnReSubscribe(object sender, OnReSubscriberArgs e)
-        {
-            m_SubsThisSession++;
-            m_LogEvents.writeAndLog("User Resubscribed - " + e.ReSubscriber.DisplayName);
-        }
-
-        private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
-        {
-            m_SubsThisSession++;
-            m_LogEvents.writeAndLog("User Gifted a Subscription - " + e.GiftedSubscription.DisplayName + " gifted to " + e.GiftedSubscription.MsgParamRecipientDisplayName);
-        }
-
-        private void Client_OnLog(object sender, TwitchLib.Client.Events.OnLogArgs e)
+        /*
+        private async Task Client_OnLog(object sender, TwitchLib.Client.Events.OnLogArgs e)
         {
             m_LogConnection.writeAndLog($"{e.BotUsername} - {e.Data}");
         }
+        */
 
-        private void Client_OnConnectionError(object sender, OnConnectionErrorArgs e)
+        private async Task Client_OnConnectionError(object sender, OnConnectionErrorArgs e)
         {
             m_LogWarningsErrors.writeAndLog($"{e.BotUsername} - {e.Error}");
         }
@@ -1466,7 +1526,8 @@ namespace JerpDoesBots
 
         }
 
-        private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
+        // TODO: Uh?  Not in EventSub.
+        private async Task Client_OnUserJoined(object sender, OnUserJoinedArgs e)
         {
             userEntry joinedUser = checkCreateUser(e.Username);
             joinedUser.inChannel = true;
@@ -1481,13 +1542,14 @@ namespace JerpDoesBots
             }
         }
 
-        private void Client_OnUserLeft(object sender, OnUserLeftArgs e)
+        // TODO: Uh?  Not in EventSub.
+        private async Task Client_OnUserLeft(object sender, OnUserLeftArgs e)
         {
             userEntry leftUser = checkCreateUser(e.Username);
             leftUser.inChannel = false;
         }
 
-        private void Client_OnRaidNotification(object sender, OnRaidNotificationArgs e)
+        private async Task Client_OnRaidNotification(object sender, OnRaidNotificationArgs e)
         {
             m_LogEvents.writeAndLog("Raid from " + e.RaidNotification.MsgParamDisplayName + " with " + e.RaidNotification.MsgParamViewerCount + " viewers.");
 
@@ -1536,11 +1598,6 @@ namespace JerpDoesBots
             }
         }
 
-        private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e)
-        {
-            IsLive = false;
-        }
-
         private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
         {
             ParseStreamData(e.Stream);
@@ -1548,57 +1605,124 @@ namespace JerpDoesBots
 
         // ==========================================================
 
-        private void PubSub_OnChannelPointsRewardRedeemed(object sender, OnChannelPointsRewardRedeemedArgs e)
+        public async Task Twitch_OnErrorOccurred(object sender, ErrorOccuredArgs e)
         {
-            processChannelPointRedemption(e.RewardRedeemed.Redemption.User.DisplayName, e.RewardRedeemed.Redemption.Reward.Title, e.RewardRedeemed.Redemption.Reward.Cost, e.RewardRedeemed.Redemption.UserInput, e.RewardRedeemed.Redemption.Reward.Id, e.RewardRedeemed.Redemption.Id);
+            m_LogGeneral.writeAndLog($"Websocket error: {e.Message}");
         }
 
-        private void PubSub_OnServiceConnected(object sender, EventArgs e)
+        public async Task Twitch_OnChannelFollow(object sender, ChannelFollowArgs e)
         {
-            m_LogConnection.writeAndLog("Connected to PubSub service, sending topics...");
-            m_TwitchPubSubBot.SendTopics(m_CoreConfig.configData.pubsub.oauth);
-        }
+            var eventData = e.Notification.Payload.Event;
 
-        private void PubSub_OnListenResponse(object sender, OnListenResponseArgs e)
-        {
-            if (!e.Successful)
-                throw new Exception($"Failed to listen! Response: {e.Response}");
-        }
-
-        private void PubSub_OnFollowResponse(object sender, OnFollowArgs e)
-        {
-            userEntry messageUser = checkCreateUser(e.DisplayName);
+            userEntry messageUser = checkCreateUser(eventData.UserName);
             messageUser.isFollower = true;
-            messageUser.twitchUserID = e.UserId;
+            messageUser.twitchUserID = eventData.UserId;
             messageUser.lastFollowCheckTime = DateTime.Now;
             if (m_CoreConfig.configData.announceFollowEvents)
             {
-                sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), e.DisplayName));
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), eventData.UserName));
             }
         }
 
-        private void PubSub_OnCommercialResponse(object sender, OnCommercialArgs e)
+        public async Task Twitch_OnChannelChatMessage(object sender, ChannelChatMessageArgs e)
         {
-            m_LogEvents.writeAndLog("Commercial Started with Length:" + e.Length + " seconds.");
-
-            botModule tempModule;
-            for (int i = 0; i < m_Modules.Count; i++)
+            if (e.Notification.Payload.Event.BroadcasterUserId == ownerUserID)
             {
-                tempModule = m_Modules[i];
+                ChannelChatMessage userMessage = e.Notification.Payload.Event;
+                userEntry messageUser = checkCreateUser(userMessage.ChatterUserName);
 
-                if (isModuleValidForUserAction(tempModule))
-                    tempModule.onCommercialStart(e);
+                messageUser.isBroadcaster = userMessage.IsBroadcaster;
+                messageUser.isModerator = userMessage.IsModerator;
+                messageUser.isSubscriber = userMessage.IsSubscriber;
+                messageUser.isVIP = userMessage.IsVip;
+                // TOOD: messageUser.isPartner = ???
+                messageUser.inChannel = true;
+                messageUser.twitchUserID = userMessage.ChatterUserId;
+
+                processUserMessage(userMessage.ChatterUserName, userMessage.Message.Text);
             }
+        }
+
+        // ==========================================================
+
+        /// <summary>
+        /// This needs to occur after the singleton is available.  Mostly just connects to Twitch and whatnot.
+        /// </summary>
+        public void initiateSubscriptions()
+        {
+            m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
+            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
+
+            OperatingSystem osInfo = Environment.OSVersion;
+            Version win8version = new Version(6, 2, 9200, 0);
+            bool webSocketsSupported = (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version); // Websockets requires Win8+
+
+            TwitchLib.Client.Enums.ClientProtocol useClientProtocol = webSocketsSupported ? TwitchLib.Client.Enums.ClientProtocol.WebSocket : TwitchLib.Client.Enums.ClientProtocol.TCP;
+
+            m_TwitchClientBot = new TwitchClient(protocol: useClientProtocol);
+            m_TwitchClientOwner = new TwitchClient(protocol: useClientProtocol);
+
+            m_TwitchClientBot.Initialize(m_TwitchCredentialsBot);
+            m_TwitchClientOwner.Initialize(m_TwitchCredentialsOwner);
+
+            m_TwitchAPI = new TwitchAPI();
+            m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
+            m_TwitchAPI.Settings.ClientId = m_CoreConfig.configData.twitch_api.client_id;
+
+            m_StreamMonitor = new LiveStreamMonitorService(m_TwitchAPI, 60);
+
+            List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
+            m_StreamMonitor.SetChannelsById(apiChannelList);
+
+            m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
+            m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
+
+            m_StreamMonitor.Start();
+
+            m_TwitchClientOwner.OnJoinedChannel += Client_OnJoinedChannelJerp;
+            m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
+            m_TwitchClientOwner.OnRaidNotification += Client_OnRaidNotification;    // TODO: Replace with EventSub
+
+            m_TwitchClientBot.OnJoinedChannel += Client_OnJoinedChannel;
+
+            m_TwitchClientBot.OnConnected += Client_OnConnected;
+            m_TwitchClientBot.OnConnectionError += Client_OnConnectionError;
+            m_TwitchClientBot.OnUserJoined += Client_OnUserJoined;
+            m_TwitchClientBot.OnUserLeft += Client_OnUserLeft;
+
+            m_TwitchClientBot.ConnectAsync();  // TODO: Async
+            m_TwitchClientOwner.ConnectAsync();  // TODO: Async
+
+            m_ActionTimer = Stopwatch.StartNew();
+
+            m_CommandList = new List<chatCommandDef>();
+            m_CommandList.Add(new chatCommandDef("botquit", quitCommand, false, false));
+            m_CommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
+            m_CommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
+            m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
+            m_CommandList.Add(new chatCommandDef("help", getHelpString, true, true));
+            m_CommandList.Add(new chatCommandDef("random", randomNumber, true, true));
+            m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
+            m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
+            m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
+            m_CommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
+            m_CommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
+            m_CommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
+            m_CommandList.Add(new chatCommandDef("back", setUserBack, true, true));
+            m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
+            m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
+            m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
+            m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
+            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
+            m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
+
+            requestChannelInfo();
         }
 
         // ==========================================================
 
         public jerpBot(botConfig aConfig)
 		{
-            OperatingSystem osInfo = Environment.OSVersion;
-            Version win8version = new Version(6, 2, 9200, 0);
-            bool webSocketsSupported = (osInfo.Platform == PlatformID.Win32NT && osInfo.Version >= win8version); // Websockets requires Win8+
-
             m_CoreConfig = aConfig;
             m_Tags = new string[0];
 
@@ -1625,98 +1749,6 @@ namespace JerpDoesBots
             m_FollowerStaleCheckSeconds = m_CoreConfig.configData.followerStaleCheckSeconds;
 
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
-
-            m_TwitchCredentialsBot = new ConnectionCredentials(m_CoreConfig.configData.connections[0].nickname, m_CoreConfig.configData.connections[0].oauth);
-            m_TwitchCredentialsOwner = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth);
-
-            TwitchLib.Client.Enums.ClientProtocol useClientProtocol = webSocketsSupported ? TwitchLib.Client.Enums.ClientProtocol.WebSocket : TwitchLib.Client.Enums.ClientProtocol.TCP;
-
-            m_TwitchClientBot = new TwitchClient(protocol: useClientProtocol);
-            m_TwitchClientOwner = new TwitchClient(protocol: useClientProtocol);
-
-            m_TwitchClientBot.Initialize(m_TwitchCredentialsBot);
-            m_TwitchClientOwner.Initialize(m_TwitchCredentialsOwner);
-
-            m_TwitchAPI = new TwitchAPI();
-            m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
-            m_TwitchAPI.Settings.ClientId = m_CoreConfig.configData.twitch_api.client_id;
-
-            m_StreamMonitor = new LiveStreamMonitorService(m_TwitchAPI, 60);
-
-            List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
-            m_StreamMonitor.SetChannelsById(apiChannelList);
-
-            m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
-            m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
-            m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
-
-            m_StreamMonitor.Start();
-
-            m_TwitchClientOwner.OnJoinedChannel += Client_OnJoinedChannelJerp;
-            m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
-            m_TwitchClientOwner.OnRaidNotification += Client_OnRaidNotification;
-
-            m_TwitchClientBot.OnJoinedChannel += Client_OnJoinedChannel;
-
-            m_TwitchClientBot.OnLog += Client_OnLog;
-            m_TwitchClientBot.OnConnected += Client_OnConnected;
-            m_TwitchClientBot.OnConnectionError += Client_OnConnectionError;
-            m_TwitchClientBot.OnMessageReceived += Client_OnMessageReceived;
-            m_TwitchClientBot.OnUserJoined += Client_OnUserJoined;
-            m_TwitchClientBot.OnUserLeft += Client_OnUserLeft;
-            m_TwitchClientBot.OnNewSubscriber += Client_OnNewSubscriber;
-            m_TwitchClientBot.OnCommunitySubscription += Client_OnCommunitySubscription;
-            m_TwitchClientBot.OnReSubscriber += Client_OnReSubscribe;
-            m_TwitchClientBot.OnGiftedSubscription += Client_OnGiftedSubscription;
-
-            m_TwitchClientBot.ConnectAsync();  // TODO: Async
-            m_TwitchClientOwner.ConnectAsync();  // TODO: Async
-
-            m_TwitchPubSubBot = new TwitchPubSub();
-
-            m_TwitchPubSubBot.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
-            m_TwitchPubSubBot.OnPubSubServiceConnected += PubSub_OnServiceConnected;
-            m_TwitchPubSubBot.OnListenResponse += PubSub_OnListenResponse;
-            m_TwitchPubSubBot.OnFollow += PubSub_OnFollowResponse;
-            m_TwitchPubSubBot.OnCommercial += PubSub_OnCommercialResponse;
-
-            m_TwitchPubSubBot.ListenToChannelPoints(m_CoreConfig.configData.twitch_api.channel_id.ToString());
-            m_TwitchPubSubBot.ListenToFollows(m_CoreConfig.configData.twitch_api.channel_id.ToString());
-            m_TwitchPubSubBot.ListenToVideoPlayback(m_CoreConfig.configData.twitch_api.channel_id.ToString());
-
-            if (webSocketsSupported)
-            {
-                m_TwitchPubSubBot.Connect();
-            }
-            else
-            {
-                m_LogWarningsErrors.writeAndLog("Unable to check for followers/channel point redemptions, etc. via websockets -- requires Win8+");
-            }            
-
-            m_ActionTimer = Stopwatch.StartNew();
-
-			m_CommandList = new List<chatCommandDef>();
-			m_CommandList.Add(new chatCommandDef("botquit", quitCommand, false, false));
-			m_CommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
-			m_CommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
-			m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
-			m_CommandList.Add(new chatCommandDef("help", getHelpString, true, true));
-            m_CommandList.Add(new chatCommandDef("random", randomNumber, true, true));
-            m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
-            m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
-            m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
-            m_CommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
-            m_CommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
-            m_CommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
-            m_CommandList.Add(new chatCommandDef("back", setUserBack, true, true));
-            m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
-            m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
-            m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
-            m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
-            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
-            m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
-
-            requestChannelInfo();
         }
 	}
 }

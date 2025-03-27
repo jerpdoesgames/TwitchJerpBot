@@ -20,8 +20,10 @@ namespace JerpDoesBots
         // channel:read:ads					Read ad schedule
         // channel:manage:ads				Manage ads (snooze)
         // moderator:read:followers			Followage
+        // channel:read:subscriptions
+        // user:read:chat
 
-        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions+moderator:manage:announcements+moderator:manage:shoutouts+channel:read:ads+channel:manage:ads+moderator:read:followers
+        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions+moderator:manage:announcements+moderator:manage:shoutouts+channel:read:ads+channel:manage:ads+moderator:read:followers+channel:read:subscriptions+user:read:chat
 
         // Eventually?:
         // channel:read:polls				Read polls
@@ -33,8 +35,10 @@ namespace JerpDoesBots
         // chat_login
         // moderator:manage:announcements
         // moderator:manage:shoutouts
+        // user:write:chat
+        // user:bot (maybe)
 
-        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=chat_login+moderator:manage:announcements+moderator:manage:shoutouts
+        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=chat_login+moderator:manage:announcements+moderator:manage:shoutouts+user:write:chat
 
         public string oauth { get; set; }
 	}
@@ -50,16 +54,10 @@ namespace JerpDoesBots
 		public List<string> channels { get; set; }
 	}
 
-    public class pubSubConfig
-    {
-		public string oauth { get; set; }
-	}
-
 	public class botConfigData
 	{
 		public twitchAPIConfig twitch_api { get; set; }
 		public List<botConnection> connections { get; set; }
-		public pubSubConfig pubsub { get; set; }
 		public bool updateTwitchIDsOnUserJoins { get; set; }
 		public long followerStaleCheckSeconds { get; set; }
 		public bool announceFollowEvents { get; set; }

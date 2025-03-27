@@ -1,4 +1,4 @@
-﻿using TwitchLib.PubSub.Events;
+﻿using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 
 namespace JerpDoesBots
 {
@@ -52,18 +52,18 @@ namespace JerpDoesBots
 		/// <param name="aRewardID">The ID of the reward being redeemed.</param>
 		/// <param name="aRedemptionID">The ID of the redemption instance for this reward.</param>
 		public virtual void onChannelPointRedemption(userEntry aUser, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID) { }
-		/// <summary>
-		/// Occurs when an ad starts on Twitch.
-		/// </summary>
-		/// <param name="aCommercialArgs">Data about the commercial being played including its length.</param>
-		public virtual void onCommercialStart(OnCommercialArgs aCommercialArgs) { }
-		
-		/// <summary>
-		/// Occurs when being raided by another channel.
-		/// </summary>
-		/// <param name="aHostName">Name of the streamer raiding the channel.</param>
-		/// <param name="aViewerCount">Amount of viewers in the raid.</param>
-		public virtual void onRaidReceived(string aHostName, int aViewerCount) { }
+        /// <summary>
+        /// Occurs when an ad starts on Twitch (EventSub version).
+        /// </summary>
+        /// <param name="aCommercialArgs">Data about the commercial being played including its length.</param>
+        public virtual void onCommercialStart(ChannelAdBreakBeginArgs aCommercialArgs) { }
+
+        /// <summary>
+        /// Occurs when being raided by another channel.
+        /// </summary>
+        /// <param name="aHostName">Name of the streamer raiding the channel.</param>
+        /// <param name="aViewerCount">Amount of viewers in the raid.</param>
+        public virtual void onRaidReceived(string aHostName, int aViewerCount) { }
 
         /// <summary>
         /// Occurs when making a global request to dump data such as quotes lists/etc. - this module should dump a json file with all of its data in %userprofile%\Documents\JerpBot\output

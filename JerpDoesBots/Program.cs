@@ -1,8 +1,42 @@
-﻿namespace JerpDoesBots
+﻿using Microsoft.Extensions.Hosting;
+using System.IO;
+using Microsoft.Extensions.Configuration;
+using TwitchLib.EventSub.Websockets.Extensions;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
+
+namespace JerpDoesBots
 {
 	class Program
 	{
-		static void Main(string[] args)
+        private static void addSettingsDelegate(HostBuilderContext aContext, IConfigurationBuilder aBuilder)
+        {
+            // TODO: Figure out what we're doing here.
+            // aBuilder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"));
+        }
+
+        private static void addServicesDelegate(HostBuilderContext hostContext, IServiceCollection services)
+        {
+            services.AddLogging();
+            services.AddTwitchLibEventSubWebsockets();
+
+            services.AddHostedService<TwitchWSHostedService>();
+        }
+
+        private static IHostBuilder CreateHostBuilder()
+        {
+            IHostBuilder newHostBuilder = Host.CreateDefaultBuilder();
+            newHostBuilder = newHostBuilder.ConfigureAppConfiguration(addSettingsDelegate);
+
+            newHostBuilder.ConfigureServices(addServicesDelegate);
+
+            return newHostBuilder;
+        }
+
+        static void Main(string[] args)
 		{
 			jerpBot.checkCreateBotStorage();
 			jerpBot.checkCreateBotDatabase();
@@ -17,6 +51,7 @@
 
 			jerpBot botGeneral					= new jerpBot(tempConfig);
 			jerpBot.instance = botGeneral;
+			botGeneral.initiateSubscriptions();
 
 			pointRewardManager pointRewardsModule     = new pointRewardManager(); // Keep this early as other modules will be dependent on the fist rewards list update.
 			raffle raffleModule						  = new raffle();
@@ -51,13 +86,21 @@
             botGeneral.soundCommandModule = soundManager;
             botGeneral.aliasModule = aliasManager;
 
-			botGeneral.setLoadComplete();
+            botGeneral.setLoadComplete();
 
-            while (!botGeneral.isReadyToClose)
+            IHost TwitchEventHost = CreateHostBuilder().Build();
+            botGeneral.TwitchEventHost = TwitchEventHost;
+
+            TwitchEventHost.RunAsync();  // Grabs static jerpBot instance
+
+            // ==========================================================
+
+            while (!jerpBot.instance.isReadyToClose)
             {
-                botGeneral.onFrame();
+                jerpBot.instance.onFrame();
             }
 
-		}
-	}
+            TwitchEventHost.StopAsync();
+        }
+    }
 }

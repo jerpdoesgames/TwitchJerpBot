@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using TwitchLib.Api.Helix.Models.Channels.GetAdSchedule;
 using TwitchLib.Api.Helix.Models.Channels.SnoozeNextAd;
-using TwitchLib.PubSub.Events;
+using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 
 namespace JerpDoesBots
 {
@@ -73,22 +73,28 @@ namespace JerpDoesBots
         /// Occurs when a commercial begins.
         /// </summary>
         /// <param name="aCommercialArgs">Information about the commercial being played.</param>
-        public override void onCommercialStart(OnCommercialArgs aCommercialArgs)
+        public override void onCommercialStart(ChannelAdBreakBeginArgs aCommercialArgs)
+        {
+            onCommercialStartInternal(aCommercialArgs.Notification.Payload.Event.DurationSeconds);
+        }
+
+        // TODO: Blah, sloppy, fix once the EventSub convert is over
+        public void onCommercialStartInternal(int aLengthSeconds)
         {
             m_CommercialStartTimeMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
-            m_CommercialLengthSeconds = aCommercialArgs.Length;
+            m_CommercialLengthSeconds = aLengthSeconds;
             m_CommercialStartGame = jerpBot.instance.game;
             m_CommercialStartViewerCount = jerpBot.instance.viewersLast;
             m_CommercialStartTags = jerpBot.instance.tags;
-            
+
             m_IsCommercialActive = true;
 
             m_NextAdAt = null;
 
             if (m_Config.announceCommercialStart)
             {
-                int adTimeSeconds = aCommercialArgs.Length % 60;
-                int adTimeMinutes = aCommercialArgs.Length / 60;    // Truncation is expected
+                int adTimeSeconds = aLengthSeconds % 60;
+                int adTimeMinutes = aLengthSeconds / 60;    // Truncation is expected
                 string adTimeString = (adTimeMinutes > 0 ? adTimeMinutes + "m" : "") + (adTimeSeconds > 0 ? adTimeSeconds + "s" : "");
                 jerpBot.instance.sendDefaultChannelAnnounce(string.Format(jerpBot.instance.localizer.getString("adManagerCommercialStart"), adTimeString));
             }
