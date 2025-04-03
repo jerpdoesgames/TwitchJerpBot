@@ -33,7 +33,7 @@ namespace JerpDoesBots
             // _eventSubWebsocketClient.ChannelRaid += jerpBot.instance.Twitch_ChannelRaid; // TODO: This is apparently when a raid is outgoing, rather than an incoming raid (so this can be like "generate a raid message/etc.")
             _eventSubWebsocketClient.ChannelSubscriptionGift += jerpBot.instance.Twitch_ChannelSubscriptionGift;
             // _eventSubWebsocketClient.StreamOnline += jerpBot.instance.Twitch_StreamOnline;
-            _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
+            // _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
             _eventSubWebsocketClient.ChannelAdBreakBegin += jerpBot.instance.Twitch_ChannelAdBreakBegin;
             _eventSubWebsocketClient.ChannelPointsCustomRewardRedemptionAdd += jerpBot.instance.Twitch_ChannelPointsCustomRewardRedemptionAdd;
         }

@@ -1598,6 +1598,11 @@ namespace JerpDoesBots
             }
         }
 
+        private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e)
+        {
+            IsLive = false;
+        }
+
         private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
         {
             ParseStreamData(e.Stream);
@@ -1676,6 +1681,7 @@ namespace JerpDoesBots
 
             m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
             m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
+            m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
 
             m_StreamMonitor.Start();
 
