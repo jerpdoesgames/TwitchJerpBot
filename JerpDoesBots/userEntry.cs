@@ -30,11 +30,11 @@ namespace JerpDoesBots
 		private int m_SessionCommandCount = 0;
 		private bool m_IsBrb = false;
 		private string m_TwitchUserID;
-		private long m_LastShoutoutTimeMS = -1;
+		private long m_LastShoutoutTimeSeconds = 0;
 
 		private SQLiteConnection botDatabase;
 
-		public long lastShoutoutTimeMS { get { return m_LastShoutoutTimeMS; } set { m_LastShoutoutTimeMS = value; } }
+		public long lastShoutoutTimeSeconds { get { return m_LastShoutoutTimeSeconds; } set { m_LastShoutoutTimeSeconds = value; doUpdate(m_LastShoutoutTimeSeconds); } }	// TODO: Actually utilize m_NeedsUpdate / m_LastUpdate
 
 		public void incrementMessageCount()
 		{
@@ -71,27 +71,29 @@ namespace JerpDoesBots
 
 		public void doUpdate(long updateTime)
 		{
-			string updateRowQuery = "UPDATE viewers SET loyalty = @param1, points = @param2 WHERE name = @param3 LIMIT 1";
+			string updateRowQuery = "UPDATE viewers SET loyalty = @param1, points = @param2, lastShoutout = @param4 WHERE name = @param3 LIMIT 1";
 			SQLiteCommand updateRowCommand = new SQLiteCommand(updateRowQuery, botDatabase);
 			updateRowCommand.Parameters.Add(new SQLiteParameter("@param1", m_Loyalty));
 			updateRowCommand.Parameters.Add(new SQLiteParameter("@param2", m_Points));
 			updateRowCommand.Parameters.Add(new SQLiteParameter("@param3", m_Nickname));
-			updateRowCommand.ExecuteNonQuery();
+            updateRowCommand.Parameters.Add(new SQLiteParameter("@param4", m_LastShoutoutTimeSeconds));
+            updateRowCommand.ExecuteNonQuery();
 
 			m_LastUpdate = updateTime;
 		}
 
 		private bool createUser(string aUsername)
 		{
-			string createViewerRowQuery = "INSERT INTO viewers (name, loyalty, points) values (@param1, @param2, @param3)";
+			string createViewerRowQuery = "INSERT INTO viewers (name, loyalty, points, lastShoutout) values (@param1, @param2, @param3)";
 
 			SQLiteCommand createViewerRowCommand = new SQLiteCommand(createViewerRowQuery, botDatabase);
 
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param1", aUsername));
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param2", (object)0));
 			createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param3", (object)0));
+            createViewerRowCommand.Parameters.Add(new SQLiteParameter("@param4", (object)0));
 
-			if (createViewerRowCommand.ExecuteNonQuery() > 0)
+            if (createViewerRowCommand.ExecuteNonQuery() > 0)
 			{
 				return true;
 			}
@@ -109,7 +111,8 @@ namespace JerpDoesBots
 			{
 				m_Loyalty = Convert.ToInt32(viewerRowReader["loyalty"]);
 				m_Points = Convert.ToInt32(viewerRowReader["points"]);
-				return true;
+                m_LastShoutoutTimeSeconds = Convert.ToInt32(viewerRowReader["lastShoutout"]);
+                return true;
 			}
 
 			return false;

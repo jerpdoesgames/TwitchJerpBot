@@ -1740,7 +1740,7 @@ namespace JerpDoesBots
             m_StorageDB = new SQLiteConnection("Data Source=" + databasePath + ";Version=3;");
             m_StorageDB.Open();
 
-            string createViewerTableQuery = "CREATE TABLE IF NOT EXISTS viewers (viewerID INTEGER PRIMARY KEY ASC, name varchar(25) UNIQUE, loyalty INTEGER, points INTEGER)";
+            string createViewerTableQuery = "CREATE TABLE IF NOT EXISTS viewers (viewerID INTEGER PRIMARY KEY ASC, name varchar(25) UNIQUE, loyalty INTEGER NOT NULL DEFAULT 0, points INTEGER NOT NULL DEFAULT 0, lastShoutout INTEGER NOT NULL DEFAULT 0)";
             SQLiteCommand createViewerTableCommand = new SQLiteCommand(createViewerTableQuery, m_StorageDB);
             createViewerTableCommand.ExecuteNonQuery();
 

@@ -64,7 +64,10 @@ namespace JerpDoesBots
 			{
 				userEntry userToShout = jerpBot.instance.checkCreateUser(aChannelName);
 
-                if (userToShout.lastShoutoutTimeMS == -1 || jerpBot.instance.actionTimer.ElapsedMilliseconds > (userToShout.lastShoutoutTimeMS + m_ShoutThrottleMS))	// On global cooldown?
+                DateTime currentTime = DateTime.UtcNow;
+                long currentUnixTime = ((DateTimeOffset)currentTime).ToUnixTimeSeconds();
+
+                if (userToShout.lastShoutoutTimeSeconds == 0 || currentUnixTime > (userToShout.lastShoutoutTimeSeconds + (m_ShoutThrottleMS / 1000)))	// On global cooldown?
 				{
 					bool apiShoutAvailable = (
                         (
@@ -73,7 +76,7 @@ namespace JerpDoesBots
                         ) &&
                         (
                             m_LastShoutedNickname != userToShout.Nickname ||
-                            jerpBot.instance.actionTimer.ElapsedMilliseconds > userToShout.lastShoutoutTimeMS + m_APIShoutThrottlePerUserMS
+                            currentUnixTime > userToShout.lastShoutoutTimeSeconds + (m_APIShoutThrottlePerUserMS / 1000)
                         )
                     );
                     autoShoutoutUser shoutUser = configData.users.Find(x => x.name.ToLower() == aChannelName.ToLower());
@@ -94,7 +97,7 @@ namespace JerpDoesBots
                             shoutTask.Wait();
 							didAPIShoutout = true;
                             m_LastShoutedNickname = userToShout.Nickname;
-                            userToShout.lastShoutoutTimeMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
+                            userToShout.lastShoutoutTimeSeconds = currentUnixTime;
                             m_APILastShoutMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
 
                             if (shoutUser != null && !string.IsNullOrEmpty(shoutUser.shoutMessage) && shoutUser.type == autoShoutUserType.streamer) // Streamer check unncessary for now, but keeping in case other types are added later.
@@ -154,7 +157,7 @@ namespace JerpDoesBots
                             jerpBot.instance.sendDefaultChannelAnnounce(string.Format(jerpBot.instance.localizer.getString("shoutoutMessage"), channelInfo.BroadcasterName, channelInfo.BroadcasterName.ToLower()) + lastGame);
                         }
                         m_LastShoutedNickname = userToShout.Nickname;
-                        userToShout.lastShoutoutTimeMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
+                        userToShout.lastShoutoutTimeSeconds = currentUnixTime;
                     }
 
                     if (shoutUser != null && shoutUser.shoutCommands != null && shoutUser.shoutCommands.Count > 0)
