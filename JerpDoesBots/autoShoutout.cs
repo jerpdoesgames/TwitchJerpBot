@@ -42,7 +42,7 @@ namespace JerpDoesBots
 	{
 		private autoShoutoutConfig configData;
 		public bool loaded = false;
-		private long m_ShoutThrottleMS = 1000 * 60 * 60 * 2;  // 2 hours (MS/S * S * M * S)  Should ideally be longer than the API times
+		private long m_ShoutThrottleMS = 1000 * 60 * 60 * 12;  // 12 hours (MS/S * S * M * S)  Should ideally be longer than the API times
 		private long m_APIShoutThrottleMS = (1000 * 60 * 2) + 30000;    // 2 minutes (MS/S * S * M) - plus an extra 30s as a buffer
 		private long m_APIShoutThrottlePerUserMS = (1000 * 60 * 60) + 300000; // 60 minutes + 5 as a buffer (MS/S * S * M) + 300000
 		private string m_LastShoutedNickname = string.Empty;
