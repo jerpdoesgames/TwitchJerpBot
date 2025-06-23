@@ -1679,9 +1679,9 @@ namespace JerpDoesBots
             List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
             m_StreamMonitor.SetChannelsById(apiChannelList);
 
-            m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
+            // m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
             m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
-            m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
+            // m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
 
             m_StreamMonitor.Start();
 

@@ -27,13 +27,14 @@ namespace JerpDoesBots
             _eventSubWebsocketClient.WebsocketReconnected += OnWebsocketReconnected;
             _eventSubWebsocketClient.ErrorOccurred += jerpBot.instance.Twitch_OnErrorOccurred;
 
+            // _eventSubWebsocketClient.ChannelRaid += jerpBot.instance.Twitch_ChannelRaid; // TODO: This is apparently when a raid is outgoing, rather than an incoming raid (so this can be like "generate a raid message/etc.")
+
             _eventSubWebsocketClient.ChannelChatMessage += jerpBot.instance.Twitch_OnChannelChatMessage;
             _eventSubWebsocketClient.ChannelSubscribe += jerpBot.instance.Twitch_ChannelSubscribe;
             _eventSubWebsocketClient.ChannelFollow += jerpBot.instance.Twitch_OnChannelFollow;
-            // _eventSubWebsocketClient.ChannelRaid += jerpBot.instance.Twitch_ChannelRaid; // TODO: This is apparently when a raid is outgoing, rather than an incoming raid (so this can be like "generate a raid message/etc.")
             _eventSubWebsocketClient.ChannelSubscriptionGift += jerpBot.instance.Twitch_ChannelSubscriptionGift;
-            // _eventSubWebsocketClient.StreamOnline += jerpBot.instance.Twitch_StreamOnline;
-            // _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
+            _eventSubWebsocketClient.StreamOnline += jerpBot.instance.Twitch_StreamOnline;
+            _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
             _eventSubWebsocketClient.ChannelAdBreakBegin += jerpBot.instance.Twitch_ChannelAdBreakBegin;
             _eventSubWebsocketClient.ChannelPointsCustomRewardRedemptionAdd += jerpBot.instance.Twitch_ChannelPointsCustomRewardRedemptionAdd;
         }
@@ -66,14 +67,16 @@ namespace JerpDoesBots
                     { "moderator_user_id", jerpBot.instance.ownerUserID }
                 };
 
-                AttemptSubscription("channel.channel_points_custom_reward_redemption.add", conditions);
+                // AttemptSubscription("channel.raid", conditions);
+
+                AttemptSubscription("channel.chat.message", conditions);
                 AttemptSubscription("channel.subscribe", conditions);
                 AttemptSubscription("channel.follow", conditions, "2");
-                // AttemptSubscription("channel.raid", conditions);
                 AttemptSubscription("channel.subscription.gift", conditions);
+                AttemptSubscription("stream.online", conditions);
                 AttemptSubscription("stream.offline", conditions);
                 AttemptSubscription("channel.ad_break.begin", conditions);
-                AttemptSubscription("channel.chat.message", conditions);
+                AttemptSubscription("channel.channel_points_custom_reward_redemption.add", conditions);
             }
         }
 
