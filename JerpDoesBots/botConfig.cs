@@ -22,8 +22,9 @@ namespace JerpDoesBots
         // moderator:read:followers			Followage
         // channel:read:subscriptions
         // user:read:chat
+		// bits:read
 
-        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions+moderator:manage:announcements+moderator:manage:shoutouts+channel:read:ads+channel:manage:ads+moderator:read:followers+channel:read:subscriptions+user:read:chat
+        // https://id.twitch.tv/oauth2/authorize?client_id=[client_id]&redirect_uri=http://localhost&response_type=token&scope=channel:manage:redemptions+channel:edit:commercial+channel:manage:broadcast+channel:read:predictions+channel:manage:predictions+moderator:manage:announcements+moderator:manage:shoutouts+channel:read:ads+channel:manage:ads+moderator:read:followers+channel:read:subscriptions+user:read:chat+bits:read
 
         // Eventually?:
         // channel:read:polls				Read polls
