@@ -49,7 +49,7 @@ namespace JerpDoesBots
         TwitchClient m_TwitchClientOwner;
         private IHost m_TwitchEventHost;
         public IHost TwitchEventHost { set { m_TwitchEventHost = value; } }
-        
+
 
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
@@ -268,6 +268,8 @@ namespace JerpDoesBots
 
         private commandAlias m_AliasModule;
 
+        private TwitchEventSubHandler m_EventSubModule;
+        public TwitchEventSubHandler eventSubModule { set { m_EventSubModule = value; } }
         public commandAlias aliasModule { set { m_AliasModule = value; } }
 
         private Dictionary<string, userEntry> m_UserList;
@@ -337,7 +339,7 @@ namespace JerpDoesBots
                     {
                         // TODO: Actually use channel ID for target channel rather than just all messages being in one channel
                         // TOOD: Get a new token for the bot with at least user.write.chat and whatever else
-                        m_LogGeneral.writeAndLog($"Channel Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
+                        // m_LogGeneral.writeAndLog($"Channel Message | {commandToExecute.getTarget()} | {commandToExecute.getMessage()}");
                         Task sendMessageTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatMessage(ownerUserID, botUserID, commandToExecute.getMessage(), null, botAuth.Substring(6)));
                         sendMessageTask.Wait();
                     }
@@ -377,6 +379,7 @@ namespace JerpDoesBots
                 case connectionCommand.types.quit:
                     m_TwitchClientBot.DisconnectAsync();  // TODO: Async
                     m_TwitchClientOwner.DisconnectAsync();  // TODO: Async
+                    // m_EventSubModule.closeConnection();
                     m_IsReadyToClose = true;
                     isDone = true;
                     break;
@@ -1036,7 +1039,8 @@ namespace JerpDoesBots
 
             m_LineCount++;
 
-            m_LogChat.writeAndLog("Chat | " + aNickname + " | " + aMessage);
+            // m_LogChat.writeAndLog("Chat | " + aNickname + " | " + aMessage);
+            m_LogGeneral.writeAndLog($"Channel Message | {aNickname} | {aMessage}");
 
             if (isValidCommandFormat(aMessage))
             {
@@ -1070,7 +1074,7 @@ namespace JerpDoesBots
         /// <param name="aRewardUserInput">Any user input (if required) for the reward.</param>
         /// <param name="aRewardID">ID of the reward that can be redeemed.</param>
         /// <param name="aRedemptionID">ID of this specific redemption instance for the reward.</param>
-        public void processChannelPointRedemption(string aNickname, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
+        public void receiveEventChannelPointRewardRedemption(string aNickname, string aRewardTitle, int aRewardCost, string aRewardUserInput, string aRewardID, string aRedemptionID)
         {
             userEntry messageUser = checkCreateUser(aNickname);
 
@@ -1373,21 +1377,25 @@ namespace JerpDoesBots
         {
             ChannelPointsCustomRewardRedemption redeemEvent = e.Notification.Payload.Event;
             
-            processChannelPointRedemption(redeemEvent.UserName, redeemEvent.Reward.Title, redeemEvent.Reward.Cost, redeemEvent.UserInput, redeemEvent.Reward.Id, redeemEvent.Id);
+            receiveEventChannelPointRewardRedemption(redeemEvent.UserName, redeemEvent.Reward.Title, redeemEvent.Reward.Cost, redeemEvent.UserInput, redeemEvent.Reward.Id, redeemEvent.Id);
         }
 
         public async Task Twitch_ChannelAdBreakBegin(object sender, ChannelAdBreakBeginArgs e)
         {
             m_LogEvents.writeAndLog("Commercial Started with Length:" + e.Notification.Payload.Event.DurationSeconds + " seconds.");
 
+            receiveEventAdBreakBegin(e.Notification.Payload.Event.DurationSeconds);
+
+            /*
             botModule tempModule;
             for (int i = 0; i < m_Modules.Count; i++)
             {
                 tempModule = m_Modules[i];
 
-                if (isModuleValidForUserAction(tempModule))
-                    tempModule.onCommercialStart(e);
+                // if (isModuleValidForUserAction(tempModule))
+                //     tempModule.onCommercialStart(e);
             }
+            */
         }
 
         public async Task Twitch_ChannelSubscriptionGift(object sender, ChannelSubscriptionGiftArgs e)
@@ -1646,6 +1654,84 @@ namespace JerpDoesBots
 
                 processUserMessage(userMessage.ChatterUserName, userMessage.Message.Text);
             }
+        }
+
+        // ==========================================================
+
+        public void receiveEventChatMessage(string aChannelUserID, string aChatterUsername, string aChatterUserID, string aMessageText, bool aIsBroadcaster = false, bool aIsModerator = false, bool aIsSubscriber = false, bool aIsVIP = false, bool aIsPartner = false)
+        {
+            userEntry messageUser = checkCreateUser(aChatterUsername);
+            messageUser.isBroadcaster = aChatterUsername == ownerUsername;   // aIsBroadcaster
+            messageUser.isModerator = aIsBroadcaster;
+            messageUser.isSubscriber = aIsModerator;
+            messageUser.isVIP = aIsVIP;
+            messageUser.isPartner = aIsPartner;
+            messageUser.inChannel = true;
+            messageUser.twitchUserID = aChatterUserID;
+
+            processUserMessage(aChatterUsername, aMessageText);
+        }
+
+        public void receiveEventUserSubscribe(string aUserName)
+        {
+            userEntry messageUser = checkCreateUser(aUserName);
+            messageUser.isSubscriber = true;
+            m_SubsThisSession++;
+            logEvents.writeAndLog("User Subscribed - " + aUserName);
+        }
+
+        public void receiveEventSubGift(string aGifterUserName, bool aIsAnonymous, int aGiftCount, int aTotalGifts)
+        {
+            m_SubsThisSession++;
+            if (aIsAnonymous)
+            {
+                m_LogEvents.writeAndLog($"User Gifted {aGiftCount} Subscription(s) - [anonymous] ({aTotalGifts} total so far)");
+            }
+            else
+            {
+                m_LogEvents.writeAndLog($"User Gifted {aGiftCount} Subscription(s) - {aGifterUserName} ({aTotalGifts} total so far)");
+            }
+        }
+
+        public void receiveEventChannelFollow(string aUserID, string aUserName)
+        {
+            userEntry messageUser = checkCreateUser(aUserName);
+            messageUser.isFollower = true;
+            messageUser.twitchUserID = aUserID;
+            messageUser.lastFollowCheckTime = DateTime.Now;
+            if (m_CoreConfig.configData.announceFollowEvents)
+            {
+                sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), aUserName));
+            }
+        }
+
+        public void receiveEventStreamOnline(DateTime aStartedAt)
+        {
+            m_LiveStartTime = aStartedAt;
+        }
+
+        public void receiveEventStreamOffline()
+        {
+            IsLive = false;
+        }
+
+        public void receiveEventAdBreakBegin(int aDurationSeconds)
+        {
+            m_LogEvents.writeAndLog("Commercial Started with Length:" + aDurationSeconds + " seconds.");
+
+            botModule tempModule;
+            for (int i = 0; i < m_Modules.Count; i++)
+            {
+                tempModule = m_Modules[i];
+
+                if (isModuleValidForUserAction(tempModule))
+                    tempModule.onCommercialStart(aDurationSeconds);
+            }
+        }
+
+        public void receiveEventCustomRewardRedeemed()
+        {
+
         }
 
         // ==========================================================

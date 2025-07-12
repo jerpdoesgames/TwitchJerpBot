@@ -12,6 +12,8 @@ namespace JerpDoesBots
 {
 	class Program
 	{
+
+        // ========================= REMOVE THIS SECTION EVENTUALLY ==========================
         private static void addSettingsDelegate(HostBuilderContext aContext, IConfigurationBuilder aBuilder)
         {
             // TODO: Figure out what we're doing here.
@@ -35,6 +37,12 @@ namespace JerpDoesBots
 
             return newHostBuilder;
         }
+
+        // ========================= REMOVE THIS SECTION EVENTUALLY ==========================
+
+
+
+
 
         static void Main(string[] args)
 		{
@@ -76,6 +84,7 @@ namespace JerpDoesBots
 			dataLookup dataLookupManager              = new dataLookup();
 			adManager adManagerModule                 = new adManager();
             autoExec autoExecModule                   = new autoExec();
+            // TwitchEventSubHandler eventSubManager     = new TwitchEventSubHandler();
 
             customCommandModule.initTable();
 			gameCommandModule.initTable();
@@ -85,13 +94,13 @@ namespace JerpDoesBots
 			botGeneral.gameCommandModule = gameCommandModule;
             botGeneral.soundCommandModule = soundManager;
             botGeneral.aliasModule = aliasManager;
+            // botGeneral.eventSubModule = eventSubManager;
 
             botGeneral.setLoadComplete();
 
             IHost TwitchEventHost = CreateHostBuilder().Build();
             botGeneral.TwitchEventHost = TwitchEventHost;
-
-            TwitchEventHost.RunAsync();  // Grabs static jerpBot instance
+            TwitchEventHost.RunAsync();
 
             // ==========================================================
 

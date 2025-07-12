@@ -27,11 +27,13 @@ namespace JerpDoesBots
             return false;
         }
 
-        public void nextValidMessageIndex()
+        public bool nextValidMessageIndex()
         {
             bool looped = false;
             int originalMessageIndex = m_MessageIndex;
             bool validMessageIndex = false;
+            int numIterations = 0;
+            bool wasSuccessful = true;
             do
             {
                 m_MessageIndex++;
@@ -44,14 +46,23 @@ namespace JerpDoesBots
                 if (isValidMessage(m_MessageIndex))
                     validMessageIndex = true;
 
+                numIterations++;
+                if (numIterations >= m_Config.messageList.Count)
+                {
+                    jerpBot.instance.logWarningsErrors.writeAndLog("Unable to find a valid messageRoll messsage - checked entire list.");
+                    wasSuccessful = false;
+                    break;
+                }
+
             } while (!looped && !validMessageIndex);
+            return wasSuccessful;
         }
 
         public messageRollEntry getNextMessage()
         {
-            nextValidMessageIndex();
+            bool getNextSuccess = nextValidMessageIndex();
 
-            if (isValidMessage(m_MessageIndex))
+            if (getNextSuccess && isValidMessage(m_MessageIndex))
             {
                 messageRollEntry newMessage = m_Config.messageList[m_MessageIndex];
                 return newMessage;
@@ -142,7 +153,6 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("reload", reload, false, false));
 
                 jerpBot.instance.addChatCommand(tempDef);
-
             }
 		}
 	}

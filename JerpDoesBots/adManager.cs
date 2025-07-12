@@ -73,9 +73,9 @@ namespace JerpDoesBots
         /// Occurs when a commercial begins.
         /// </summary>
         /// <param name="aCommercialArgs">Information about the commercial being played.</param>
-        public override void onCommercialStart(ChannelAdBreakBeginArgs aCommercialArgs)
+        public override void onCommercialStart(int aDurationSeconds)
         {
-            onCommercialStartInternal(aCommercialArgs.Notification.Payload.Event.DurationSeconds);
+            onCommercialStartInternal(aDurationSeconds);
         }
 
         // TODO: Blah, sloppy, fix once the EventSub convert is over

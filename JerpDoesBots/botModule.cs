@@ -55,8 +55,8 @@ namespace JerpDoesBots
         /// <summary>
         /// Occurs when an ad starts on Twitch (EventSub version).
         /// </summary>
-        /// <param name="aCommercialArgs">Data about the commercial being played including its length.</param>
-        public virtual void onCommercialStart(ChannelAdBreakBeginArgs aCommercialArgs) { }
+        /// <param name="aDurationSeconds">Length of the commercial.</param>
+        public virtual void onCommercialStart(int aDurationSeconds) { }
 
         /// <summary>
         /// Occurs when being raided by another channel.
