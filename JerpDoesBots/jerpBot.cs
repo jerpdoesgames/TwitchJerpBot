@@ -1417,6 +1417,8 @@ namespace JerpDoesBots
         {
             if (e.Notification.Payload.Event != null)
             {
+                m_LiveStartTime = e.Notification.Payload.Event.StartedAt.DateTime.ToLocalTime();
+                IsLive = true;
                 // IsLive = true;
                 // m_ViewersLast = aStream.ViewerCount;
                 // m_LiveStartTime = aStream.StartedAt;
