@@ -47,7 +47,7 @@ namespace JerpDoesBots
 
         botConfig m_CoreConfig;
         // TwitchClient m_TwitchClientBot;
-        TwitchClient m_TwitchClientOwner;
+        // TwitchClient m_TwitchClientOwner;
         private IHost m_TwitchEventHost;
         public IHost TwitchEventHost { set { m_TwitchEventHost = value; } }
 
@@ -351,21 +351,21 @@ namespace JerpDoesBots
                 case connectionCommand.types.joinChannel:
                     if (!String.IsNullOrEmpty(commandToExecute.getTarget()))
                     {
-                        m_TwitchClientOwner.JoinChannelAsync(commandToExecute.getTarget());  // TODO: Async
+                        // m_TwitchClientOwner.JoinChannelAsync(commandToExecute.getTarget());  // TODO: Async
                     }
                     break;
 
                 case connectionCommand.types.partAllChannels:
-                    for (int i = 0; i < m_TwitchClientOwner.JoinedChannels.Count; i++)
-                    {
-                        m_TwitchClientOwner.LeaveChannelAsync(m_TwitchClientOwner.JoinedChannels[i]);  // TODO: Async
-                    }
+                    //for (int i = 0; i < m_TwitchClientOwner.JoinedChannels.Count; i++)
+                    //{
+                    //    // m_TwitchClientOwner.LeaveChannelAsync(m_TwitchClientOwner.JoinedChannels[i]);  // TODO: Async
+                    //}
                     break;
 
                 case connectionCommand.types.partChannel:
                     if (!String.IsNullOrEmpty(commandToExecute.getTarget()))
                     {
-                        m_TwitchClientOwner.LeaveChannelAsync(commandToExecute.getTarget());  // TODO: Async
+                        // m_TwitchClientOwner.LeaveChannelAsync(commandToExecute.getTarget());  // TODO: Async
                     }
                     break;
 
@@ -380,7 +380,7 @@ namespace JerpDoesBots
                     break;
 
                 case connectionCommand.types.quit:
-                    Task clientDisconnectTask = Task.Run(() => m_TwitchClientOwner.DisconnectAsync());
+                    // Task clientDisconnectTask = Task.Run(() => m_TwitchClientOwner.DisconnectAsync());
                     // m_EventSubModule.closeConnection();
                     m_IsReadyToClose = true;
                     isDone = true;
@@ -1383,8 +1383,8 @@ namespace JerpDoesBots
         private async Task Client_OnConnectedOwner(object sender, TwitchLib.Client.Events.OnConnectedEventArgs eConnectedEvent)
         {
             m_LogConnection.writeAndLog($"jerpBot owner account connected to {eConnectedEvent.BotUsername}");
-            Task onConnectedTask = Task.Run(() => m_TwitchClientOwner.JoinChannelAsync(m_DefaultChannel));
-            onConnectedTask.Wait();
+            // Task onConnectedTask = Task.Run(() => m_TwitchClientOwner.JoinChannelAsync(m_DefaultChannel));
+            // onConnectedTask.Wait();
         }
 
         public async Task Twitch_ChannelPointsCustomRewardRedemptionAdd(object sender, ChannelPointsCustomRewardRedemptionArgs e)
