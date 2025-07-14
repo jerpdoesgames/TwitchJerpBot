@@ -27,8 +27,7 @@ namespace JerpDoesBots
             _eventSubWebsocketClient.WebsocketReconnected += OnWebsocketReconnected;
             _eventSubWebsocketClient.ErrorOccurred += jerpBot.instance.Twitch_OnErrorOccurred;
 
-            // _eventSubWebsocketClient.ChannelRaid += jerpBot.instance.Twitch_ChannelRaid; // TODO: This is apparently when a raid is outgoing, rather than an incoming raid (so this can be like "generate a raid message/etc.")
-
+            _eventSubWebsocketClient.ChannelRaid += jerpBot.instance.Twitch_ChannelRaid;
             _eventSubWebsocketClient.ChannelChatMessage += jerpBot.instance.Twitch_OnChannelChatMessage;
             _eventSubWebsocketClient.ChannelSubscribe += jerpBot.instance.Twitch_ChannelSubscribe;
             _eventSubWebsocketClient.ChannelFollow += jerpBot.instance.Twitch_OnChannelFollow;
@@ -39,13 +38,16 @@ namespace JerpDoesBots
             _eventSubWebsocketClient.ChannelPointsCustomRewardRedemptionAdd += jerpBot.instance.Twitch_ChannelPointsCustomRewardRedemptionAdd;
         }
 
-        // TODO: Move elsewhere
-
         private async void AttemptSubscription(string aTopic, Dictionary<string, string> aConditions, string aVersion="1")
         {
             try
             {
                 CreateEventSubSubscriptionResponse subResponse = await jerpBot.instance.twitchAPI.Helix.EventSub.CreateEventSubSubscriptionAsync(aTopic, aVersion, aConditions, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, _eventSubWebsocketClient.SessionId);
+                if (aTopic == "channel.chat.message" && aConditions.ContainsKey("broadcaster_user_id") && aConditions["broadcaster_user_id"] == jerpBot.instance.ownerUserID)
+                {
+                    jerpBot.instance.eventJoinChannelSuccess();
+                }
+                
             }
             catch (Exception subException)
             {
@@ -59,7 +61,6 @@ namespace JerpDoesBots
 
             if (!e.IsRequestedReconnect)
             {
-                // subscribe to topics
                 Dictionary<string, string> conditions = new Dictionary<string, string>()
                 {
                     { "broadcaster_user_id", jerpBot.instance.ownerUserID },
@@ -67,14 +68,23 @@ namespace JerpDoesBots
                     { "moderator_user_id", jerpBot.instance.ownerUserID }
                 };
 
-                // AttemptSubscription("channel.raid", conditions);
+                Dictionary<string, string> onlineStatusConditions = new Dictionary<string, string>()
+                {
+                    { "broadcaster_user_id", jerpBot.instance.ownerUserID }
+                };
 
+                Dictionary<string, string> incomingRaidConditions = new Dictionary<string, string>()
+                {
+                    { "to_broadcaster_user_id", jerpBot.instance.ownerUserID }
+                };
+
+                AttemptSubscription("channel.raid", incomingRaidConditions);
                 AttemptSubscription("channel.chat.message", conditions);
                 AttemptSubscription("channel.subscribe", conditions);
                 AttemptSubscription("channel.follow", conditions, "2");
                 AttemptSubscription("channel.subscription.gift", conditions);
-                AttemptSubscription("stream.online", conditions);
-                AttemptSubscription("stream.offline", conditions);
+                AttemptSubscription("stream.online", onlineStatusConditions);
+                AttemptSubscription("stream.offline", onlineStatusConditions);
                 AttemptSubscription("channel.ad_break.begin", conditions);
                 AttemptSubscription("channel.channel_points_custom_reward_redemption.add", conditions);
             }

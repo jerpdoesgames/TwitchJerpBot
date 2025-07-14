@@ -7,7 +7,7 @@ namespace JerpDoesBots
     public class twitchAPIConfig
     {
         public string client_id { get; set; }
-        public int channel_id { get; set; }
+        public string channel_id { get; set; }
 
         // Required Scopes:
         // channel:manage:redemptions		Channel Point rewards
@@ -48,7 +48,7 @@ namespace JerpDoesBots
 	{
 		public string username { get; set; }
 		public string nickname { get; set; }
-		public int channel_id { get; set; }
+		public string channel_id { get; set; }
 		public string oauth { get; set; }
 		public string server { get; set; }
 		public int port { get; set; }
