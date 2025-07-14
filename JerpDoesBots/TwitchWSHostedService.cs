@@ -32,8 +32,8 @@ namespace JerpDoesBots
             _eventSubWebsocketClient.ChannelSubscribe += jerpBot.instance.Twitch_ChannelSubscribe;
             _eventSubWebsocketClient.ChannelFollow += jerpBot.instance.Twitch_OnChannelFollow;
             _eventSubWebsocketClient.ChannelSubscriptionGift += jerpBot.instance.Twitch_ChannelSubscriptionGift;
-            _eventSubWebsocketClient.StreamOnline += jerpBot.instance.Twitch_StreamOnline;
-            _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
+            // _eventSubWebsocketClient.StreamOnline += jerpBot.instance.Twitch_StreamOnline;
+            // _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
             _eventSubWebsocketClient.ChannelAdBreakBegin += jerpBot.instance.Twitch_ChannelAdBreakBegin;
             _eventSubWebsocketClient.ChannelPointsCustomRewardRedemptionAdd += jerpBot.instance.Twitch_ChannelPointsCustomRewardRedemptionAdd;
             _eventSubWebsocketClient.ChannelUpdate += jerpBot.instance.Twitch_ChannelUpdate;

@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Channels.GetChannelFollowers;
+using TwitchLib.Api.Helix.Models.Streams.GetStreams;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
@@ -53,6 +54,8 @@ namespace JerpDoesBots
 
         TwitchAPI m_TwitchAPI;
         LiveStreamMonitorService m_StreamMonitor;
+
+        throttler m_StreamStatusMonitorThrottle;
 
         private logger m_LogGeneral;
         private logger m_LogEvents;
@@ -500,6 +503,32 @@ namespace JerpDoesBots
                     }
                 }
                 */
+            }
+
+            if (m_StreamStatusMonitorThrottle.isReady)
+            {
+                // todo: grab stream status and do stream status things
+
+                List<string> channelIDlist = new List<string> { ownerUserID };
+
+                Task<GetStreamsResponse> streamInfoTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamsAsync(null, 1, null, null, channelIDlist));
+                streamInfoTask.Wait();
+
+
+                if (streamInfoTask.Result != null)
+                {
+
+                    if (streamInfoTask.Result.Streams.Length > 0)
+                    {
+                        m_IsLive = true;
+                        ParseStreamData(streamInfoTask.Result.Streams[0]);
+                    }
+                    else
+                    {
+                        m_IsLive = false;
+                    }
+                }
+                m_StreamStatusMonitorThrottle.trigger();
             }
         }
 
@@ -1712,29 +1741,29 @@ namespace JerpDoesBots
             m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
             m_TwitchAPI.Settings.ClientId = m_CoreConfig.configData.twitch_api.client_id;
 
-            m_StreamMonitor = new LiveStreamMonitorService(m_TwitchAPI, 60);
-            m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
-            m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
-            m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
-            m_StreamMonitor.OnChannelsSet += Monitor_OnchannelsSet;
-            m_StreamMonitor.OnServiceStarted += Monitor_OnServiceStarted;
-            m_StreamMonitor.OnServiceStopped += Monitor_OnServiceStopped;
-            m_StreamMonitor.OnServiceTick += Monitor_OnServiceTick;
-            List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
-            m_StreamMonitor.SetChannelsById(apiChannelList);
-            m_StreamMonitor.Start();
+            // m_StreamMonitor = new LiveStreamMonitorService(m_TwitchAPI, 60);
+            // m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
+            // m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
+            // m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
+            // m_StreamMonitor.OnChannelsSet += Monitor_OnchannelsSet;
+            // m_StreamMonitor.OnServiceStarted += Monitor_OnServiceStarted;
+            // m_StreamMonitor.OnServiceStopped += Monitor_OnServiceStopped;
+            // m_StreamMonitor.OnServiceTick += Monitor_OnServiceTick;
+            // List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
+            // m_StreamMonitor.SetChannelsById(apiChannelList);
+            // m_StreamMonitor.Start();
 
-            ConnectionCredentials ownerClientCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
-            m_TwitchClientOwner = new TwitchClient();   //protocol: useClientProtocol
-            m_TwitchClientOwner.Initialize(ownerClientCredentials);
-            m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
-            m_TwitchClientOwner.OnUserJoined += Client_OnUserJoined;
-            m_TwitchClientOwner.OnUserLeft += Client_OnUserLeft;
-            m_TwitchClientOwner.OnError += Client_OnError;
-            m_TwitchClientOwner.OnConnectionError += Client_OnConnectionError;
-            m_TwitchClientOwner.OnUnaccountedFor += Client_UnaccountedFor;
-            Task twitchClientConnectTask = Task.Run(() => m_TwitchClientOwner.ConnectAsync());
-            twitchClientConnectTask.Wait();
+            // ConnectionCredentials ownerClientCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
+            // m_TwitchClientOwner = new TwitchClient();   //protocol: useClientProtocol
+            // m_TwitchClientOwner.Initialize(ownerClientCredentials);
+            // m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
+            // m_TwitchClientOwner.OnUserJoined += Client_OnUserJoined;
+            // m_TwitchClientOwner.OnUserLeft += Client_OnUserLeft;
+            // m_TwitchClientOwner.OnError += Client_OnError;
+            // m_TwitchClientOwner.OnConnectionError += Client_OnConnectionError;
+            // m_TwitchClientOwner.OnUnaccountedFor += Client_UnaccountedFor;
+            // Task twitchClientConnectTask = Task.Run(() => m_TwitchClientOwner.ConnectAsync());
+            // twitchClientConnectTask.Wait();
 
             m_ActionTimer = Stopwatch.StartNew();
 
@@ -1760,6 +1789,12 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
 
             requestChannelInfo();
+
+            m_StreamStatusMonitorThrottle = new throttler();
+            m_StreamStatusMonitorThrottle.waitTimeMSMax = 1000 * 30;
+            m_StreamStatusMonitorThrottle.messagesReduceTimer = false;
+            m_StreamStatusMonitorThrottle.requiresUserMessages = false;
+
         }
 
         // ==========================================================
