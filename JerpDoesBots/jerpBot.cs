@@ -1554,6 +1554,21 @@ namespace JerpDoesBots
             Console.WriteLine("on channels set for livestream monitor - " + string.Join(",", e.Channels));
         }
 
+        private void Monitor_OnServiceStarted(object sender, OnServiceStartedArgs e)
+        {
+            Console.WriteLine("Monitor_OnServiceStarted occurred.");
+        }
+
+        private void Monitor_OnServiceStopped(object sender, OnServiceStoppedArgs e)
+        {
+            Console.WriteLine("Monitor_OnServiceStopped occurred.");
+        }
+
+        private void Monitor_OnServiceTick(object sender, OnServiceTickArgs e)
+        {
+            Console.WriteLine("Monitor_OnServiceTick occurred.");
+        }
+
         private void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
             IsLive = true;
@@ -1702,6 +1717,9 @@ namespace JerpDoesBots
             m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
             m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
             m_StreamMonitor.OnChannelsSet += Monitor_OnchannelsSet;
+            m_StreamMonitor.OnServiceStarted += Monitor_OnServiceStarted;
+            m_StreamMonitor.OnServiceStopped += Monitor_OnServiceStopped;
+            m_StreamMonitor.OnServiceTick += Monitor_OnServiceTick;
             List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
             m_StreamMonitor.SetChannelsById(apiChannelList);
             m_StreamMonitor.Start();
