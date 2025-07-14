@@ -1135,7 +1135,7 @@ namespace JerpDoesBots
         /// </summary>
         public void onFrame()
         {
-            if (m_TwitchClientOwner.IsConnected && m_HasChatConnection && m_HasJoinedChannel)
+            if (m_HasChatConnection && m_HasJoinedChannel)
             {
                 if (m_IsFullyLoaded && m_HasReceivedChannelInfo && !m_HasExecutedLoadEvent)
                 {
