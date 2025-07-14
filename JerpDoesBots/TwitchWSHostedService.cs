@@ -88,6 +88,7 @@ namespace JerpDoesBots
                 AttemptSubscription("stream.offline", onlineStatusConditions);
                 AttemptSubscription("channel.ad_break.begin", conditions);
                 AttemptSubscription("channel.channel_points_custom_reward_redemption.add", conditions);
+                AttemptSubscription("channel.update", onlineStatusConditions, "2");
             }
         }
 
