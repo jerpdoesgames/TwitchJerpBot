@@ -1379,6 +1379,17 @@ namespace JerpDoesBots
             receiveEventStreamOnline(e.Notification.Payload.Event.StartedAt.DateTime.ToLocalTime());
         }
 
+        public async Task Twitch_ChannelUpdate(object sender, ChannelUpdateArgs e)
+        {
+            m_Title = e.Notification.Payload.Event.Title;
+            m_Game = e.Notification.Payload.Event.CategoryId;
+            setCategoryID(e.Notification.Payload.Event.CategoryId);
+
+            // m_ViewersLast = e.Stream.ViewerCount;
+            // m_Tags = e.Stream.Tags;
+            m_HasReceivedChannelInfo = true;
+        }
+
         public async Task Twitch_StreamOffline(object sender, StreamOfflineArgs e)
         {
             receiveEventStreamOffline();

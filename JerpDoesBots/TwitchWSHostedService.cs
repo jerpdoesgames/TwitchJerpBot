@@ -36,6 +36,7 @@ namespace JerpDoesBots
             _eventSubWebsocketClient.StreamOffline += jerpBot.instance.Twitch_StreamOffline;
             _eventSubWebsocketClient.ChannelAdBreakBegin += jerpBot.instance.Twitch_ChannelAdBreakBegin;
             _eventSubWebsocketClient.ChannelPointsCustomRewardRedemptionAdd += jerpBot.instance.Twitch_ChannelPointsCustomRewardRedemptionAdd;
+            _eventSubWebsocketClient.ChannelUpdate += jerpBot.instance.Twitch_ChannelUpdate;
         }
 
         private async void AttemptSubscription(string aTopic, Dictionary<string, string> aConditions, string aVersion="1")
