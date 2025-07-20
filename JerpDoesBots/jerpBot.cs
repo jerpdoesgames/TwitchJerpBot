@@ -520,12 +520,12 @@ namespace JerpDoesBots
 
                     if (streamInfoTask.Result.Streams.Length > 0)
                     {
-                        m_IsLive = true;
+                        IsLive = true;
                         ParseStreamData(streamInfoTask.Result.Streams[0]);
                     }
                     else
                     {
-                        m_IsLive = false;
+                        IsLive = false;
                     }
                 }
                 m_StreamStatusMonitorThrottle.trigger();
