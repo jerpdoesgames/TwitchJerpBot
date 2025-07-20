@@ -61,6 +61,10 @@ namespace JerpDoesBots
                     attemptSubscription("channel.ad_break.begin", conditions);
                     attemptSubscription("channel.channel_points_custom_reward_redemption.add", conditions);
                     break;
+
+
+                /*
+
                 case "session_keepalive":
                     // KeepAlive message - not gonna bother with it for now.
                     // Would probably DateTime.Parse the timestamp and check against it here and there
@@ -94,7 +98,6 @@ namespace JerpDoesBots
                                             // TODO: Sub gifter stuff?
                                             break;
                                     }
-
                                 }
                             }
 
@@ -138,6 +141,7 @@ namespace JerpDoesBots
                     jerpBot.instance.logWarningsErrors.writeAndLog("Unknown EventSub message_type " + aMessage.metadata.message_type);
                     jerpBot.instance.logWarningsErrors.writeAndLog(aRawMessage);
                     break;
+                */
             }
         }
 
@@ -173,6 +177,7 @@ namespace JerpDoesBots
                         string parsedMessage = messageReader.ReadToEnd();
                         if (!string.IsNullOrEmpty(parsedMessage))
                         {
+                            jerpBot.instance.logWebsockets.write("EventSub Message | " + parsedMessage);
                             TwitchEventSubMessage messageObject = JsonSerializer.Deserialize<TwitchEventSubMessage>(parsedMessage);
                             processReceivedMessage(messageObject, parsedMessage);
                         }

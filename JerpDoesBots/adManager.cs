@@ -160,10 +160,10 @@ namespace JerpDoesBots
                 if (!m_IsCommercialActive && m_SnoozeRefreshAt != null)
                 {
                     // Check next snooze
-                    TimeSpan timeUntilSnoozeAvailable = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now);
+                    TimeSpan timeUntilSnoozeAvailable = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now.ToUniversalTime());
                     if (timeUntilSnoozeAvailable.Seconds + m_SnoozeRefreshCheckBufferSeconds <= 0)
                     {
-                        m_SnoozeRefreshAt = DateTime.Now.AddSeconds(m_SnoozeRefreshThrottleSeconds);    // Enforcing a throttle in case it fails, otherwise this will be overwritten with the actual time.
+                        m_SnoozeRefreshAt = DateTime.Now.ToUniversalTime().AddSeconds(m_SnoozeRefreshThrottleSeconds);    // Enforcing a throttle in case it fails, otherwise this will be overwritten with the actual time.
                         getAdScheduleData();
                     }
                 }
@@ -171,7 +171,7 @@ namespace JerpDoesBots
                 // Check whether to display ad warnings
                 if (!m_IsCommercialActive && m_NextAdAt != null && m_Config.incomingAdWarnings != null && m_Config.incomingAdWarnings.Count > 0)
                 {
-                    TimeSpan timeUntilNextAd = m_NextAdAt.Value.Subtract(DateTime.Now);
+                    TimeSpan timeUntilNextAd = m_NextAdAt.Value.Subtract(DateTime.Now.ToUniversalTime());
                     double secondsUntilNextAd = timeUntilNextAd.TotalSeconds;
 
                     if (secondsUntilNextAd > 0)
@@ -205,7 +205,7 @@ namespace JerpDoesBots
 
             if (m_SnoozeRefreshAt != null)
             {
-                TimeSpan timeUntilNextSnooze = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now);
+                TimeSpan timeUntilNextSnooze = m_SnoozeRefreshAt.Value.Subtract(DateTime.Now.ToUniversalTime());
                 if (timeUntilNextSnooze.TotalSeconds > 0)
                 {
                     output = timeUntilNextSnooze.Minutes + "m" + timeUntilNextSnooze.Seconds + "s";

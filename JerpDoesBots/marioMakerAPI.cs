@@ -101,7 +101,7 @@ namespace JerpDoesBots
 
 		public marioMakerLevelInfo()
         {
-			m_QueryTime = DateTime.Now;
+			m_QueryTime = DateTime.Now.ToUniversalTime();
 		}
 
 		public bool hasAllTags(List<marioMakerLevelTag> aTags)

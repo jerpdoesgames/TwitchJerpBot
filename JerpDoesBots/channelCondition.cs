@@ -17,7 +17,7 @@ namespace JerpDoesBots
 
         public bool isValidDateTime()
         {
-            DateTime curTime = DateTime.Now;
+            DateTime curTime = DateTime.Now.ToUniversalTime();
 
             return ((m_DateTimeStart == null || curTime >= m_DateTimeStart) && (m_DateTimeEnd == null || curTime <= m_DateTimeEnd));
         }
@@ -262,6 +262,8 @@ namespace JerpDoesBots
             followPercentMax = -1;
             viewersMin = -1;
             viewersMax = -1;
+            secondsSinceLiveMin = -1;
+            secondsSinceLiveMax = -1;
         }
     }
 

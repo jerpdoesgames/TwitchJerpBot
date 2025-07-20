@@ -37,6 +37,7 @@ namespace JerpDoesBots
             _eventSubWebsocketClient.ChannelAdBreakBegin += jerpBot.instance.Twitch_ChannelAdBreakBegin;
             _eventSubWebsocketClient.ChannelPointsCustomRewardRedemptionAdd += jerpBot.instance.Twitch_ChannelPointsCustomRewardRedemptionAdd;
             _eventSubWebsocketClient.ChannelUpdate += jerpBot.instance.Twitch_ChannelUpdate;
+            _eventSubWebsocketClient.ChannelChatNotification += jerpBot.instance.Twitch_ChannelChatNotification;
         }
 
         private async void AttemptSubscription(string aTopic, Dictionary<string, string> aConditions, string aVersion="1")
@@ -89,6 +90,7 @@ namespace JerpDoesBots
                 AttemptSubscription("channel.ad_break.begin", conditions);
                 AttemptSubscription("channel.channel_points_custom_reward_redemption.add", conditions);
                 AttemptSubscription("channel.update", onlineStatusConditions, "2");
+                AttemptSubscription("channel.chat.notification", conditions, "1");
             }
         }
 

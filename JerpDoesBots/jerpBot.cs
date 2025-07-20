@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -47,7 +48,7 @@ namespace JerpDoesBots
 
         botConfig m_CoreConfig;
         // TwitchClient m_TwitchClientBot;
-        // TwitchClient m_TwitchClientOwner;
+        TwitchClient m_TwitchClientOwner;
         private IHost m_TwitchEventHost;
         public IHost TwitchEventHost { set { m_TwitchEventHost = value; } }
 
@@ -62,6 +63,7 @@ namespace JerpDoesBots
         private logger m_LogChat;
         private logger m_LogWarningsErrors;
         private logger m_LogConnection;
+        private logger m_LogWebsockets;
 
         /// <summary>
         /// Primarily internal housekeeping and non-error/warning messages.
@@ -83,6 +85,10 @@ namespace JerpDoesBots
         /// General connection output (somewhat raw output for the bot).
         /// </summary>
         public logger logConnection { get { return m_LogConnection; } }
+        /// <summary>
+        /// Raw websockets output (primarily EventSub)
+        /// </summary>
+        public logger logWebsockets { get { return m_LogWebsockets; } }
 
         public TwitchAPI twitchAPI { get { return m_TwitchAPI; } }
 
@@ -381,7 +387,7 @@ namespace JerpDoesBots
 
                 case connectionCommand.types.quit:
                     // Task clientDisconnectTask = Task.Run(() => m_TwitchClientOwner.DisconnectAsync());
-                    // m_EventSubModule.closeConnection();
+                    m_EventSubModule.closeConnection();
                     m_IsReadyToClose = true;
                     isDone = true;
                     break;
@@ -514,8 +520,7 @@ namespace JerpDoesBots
                 Task<GetStreamsResponse> streamInfoTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamsAsync(null, 1, null, null, channelIDlist));
                 streamInfoTask.Wait();
 
-
-                if (streamInfoTask.Result != null)
+                if (false || streamInfoTask.Result != null)
                 {
 
                     if (streamInfoTask.Result.Streams.Length > 0)
@@ -837,12 +842,12 @@ namespace JerpDoesBots
                 if (getFollowsResponse != null)
                 {
                     checkUser.isFollower = (getFollowsResponse.Data.Length > 0);
-                    checkUser.lastFollowCheckTime = DateTime.Now;
+                    checkUser.lastFollowCheckTime = DateTime.Now.ToUniversalTime();
 
                     if (checkUser.isFollower)
                     {
                         string followDurationString = simpleDurationString(
-                            DateTime.Now.Subtract(
+                            DateTime.Now.ToUniversalTime().Subtract(
                                 DateTime.Parse(getFollowsResponse.Data[0].FollowedAt)
                             )
                         );
@@ -1016,12 +1021,12 @@ namespace JerpDoesBots
 
         public bool checkUpdateIsFollower(userEntry aUser)
         {
-            if (m_NextIsFollowingCheck == null || DateTime.Now.Subtract(m_NextIsFollowingCheck.Value).TotalSeconds > m_FollowerStaleCheckThrottleSeconds)
+            if (m_NextIsFollowingCheck == null || DateTime.Now.ToUniversalTime().Subtract(m_NextIsFollowingCheck.Value).TotalSeconds > m_FollowerStaleCheckThrottleSeconds)
             {
-                m_NextIsFollowingCheck = DateTime.Now.AddSeconds(m_FollowerStaleCheckThrottleSeconds);
+                m_NextIsFollowingCheck = DateTime.Now.ToUniversalTime().AddSeconds(m_FollowerStaleCheckThrottleSeconds);
                 if (!aUser.isBroadcaster)
                 {
-                    TimeSpan timeSinceFollowCheck = DateTime.Now.Subtract(aUser.lastFollowCheckTime);
+                    TimeSpan timeSinceFollowCheck = DateTime.Now.ToUniversalTime().Subtract(aUser.lastFollowCheckTime);
 
                     if (timeSinceFollowCheck.TotalSeconds > m_FollowerStaleCheckSeconds && !string.IsNullOrEmpty(aUser.twitchUserID))
                     {
@@ -1032,13 +1037,13 @@ namespace JerpDoesBots
                             if (userFollowsResponse != null)
                             {
                                 aUser.isFollower = (userFollowsResponse.Data.Length >= 1);
-                                aUser.lastFollowCheckTime = DateTime.Now;
+                                aUser.lastFollowCheckTime = DateTime.Now.ToUniversalTime();
                             }
                         }
                         catch (Exception e)
                         {
                             m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname + "| Error: " + e.Message);
-                            m_NextIsFollowingCheck = DateTime.Now.AddSeconds(m_FollowerCheckFailDelaySeconds);
+                            m_NextIsFollowingCheck = DateTime.Now.ToUniversalTime().AddSeconds(m_FollowerCheckFailDelaySeconds);
                         }
                     }
                 }
@@ -1383,8 +1388,8 @@ namespace JerpDoesBots
         private async Task Client_OnConnectedOwner(object sender, TwitchLib.Client.Events.OnConnectedEventArgs eConnectedEvent)
         {
             m_LogConnection.writeAndLog($"jerpBot owner account connected to {eConnectedEvent.BotUsername}");
-            // Task onConnectedTask = Task.Run(() => m_TwitchClientOwner.JoinChannelAsync(m_DefaultChannel));
-            // onConnectedTask.Wait();
+            Task onConnectedTask = Task.Run(() => m_TwitchClientOwner.JoinChannelAsync(m_DefaultChannel));
+            onConnectedTask.Wait();
         }
 
         public async Task Twitch_ChannelPointsCustomRewardRedemptionAdd(object sender, ChannelPointsCustomRewardRedemptionArgs e)
@@ -1419,6 +1424,12 @@ namespace JerpDoesBots
             m_HasReceivedChannelInfo = true;
         }
 
+        public async Task Twitch_ChannelChatNotification(object sender, ChannelChatNotificationArgs e)
+        {
+            ChannelChatNotification eventData = e.Notification.Payload.Event;
+            // TODO: Decide what to do here
+        }
+
         public async Task Twitch_StreamOffline(object sender, StreamOfflineArgs e)
         {
             receiveEventStreamOffline();
@@ -1433,7 +1444,13 @@ namespace JerpDoesBots
                 receiveEventRaidIncoming(raidEvent.FromBroadcasterUserName, raidEvent.Viewers);
             }
 
-            // TODO: Something to support an outgoing raid to someone else
+            if (raidEvent.FromBroadcasterUserId == ownerUserID)
+            {
+                // TODO: Something to support an outgoing raid to someone else
+                // Generate a raid message for people to spam when they get into the other channel?
+                // Put the link to the other person's channel in chat?
+                jerpBot.instance.sendDefaultChannelMessage(string.Format("https://twitch.tv/{0}", raidEvent.ToBroadcasterUserName.ToLower()));
+            }
         }
 
         public async Task Twitch_OnChannelFollow(object sender, ChannelFollowArgs e)
@@ -1679,7 +1696,7 @@ namespace JerpDoesBots
             userEntry messageUser = checkCreateUser(aUserName);
             messageUser.isFollower = true;
             messageUser.twitchUserID = aUserID;
-            messageUser.lastFollowCheckTime = DateTime.Now;
+            messageUser.lastFollowCheckTime = DateTime.Now.ToUniversalTime();
             if (m_CoreConfig.configData.announceFollowEvents)
             {
                 sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), aUserName));
@@ -1753,17 +1770,25 @@ namespace JerpDoesBots
             // m_StreamMonitor.SetChannelsById(apiChannelList);
             // m_StreamMonitor.Start();
 
-            // ConnectionCredentials ownerClientCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
-            // m_TwitchClientOwner = new TwitchClient();   //protocol: useClientProtocol
-            // m_TwitchClientOwner.Initialize(ownerClientCredentials);
-            // m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
-            // m_TwitchClientOwner.OnUserJoined += Client_OnUserJoined;
-            // m_TwitchClientOwner.OnUserLeft += Client_OnUserLeft;
-            // m_TwitchClientOwner.OnError += Client_OnError;
-            // m_TwitchClientOwner.OnConnectionError += Client_OnConnectionError;
-            // m_TwitchClientOwner.OnUnaccountedFor += Client_UnaccountedFor;
-            // Task twitchClientConnectTask = Task.Run(() => m_TwitchClientOwner.ConnectAsync());
-            // twitchClientConnectTask.Wait();
+            var loggerFactory = LoggerFactory.Create(c => c
+                .AddConsole()
+              .SetMinimumLevel(LogLevel.Trace) // uncomment to view raw messages received from twitch
+            );
+            var logger = loggerFactory.CreateLogger("MyChatBot");
+
+            /*
+            ConnectionCredentials ownerClientCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
+            m_TwitchClientOwner = new TwitchClient(loggerFactory: loggerFactory);   //protocol: useClientProtocol
+            m_TwitchClientOwner.Initialize(ownerClientCredentials);
+            m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
+            m_TwitchClientOwner.OnUserJoined += Client_OnUserJoined;
+            m_TwitchClientOwner.OnUserLeft += Client_OnUserLeft;
+            m_TwitchClientOwner.OnError += Client_OnError;
+            m_TwitchClientOwner.OnConnectionError += Client_OnConnectionError;
+            m_TwitchClientOwner.OnUnaccountedFor += Client_UnaccountedFor;
+            Task twitchClientConnectTask = Task.Run(() => m_TwitchClientOwner.ConnectAsync());
+            twitchClientConnectTask.Wait();
+            */
 
             m_ActionTimer = Stopwatch.StartNew();
 
@@ -1787,6 +1812,8 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
             m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
             m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
+            m_CommandList.Add(new chatCommandDef("fake_online", fakeOnline, false, false));
+            m_CommandList.Add(new chatCommandDef("fake_offline", fakeOffline, false, false));
 
             requestChannelInfo();
 
@@ -1798,6 +1825,19 @@ namespace JerpDoesBots
         }
 
         // ==========================================================
+
+        public void fakeOnline(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            sendDefaultChannelMessage("Faking going online...");
+            m_LiveStartTime = DateTime.Now.ToUniversalTime();
+            IsLive = true;
+        }
+
+        public void fakeOffline(userEntry commandUser, string argumentString, bool aSilent = false)
+        {
+            sendDefaultChannelMessage("Faking going offline...");
+            IsLive = false;
+        }
 
         public jerpBot(botConfig aConfig)
 		{
@@ -1821,6 +1861,7 @@ namespace JerpDoesBots
             m_LogChat = new logger("log_chat");
             m_LogWarningsErrors = new logger("log_warnings_errors");
             m_LogConnection = new logger("log_connection");
+            m_LogWebsockets = new logger("log_websockets");
 
             m_Localizer = new localizer();
 
