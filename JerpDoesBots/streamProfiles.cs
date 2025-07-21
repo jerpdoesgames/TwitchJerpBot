@@ -111,8 +111,15 @@ namespace JerpDoesBots
                     jerpBot.instance.updateChannelInfo(newChannelInfoRequest, newTags, aSilent);
                 }
 
-                if (!string.IsNullOrEmpty(useProfile.rewardGroup))
-                    applyRewardGroupInternal(useProfile.rewardGroup, aSilent);
+				if (!string.IsNullOrEmpty(useProfile.rewardGroup))
+				{
+
+					applyRewardGroupInternal(useProfile.rewardGroup, aSilent);
+				}
+				else
+				{
+                    applyRewardGroupInternal(null, aSilent);
+                }
 
 				return true;
             }
@@ -191,10 +198,10 @@ namespace JerpDoesBots
 			// Clear rewards from other groups first
 			foreach(string groupKey in m_Config.rewardGroups.Keys)
             {
-
                 foreach (pointReward curReward in m_Config.rewardGroups[groupKey])
                 {
-					curReward.shouldExistOnTwitch = groupKey == aGroupName;
+					bool shouldExist = !string.IsNullOrEmpty(aGroupName) ? groupKey == aGroupName : false;
+                    curReward.shouldExistOnTwitch = shouldExist;
                 }
             }
 
