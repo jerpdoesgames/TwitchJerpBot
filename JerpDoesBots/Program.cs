@@ -84,7 +84,7 @@ namespace JerpDoesBots
 			dataLookup dataLookupManager              = new dataLookup();
 			adManager adManagerModule                 = new adManager();
             autoExec autoExecModule                   = new autoExec();
-            TwitchEventSubHandler eventSubManager     = new TwitchEventSubHandler();
+            // TwitchEventSubHandler eventSubManager     = new TwitchEventSubHandler();
 
             customCommandModule.initTable();
 			gameCommandModule.initTable();
@@ -94,7 +94,7 @@ namespace JerpDoesBots
 			botGeneral.gameCommandModule = gameCommandModule;
             botGeneral.soundCommandModule = soundManager;
             botGeneral.aliasModule = aliasManager;
-            botGeneral.eventSubModule = eventSubManager;
+            // botGeneral.eventSubModule = eventSubManager;
 
             botGeneral.setLoadComplete();
 

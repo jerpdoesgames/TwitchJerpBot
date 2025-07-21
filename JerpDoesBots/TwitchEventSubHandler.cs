@@ -19,7 +19,7 @@ namespace JerpDoesBots
         private Uri m_EventSubURI = new Uri("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=" + m_WSKeepaliveSeconds.ToString());
         private string m_SessionID = "";
         public bool waitingForMessage = false;
-
+        public bool isClosed = false;   // TODO: Fix this later
 
         private async void attemptSubscription(string aTopic, Dictionary<string, string> aConditions, string aVersion = "1")
         {
@@ -31,7 +31,7 @@ namespace JerpDoesBots
                 }
                 catch (Exception subException)
                 {
-                    jerpBot.instance.logConnection.writeAndLog($"EventSub subscription failed for topic \"{aTopic}\" - {subException.Message}");
+                    jerpBot.instance.logConnection.writeAndLog($"EventSub subscription (jerp's TwitchEventSubHandler) failed for topic \"{aTopic}\" - {subException.Message}");
                 }
             }
             else
@@ -189,18 +189,23 @@ namespace JerpDoesBots
         }
         public override void onFrame()
         {
-            if (m_Connection.State == WebSocketState.Open)
+            if (!isClosed)
             {
-                if (!waitingForMessage)
+                if (m_Connection.State == WebSocketState.Open)
                 {
-                    waitForIncomingMessage();
-                    waitingForMessage = true;
+                    if (!waitingForMessage)
+                    {
+                        waitForIncomingMessage();
+                        waitingForMessage = true;
+                    }
+                }
+                else if (m_Connection.State == WebSocketState.CloseReceived)
+                {
+                    closeConnection();
+                    isClosed = true;
                 }
             }
-            else if (m_Connection.State == WebSocketState.CloseReceived)
-            {
-                closeConnection();
-            }
+
         }
 
         public void closeConnection()

@@ -387,7 +387,7 @@ namespace JerpDoesBots
 
                 case connectionCommand.types.quit:
                     // Task clientDisconnectTask = Task.Run(() => m_TwitchClientOwner.DisconnectAsync());
-                    m_EventSubModule.closeConnection();
+                    // m_EventSubModule.closeConnection();
                     m_IsReadyToClose = true;
                     isDone = true;
                     break;
@@ -520,7 +520,7 @@ namespace JerpDoesBots
                 Task<GetStreamsResponse> streamInfoTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamsAsync(null, 1, null, null, channelIDlist));
                 streamInfoTask.Wait();
 
-                if (false || streamInfoTask.Result != null)
+                if (streamInfoTask.Result != null)
                 {
 
                     if (streamInfoTask.Result.Streams.Length > 0)
