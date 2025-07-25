@@ -53,7 +53,7 @@ namespace JerpDoesBots
             }
             catch (Exception subException)
             {
-                jerpBot.instance.logConnection.writeAndLog($"EventSub subscription failed for topic \"{aTopic}\" - {subException.Message}");
+                jerpBot.instance.logConnection.writeAndLog($"EventSub subscription (TwitchWSHostedService) failed for topic \"{aTopic}\" - {subException.Message}");
             }
         }
 
