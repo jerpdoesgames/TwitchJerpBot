@@ -32,7 +32,7 @@ namespace JerpDoesBots
         {
             user = aUser;
             data = aData;
-            addTime = DateTime.Now.ToUniversalTime();
+            addTime = DateTime.Now;
             randomWeight = 0;
         }
     }
@@ -562,7 +562,7 @@ namespace JerpDoesBots
 
                             if (m_QueueType == QUEUE_TYPE_MARIOMAKER2 && m_config.marioMaker2.useAPI)
                             {
-                                if (!m_MarioMaker2LevelInfoCache.ContainsKey(dataToEnter) || DateTime.Now.ToUniversalTime().Subtract(m_MarioMaker2LevelInfoCache[dataToEnter].queryTime).TotalSeconds > m_config.marioMaker2.levelInfoCacheTime)
+                                if (!m_MarioMaker2LevelInfoCache.ContainsKey(dataToEnter) || DateTime.Now.Subtract(m_MarioMaker2LevelInfoCache[dataToEnter].queryTime).TotalSeconds > m_config.marioMaker2.levelInfoCacheTime)
                                 {
                                     newLevelInfo = marioMakerAPI.getLevelInfo(dataToEnter);
                                     if (newLevelInfo != null)
@@ -575,7 +575,7 @@ namespace JerpDoesBots
 
                                 if (newLevelInfo != null)
                                 {
-                                    if (m_config.marioMaker2.useFilter && (!m_PermitList.ContainsKey(commandUser) || DateTime.Now.ToUniversalTime().Subtract(m_PermitList[commandUser]).TotalSeconds > m_config.permitNoFilterTime))
+                                    if (m_config.marioMaker2.useFilter && (!m_PermitList.ContainsKey(commandUser) || DateTime.Now.Subtract(m_PermitList[commandUser]).TotalSeconds > m_config.permitNoFilterTime))
                                     {
                                         string filterFailReasons;
                                         if (!isValidFilterLevel(newLevelInfo, out filterFailReasons))
@@ -1032,7 +1032,7 @@ namespace JerpDoesBots
             if (m_QueueType == QUEUE_TYPE_MARIOMAKER2)
             {
                 userEntry newUser = jerpBot.instance.checkCreateUser(argumentString);
-                m_PermitList.Add(newUser, DateTime.Now.ToUniversalTime());
+                m_PermitList.Add(newUser, DateTime.Now);
 
                 if (!aSilent)
                     jerpBot.instance.sendDefaultChannelMessage(string.Format(jerpBot.instance.localizer.getString("queuePermitNoFilterDisplay"), argumentString, m_config.permitNoFilterTime));
@@ -1046,7 +1046,7 @@ namespace JerpDoesBots
             float valuePerMinute = m_LoadSuccessful ? m_config.weightedRandom.valuePerMinute : 2.0f;
             int maxMinutesPassed = m_LoadSuccessful ? m_config.weightedRandom.maxMinutesPassed : 120;
 
-            DateTime curTime = DateTime.Now.ToUniversalTime();
+            DateTime curTime = DateTime.Now;
             TimeSpan timeSinceAdd = curTime.Subtract(aData.addTime);
             int minutesSinceAdd = (int)timeSinceAdd.TotalMinutes;
 

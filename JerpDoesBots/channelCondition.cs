@@ -17,7 +17,7 @@ namespace JerpDoesBots
 
         public bool isValidDateTime()
         {
-            DateTime curTime = DateTime.Now.ToUniversalTime();
+            DateTime curTime = DateTime.Now;
 
             return ((m_DateTimeStart == null || curTime >= m_DateTimeStart) && (m_DateTimeEnd == null || curTime <= m_DateTimeEnd));
         }

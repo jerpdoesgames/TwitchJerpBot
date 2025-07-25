@@ -153,7 +153,7 @@ namespace JerpDoesBots
             get {
                 if (IsLive)
                 {
-                    DateTime curTime = DateTime.Now.ToUniversalTime();
+                    DateTime curTime = DateTime.Now;
                     return curTime.Subtract(m_LiveStartTime);
                 }
                 return new TimeSpan(0);
@@ -842,13 +842,13 @@ namespace JerpDoesBots
                 if (getFollowsResponse != null)
                 {
                     checkUser.isFollower = (getFollowsResponse.Data.Length > 0);
-                    checkUser.lastFollowCheckTime = DateTime.Now.ToUniversalTime();
+                    checkUser.lastFollowCheckTime = DateTime.Now;
 
                     if (checkUser.isFollower)
                     {
                         string followDurationString = simpleDurationString(
-                            DateTime.Now.ToUniversalTime().Subtract(
-                                DateTime.Parse(getFollowsResponse.Data[0].FollowedAt)
+                            DateTime.Now.Subtract(
+                                DateTime.Parse(getFollowsResponse.Data[0].FollowedAt).ToLocalTime()
                             )
                         );
                         sendDefaultChannelMessage(string.Format(localizer.getString("followageDisplayTime"), checkUser.Nickname, followDurationString));
@@ -1021,12 +1021,12 @@ namespace JerpDoesBots
 
         public bool checkUpdateIsFollower(userEntry aUser)
         {
-            if (m_NextIsFollowingCheck == null || DateTime.Now.ToUniversalTime().Subtract(m_NextIsFollowingCheck.Value).TotalSeconds > m_FollowerStaleCheckThrottleSeconds)
+            if (m_NextIsFollowingCheck == null || DateTime.Now.Subtract(m_NextIsFollowingCheck.Value).TotalSeconds > m_FollowerStaleCheckThrottleSeconds)
             {
-                m_NextIsFollowingCheck = DateTime.Now.ToUniversalTime().AddSeconds(m_FollowerStaleCheckThrottleSeconds);
+                m_NextIsFollowingCheck = DateTime.Now.AddSeconds(m_FollowerStaleCheckThrottleSeconds);
                 if (!aUser.isBroadcaster)
                 {
-                    TimeSpan timeSinceFollowCheck = DateTime.Now.ToUniversalTime().Subtract(aUser.lastFollowCheckTime);
+                    TimeSpan timeSinceFollowCheck = DateTime.Now.Subtract(aUser.lastFollowCheckTime);
 
                     if (timeSinceFollowCheck.TotalSeconds > m_FollowerStaleCheckSeconds && !string.IsNullOrEmpty(aUser.twitchUserID))
                     {
@@ -1037,13 +1037,13 @@ namespace JerpDoesBots
                             if (userFollowsResponse != null)
                             {
                                 aUser.isFollower = (userFollowsResponse.Data.Length >= 1);
-                                aUser.lastFollowCheckTime = DateTime.Now.ToUniversalTime();
+                                aUser.lastFollowCheckTime = DateTime.Now;
                             }
                         }
                         catch (Exception e)
                         {
                             m_LogWarningsErrors.writeAndLog("Failed to check following status for: " + aUser.Nickname + "| Error: " + e.Message);
-                            m_NextIsFollowingCheck = DateTime.Now.ToUniversalTime().AddSeconds(m_FollowerCheckFailDelaySeconds);
+                            m_NextIsFollowingCheck = DateTime.Now.AddSeconds(m_FollowerCheckFailDelaySeconds);
                         }
                     }
                 }
@@ -1586,7 +1586,7 @@ namespace JerpDoesBots
             if (aStream != null)
             {
                 m_ViewersLast = aStream.ViewerCount;
-                m_LiveStartTime = aStream.StartedAt;
+                m_LiveStartTime = aStream.StartedAt.ToLocalTime();
                 m_Game = aStream.GameName;
                 m_Title = aStream.Title;
                 m_Tags = aStream.Tags;
@@ -1696,7 +1696,7 @@ namespace JerpDoesBots
             userEntry messageUser = checkCreateUser(aUserName);
             messageUser.isFollower = true;
             messageUser.twitchUserID = aUserID;
-            messageUser.lastFollowCheckTime = DateTime.Now.ToUniversalTime();
+            messageUser.lastFollowCheckTime = DateTime.Now;
             if (m_CoreConfig.configData.announceFollowEvents)
             {
                 sendDefaultChannelMessage(string.Format(m_Localizer.getString("announceFollowEvent"), aUserName));
@@ -1705,7 +1705,7 @@ namespace JerpDoesBots
 
         public void receiveEventStreamOnline(DateTime aStartedAt)
         {
-            m_LiveStartTime = aStartedAt;
+            m_LiveStartTime = aStartedAt.ToLocalTime();
         }
 
         public void receiveEventStreamOffline()
@@ -1829,7 +1829,7 @@ namespace JerpDoesBots
         public void fakeOnline(userEntry commandUser, string argumentString, bool aSilent = false)
         {
             sendDefaultChannelMessage("Faking going online...");
-            m_LiveStartTime = DateTime.Now.ToUniversalTime();
+            m_LiveStartTime = DateTime.Now;
             IsLive = true;
         }
 
