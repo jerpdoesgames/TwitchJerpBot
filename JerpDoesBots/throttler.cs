@@ -115,8 +115,7 @@ namespace JerpDoesBots
             {
                 if (!m_Initialized)
                 {
-                    m_MessageTimeLastMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
-                    m_Initialized = true;
+                    initialize();
                 }
 
                 return (!isWaitingOnLines && isTimeUp);
@@ -128,6 +127,27 @@ namespace JerpDoesBots
         {
             m_MessageTimeLastMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
             m_LastLineCount = jerpBot.instance.lineCount;
+        }
+
+        /// <summary>
+        /// Initializes the throttler using the current elapsed MS and line count.
+        /// </summary>
+        public void initialize()
+        {
+            m_MessageTimeLastMS = jerpBot.instance.actionTimer.ElapsedMilliseconds;
+            m_Initialized = true;
+        }
+
+        /// <summary>
+        /// Logs that the desired throttled action occurred and begins to wait for more lines/time before becoming ready.
+        /// </summary>
+        /// <param name="aAutoInitialize">Whether to automatically initialize or wait for the first call to isReady.</param>
+        public throttler(bool aAutoInitialize = false)
+        {
+            if (aAutoInitialize)
+            {
+                initialize();
+            }
         }
     }
 }

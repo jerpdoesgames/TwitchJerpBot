@@ -193,7 +193,7 @@ namespace JerpDoesBots
 
             if (m_IsLoaded)
             {
-                m_Throttler = new throttler();
+                m_Throttler = new throttler(true);
                 m_Throttler.waitTimeMSMax = 5000;
                 m_Throttler.messagesReduceTimer = false;
                 m_Throttler.requiresUserMessages = false;

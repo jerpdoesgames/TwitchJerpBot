@@ -90,7 +90,7 @@ namespace JerpDoesBots
 
         public mediaPlayerMonitor() : base(true, true, false)
 		{
-            m_Throttler = new throttler();
+            m_Throttler = new throttler(true);
             m_Throttler.requiresUserMessages = false;
             m_Throttler.messagesReduceTimer = false;
             m_Throttler.waitTimeMSMax = 3000;

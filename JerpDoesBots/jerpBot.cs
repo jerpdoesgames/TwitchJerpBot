@@ -513,28 +513,31 @@ namespace JerpDoesBots
 
             if (m_StreamStatusMonitorThrottle.isReady)
             {
-                // todo: grab stream status and do stream status things
-
-                List<string> channelIDlist = new List<string> { ownerUserID };
-
-                Task<GetStreamsResponse> streamInfoTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamsAsync(null, 1, null, null, channelIDlist));
-                streamInfoTask.Wait();
-
-                if (streamInfoTask.Result != null)
-                {
-
-                    if (streamInfoTask.Result.Streams.Length > 0)
-                    {
-                        IsLive = true;
-                        ParseStreamData(streamInfoTask.Result.Streams[0]);
-                    }
-                    else
-                    {
-                        IsLive = false;
-                    }
-                }
-                m_StreamStatusMonitorThrottle.trigger();
+                checkStreamStatus();
             }
+        }
+
+        public void checkStreamStatus()
+        {
+            List<string> channelIDlist = new List<string> { ownerUserID };
+
+            Task<GetStreamsResponse> streamInfoTask = Task.Run(() => m_TwitchAPI.Helix.Streams.GetStreamsAsync(null, 1, null, null, channelIDlist));
+            streamInfoTask.Wait();
+
+            if (streamInfoTask.Result != null)
+            {
+
+                if (streamInfoTask.Result.Streams.Length > 0)
+                {
+                    IsLive = true;
+                    ParseStreamData(streamInfoTask.Result.Streams[0]);
+                }
+                else
+                {
+                    IsLive = false;
+                }
+            }
+            m_StreamStatusMonitorThrottle.trigger();
         }
 
         public void quit()
@@ -1817,11 +1820,11 @@ namespace JerpDoesBots
 
             requestChannelInfo();
 
-            m_StreamStatusMonitorThrottle = new throttler();
+            m_StreamStatusMonitorThrottle = new throttler(true);
             m_StreamStatusMonitorThrottle.waitTimeMSMax = 1000 * 30;
             m_StreamStatusMonitorThrottle.messagesReduceTimer = false;
             m_StreamStatusMonitorThrottle.requiresUserMessages = false;
-
+            checkStreamStatus();
         }
 
         // ==========================================================

@@ -143,7 +143,7 @@ namespace JerpDoesBots
             {
                 m_IsLoaded = true;
 
-                m_Throttler = new throttler();
+                m_Throttler = new throttler(true);
                 m_Throttler.waitTimeMSMax = 900000;
                 m_Throttler.lineCountReductionMS = 23333;
                 m_Throttler.lineCountReductionMax = 30;
