@@ -84,7 +84,7 @@ namespace JerpDoesBots
 
 		private bool createUser(string aUsername)
 		{
-			string createViewerRowQuery = "INSERT INTO viewers (name, loyalty, points, lastShoutout) values (@param1, @param2, @param3)";
+			string createViewerRowQuery = "INSERT INTO viewers (name, loyalty, points, lastShoutout) values (@param1, @param2, @param3, @param4)";
 
 			SQLiteCommand createViewerRowCommand = new SQLiteCommand(createViewerRowQuery, botDatabase);
 
