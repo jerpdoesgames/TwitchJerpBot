@@ -1382,12 +1382,6 @@ namespace JerpDoesBots
 
         // ==========================================================
 
-        private async Task Client_OnError(object sender, OnErrorEventArgs e)
-        {
-            m_HasJoinedChannel = true;
-            m_LogConnection.writeAndLog($"User account joined channel {e.Exception.InnerException.Message}");
-        }
-
         private async Task Client_OnConnectedOwner(object sender, TwitchLib.Client.Events.OnConnectedEventArgs eConnectedEvent)
         {
             m_LogConnection.writeAndLog($"jerpBot owner account connected to {eConnectedEvent.BotUsername}");
@@ -1757,9 +1751,10 @@ namespace JerpDoesBots
         /// </summary>
         public void initiateSubscriptions()
         {
-            m_TwitchAPI = new TwitchAPI();
-            m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
-            m_TwitchAPI.Settings.ClientId = m_CoreConfig.configData.twitch_api.client_id;
+            m_StreamStatusMonitorThrottle = new throttler(true);
+            m_StreamStatusMonitorThrottle.waitTimeMSMax = 1000 * 30;
+            m_StreamStatusMonitorThrottle.messagesReduceTimer = false;
+            m_StreamStatusMonitorThrottle.requiresUserMessages = false;
 
             // m_StreamMonitor = new LiveStreamMonitorService(m_TwitchAPI, 60);
             // m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
@@ -1772,12 +1767,6 @@ namespace JerpDoesBots
             // List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
             // m_StreamMonitor.SetChannelsById(apiChannelList);
             // m_StreamMonitor.Start();
-
-            var loggerFactory = LoggerFactory.Create(c => c
-                .AddConsole()
-              .SetMinimumLevel(LogLevel.Trace) // uncomment to view raw messages received from twitch
-            );
-            var logger = loggerFactory.CreateLogger("MyChatBot");
 
             /*
             ConnectionCredentials ownerClientCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
@@ -1793,37 +1782,7 @@ namespace JerpDoesBots
             twitchClientConnectTask.Wait();
             */
 
-            m_ActionTimer = Stopwatch.StartNew();
-
-            m_CommandList = new List<chatCommandDef>();
-            m_CommandList.Add(new chatCommandDef("botquit", quitCommand, false, false));
-            m_CommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
-            m_CommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
-            m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
-            m_CommandList.Add(new chatCommandDef("help", getHelpString, true, true));
-            m_CommandList.Add(new chatCommandDef("random", randomNumber, true, true));
-            m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
-            m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
-            m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
-            m_CommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
-            m_CommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
-            m_CommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
-            m_CommandList.Add(new chatCommandDef("back", setUserBack, true, true));
-            m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
-            m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
-            m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
-            m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
-            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
-            m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
-            m_CommandList.Add(new chatCommandDef("fake_online", fakeOnline, false, false));
-            m_CommandList.Add(new chatCommandDef("fake_offline", fakeOffline, false, false));
-
             requestChannelInfo();
-
-            m_StreamStatusMonitorThrottle = new throttler(true);
-            m_StreamStatusMonitorThrottle.waitTimeMSMax = 1000 * 30;
-            m_StreamStatusMonitorThrottle.messagesReduceTimer = false;
-            m_StreamStatusMonitorThrottle.requiresUserMessages = false;
             checkStreamStatus();
         }
 
@@ -1871,6 +1830,41 @@ namespace JerpDoesBots
             m_FollowerStaleCheckSeconds = m_CoreConfig.configData.followerStaleCheckSeconds;
 
             m_DefaultChannel = m_CoreConfig.configData.connections[0].channels[0];
+
+            m_TwitchAPI = new TwitchAPI();
+            m_TwitchAPI.Settings.AccessToken = m_CoreConfig.configData.twitch_api.oauth;
+            m_TwitchAPI.Settings.ClientId = m_CoreConfig.configData.twitch_api.client_id;
+
+            var loggerFactory = LoggerFactory.Create(c => c
+                .AddConsole()
+              .SetMinimumLevel(LogLevel.Trace) // uncomment to view raw messages received from twitch
+            );
+            var logger = loggerFactory.CreateLogger("MyChatBot");
+
+            m_ActionTimer = Stopwatch.StartNew();
+
+            m_CommandList = new List<chatCommandDef>();
+            m_CommandList.Add(new chatCommandDef("botquit", quitCommand, false, false));
+            m_CommandList.Add(new chatCommandDef("title", getStreamTitle, true, true));
+            m_CommandList.Add(new chatCommandDef("game", getGameCommand, true, true));
+            m_CommandList.Add(new chatCommandDef("viewers", getViewCount, true, true));
+            m_CommandList.Add(new chatCommandDef("help", getHelpString, true, true));
+            m_CommandList.Add(new chatCommandDef("random", randomNumber, true, true));
+            m_CommandList.Add(new chatCommandDef("moderator", checkModerator, true, true));
+            m_CommandList.Add(new chatCommandDef("subscriber", checkSub, true, true));
+            m_CommandList.Add(new chatCommandDef("broadcaster", checkBroadcaster, true, true));
+            m_CommandList.Add(new chatCommandDef("uptime", getUptime, true, true));
+            m_CommandList.Add(new chatCommandDef("subcount", getNewSubCount, true, false));
+            m_CommandList.Add(new chatCommandDef("brb", setUserBrb, true, true));
+            m_CommandList.Add(new chatCommandDef("back", setUserBack, true, true));
+            m_CommandList.Add(new chatCommandDef("followcount", announceChatterFollowingCount, false, false));
+            m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
+            m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
+            m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
+            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
+            m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
+            m_CommandList.Add(new chatCommandDef("fake_online", fakeOnline, false, false));
+            m_CommandList.Add(new chatCommandDef("fake_offline", fakeOffline, false, false));
         }
 	}
 }

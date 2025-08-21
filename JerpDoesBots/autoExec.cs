@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Web.Script.Serialization;
 
 namespace JerpDoesBots
@@ -83,6 +84,8 @@ namespace JerpDoesBots
             }
         }
 
+
+        // Looking for m_HasJoinedChannel and m_HasChatConnection
         public override void onStreamLive()
         {
             if (m_IsLoaded)
@@ -91,6 +94,11 @@ namespace JerpDoesBots
                 {
                     if (curEntry.activateOnStreamLive && (curEntry.requirements == null || curEntry.requirements.isMet()))
                     {
+                        if (curEntry.debug)
+                        {
+                            Console.WriteLine("Hit activate on stream live");
+                        }
+                        
                         foreach (string curCommandString in curEntry.commands)
                         {
                             jerpBot.instance.messageOrCommand(curCommandString);

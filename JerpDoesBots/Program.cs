@@ -59,7 +59,7 @@ namespace JerpDoesBots
 
 			jerpBot botGeneral					= new jerpBot(tempConfig);
 			jerpBot.instance = botGeneral;
-			botGeneral.initiateSubscriptions();
+			
 
 			pointRewardManager pointRewardsModule     = new pointRewardManager(); // Keep this early as other modules will be dependent on the fist rewards list update.
 			raffle raffleModule						  = new raffle();
@@ -97,6 +97,8 @@ namespace JerpDoesBots
             // botGeneral.eventSubModule = eventSubManager;
 
             botGeneral.setLoadComplete();
+
+            botGeneral.initiateSubscriptions();
 
             IHost TwitchEventHost = CreateHostBuilder().Build();
             botGeneral.TwitchEventHost = TwitchEventHost;

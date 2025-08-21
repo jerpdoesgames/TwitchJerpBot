@@ -48,6 +48,11 @@ namespace JerpDoesBots
         public bool activateOnStreamLive { get; set; }
 
         /// <summary>
+        /// Temp(?) for debug stuff...
+        /// </summary>
+        public bool debug { get; set; }
+
+        /// <summary>
         /// Whether this entry can be considered for activation when the stream goes from live to offline.  False by default.
         /// </summary>
         public bool activateOnStreamOffline { get; set; }
