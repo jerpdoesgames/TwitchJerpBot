@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Channels.GetChannelFollowers;
+using TwitchLib.Api.Helix.Models.Raids;
 using TwitchLib.Api.Helix.Models.Streams.GetStreams;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchLib.Api.Services;
@@ -1425,6 +1426,54 @@ namespace JerpDoesBots
         {
             ChannelChatNotification eventData = e.Notification.Payload.Event;
             // TODO: Decide what to do here
+
+            string noticeType = e.Notification.Payload.Event.NoticeType;
+
+            switch (noticeType)
+            {
+                case "sub":
+                    break;
+                case "resub":
+                    break;
+                case "sub_gift":
+                    break;
+                case "community_sub_gift":
+                    break;
+                case "gift_paid_upgrade":
+                    break;
+                case "prime_paid_upgrade":
+                    break;
+                case "raid":
+                    break;
+                case "unraid":
+                    break;
+                case "pay_it_forward":
+                    break;
+                case "announcement":
+                    break;
+                case "bits_badge_tier":
+                    break;
+                case "charity_donation":
+                    break;
+                case "shared_chat_sub":
+                    break;
+                case "shared_chat_resub":
+                    break;
+                case "shared_chat_sub_gift":
+                    break;
+                case "shared_chat_community_sub_gift":
+                    break;
+                case "shared_chat_gift_paid_upgrade":
+                    break;
+                case "shared_chat_prime_paid_upgrade":
+                    break;
+                case "shared_chat_raid":
+                    break;
+                case "shared_chat_pay_it_forward":
+                    break;
+                case "shared_chat_announcement":
+                    break;
+            }
         }
 
         public async Task Twitch_StreamOffline(object sender, StreamOfflineArgs e)
@@ -1460,16 +1509,6 @@ namespace JerpDoesBots
             receiveEventUserSubscribe(e.Notification.Payload.Event.UserName);
         }
 
-
-        private async Task Client_OnConnectionError(object sender, OnConnectionErrorArgs e)
-        {
-            m_LogWarningsErrors.writeAndLog($"{e.BotUsername} Client_OnConnectionError - {e.Error}");
-        }
-
-        private async Task Client_UnaccountedFor(object sender, OnUnaccountedForArgs e)
-        {
-            m_LogWarningsErrors.writeAndLog($"{e.BotUsername} Client_UnaccountedFor.  Raw IRC is: {e.RawIRC}");
-        }
 
         /// <summary>
         /// Grab up to 100 entries missing Twitch user IDs from m_UserList and try to request those IDs.
@@ -1526,46 +1565,6 @@ namespace JerpDoesBots
 
         }
 
-        // TODO: Uh?  Not in EventSub.
-        private async Task Client_OnUserJoined(object sender, OnUserJoinedArgs e)
-        {
-            userEntry joinedUser = checkCreateUser(e.Username);
-            joinedUser.inChannel = true;
-            m_LogConnection.write("User Joined | " + e.Username);
-
-            botModule tempModule;
-            for (int i = 0; i < m_Modules.Count; i++)
-            {
-                tempModule = m_Modules[i];
-
-                if (isModuleValidForUserAction(tempModule))
-                    tempModule.onUserJoin(joinedUser);
-            }
-        }
-
-        // TODO: Uh?  Not in EventSub.
-        private async Task Client_OnUserLeft(object sender, OnUserLeftArgs e)
-        {
-            userEntry leftUser = checkCreateUser(e.Username);
-            leftUser.inChannel = false;
-
-            m_LogConnection.write("User Left | " + e.Username);
-        }
-
-        private async Task Client_OnRaidNotification(object sender, OnRaidNotificationArgs e)
-        {
-            m_LogEvents.writeAndLog("Raid from " + e.RaidNotification.MsgParamDisplayName + " with " + e.RaidNotification.MsgParamViewerCount + " viewers.");
-
-            botModule tempModule;
-            for (int i = 0; i < m_Modules.Count; i++)
-            {
-                tempModule = m_Modules[i];
-
-                if (isModuleValidForUserAction(tempModule))
-                    tempModule.onRaidReceived(e.RaidNotification.MsgParamDisplayName, Int32.Parse(e.RaidNotification.MsgParamViewerCount));
-            }
-        }
-
         // ==========================================================
 
         private void requestChannelInfo()
@@ -1590,45 +1589,6 @@ namespace JerpDoesBots
                 setCategoryID(aStream.GameId);
                 m_HasReceivedChannelInfo = true;
             }
-        }
-
-        private void Monitor_OnchannelsSet(object sender, OnChannelsSetArgs e)
-        {
-            Console.WriteLine("on channels set for livestream monitor - " + string.Join(",", e.Channels));
-        }
-
-        private void Monitor_OnServiceStarted(object sender, OnServiceStartedArgs e)
-        {
-            Console.WriteLine("Monitor_OnServiceStarted occurred.");
-        }
-
-        private void Monitor_OnServiceStopped(object sender, OnServiceStoppedArgs e)
-        {
-            Console.WriteLine("Monitor_OnServiceStopped occurred.");
-        }
-
-        private void Monitor_OnServiceTick(object sender, OnServiceTickArgs e)
-        {
-            Console.WriteLine("Monitor_OnServiceTick occurred.");
-        }
-
-        private void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e)
-        {
-            IsLive = true;
-            if (e.Stream != null)
-            {
-                ParseStreamData(e.Stream);
-            }
-        }
-
-        private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e)
-        {
-            IsLive = false;
-        }
-
-        private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
-        {
-            ParseStreamData(e.Stream);
         }
 
         // ==========================================================
@@ -1755,32 +1715,6 @@ namespace JerpDoesBots
             m_StreamStatusMonitorThrottle.waitTimeMSMax = 1000 * 30;
             m_StreamStatusMonitorThrottle.messagesReduceTimer = false;
             m_StreamStatusMonitorThrottle.requiresUserMessages = false;
-
-            // m_StreamMonitor = new LiveStreamMonitorService(m_TwitchAPI, 60);
-            // m_StreamMonitor.OnStreamOnline += Monitor_OnStreamOnline;
-            // m_StreamMonitor.OnStreamUpdate += Monitor_OnStreamUpdate;
-            // m_StreamMonitor.OnStreamOffline += Monitor_OnStreamOffline;
-            // m_StreamMonitor.OnChannelsSet += Monitor_OnchannelsSet;
-            // m_StreamMonitor.OnServiceStarted += Monitor_OnServiceStarted;
-            // m_StreamMonitor.OnServiceStopped += Monitor_OnServiceStopped;
-            // m_StreamMonitor.OnServiceTick += Monitor_OnServiceTick;
-            // List<string> apiChannelList = new List<string> { m_CoreConfig.configData.twitch_api.channel_id.ToString() };
-            // m_StreamMonitor.SetChannelsById(apiChannelList);
-            // m_StreamMonitor.Start();
-
-            /*
-            ConnectionCredentials ownerClientCredentials = new ConnectionCredentials(m_CoreConfig.configData.connections[1].nickname, m_CoreConfig.configData.connections[1].oauth, true);
-            m_TwitchClientOwner = new TwitchClient(loggerFactory: loggerFactory);   //protocol: useClientProtocol
-            m_TwitchClientOwner.Initialize(ownerClientCredentials);
-            m_TwitchClientOwner.OnConnected += Client_OnConnectedOwner;
-            m_TwitchClientOwner.OnUserJoined += Client_OnUserJoined;
-            m_TwitchClientOwner.OnUserLeft += Client_OnUserLeft;
-            m_TwitchClientOwner.OnError += Client_OnError;
-            m_TwitchClientOwner.OnConnectionError += Client_OnConnectionError;
-            m_TwitchClientOwner.OnUnaccountedFor += Client_UnaccountedFor;
-            Task twitchClientConnectTask = Task.Run(() => m_TwitchClientOwner.ConnectAsync());
-            twitchClientConnectTask.Wait();
-            */
 
             requestChannelInfo();
             checkStreamStatus();
