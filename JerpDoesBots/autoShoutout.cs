@@ -160,12 +160,24 @@ namespace JerpDoesBots
                         userToShout.lastShoutoutTimeSeconds = currentUnixTime;
                     }
 
-                    if (shoutUser != null && shoutUser.shoutCommands != null && shoutUser.shoutCommands.Count > 0)
+                    if (shoutUser != null)
                     {
-                        foreach (string curCommand in shoutUser.shoutCommands)
+
+
+                        if (shoutUser.shoutCommands != null && shoutUser.shoutCommands.Count > 0)
                         {
-                            jerpBot.instance.messageOrCommand(curCommand);
+                            foreach (string curCommand in shoutUser.shoutCommands)
+                            {
+                                jerpBot.instance.messageOrCommand(curCommand);
+                            }
                         }
+                        else // No commands/custom sound, so just play a default sound
+                        {
+                            // TODO: Add to localization file or something
+                            jerpBot.instance.messageOrCommand("@!sound welcome");
+                        }
+
+
                     }
                     
                 }
