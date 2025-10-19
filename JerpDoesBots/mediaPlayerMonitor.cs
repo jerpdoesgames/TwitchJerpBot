@@ -99,8 +99,6 @@ namespace JerpDoesBots
 
             if (m_IsLoaded)
             {
-
-
                 chatCommandDef tempDef = new chatCommandDef("mediamonitor", null, true, true);
                 tempDef.addSubCommand(new chatCommandDef("reload", reloadConfig, false, false));
 

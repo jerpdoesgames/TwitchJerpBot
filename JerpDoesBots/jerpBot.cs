@@ -285,6 +285,9 @@ namespace JerpDoesBots
         private Dictionary<string, userEntry> m_UserList;
         public Dictionary<string, userEntry> userList { get { return m_UserList; } }
 
+        private announceManager m_AnnounceModule;
+        public announceManager announceModule { set { m_AnnounceModule = value; } }
+
         public static void checkCreateBotStorage()
         {
             if (!Directory.Exists(jerpBot.storagePath))
@@ -436,7 +439,7 @@ namespace JerpDoesBots
             return null;
         }
 
-        private void queueAction(connectionCommand actionToExecute)
+        public void queueAction(connectionCommand actionToExecute)
         {
             actionQueue.Enqueue(actionToExecute);
         }
@@ -448,24 +451,7 @@ namespace JerpDoesBots
 
         public void sendDefaultChannelAnnounce(string messageToSend, bool doQueue = true)
         {
-            sendChannelAnnouncement(ownerUserID, messageToSend, doQueue);
-        }
-
-        public void sendChannelAnnouncement(string targetChannel, string messageToSend, bool doQueue = true)
-        {
-            connectionCommand newCommand = new connectionCommand(connectionCommand.types.channelAnnouncement);
-            newCommand.setTarget(targetChannel);
-            newCommand.setMessage(messageToSend);
-
-            if (doQueue)
-            {
-                queueAction(newCommand);
-            }
-            else
-            {
-                Task announceTask = Task.Run(() => m_TwitchAPI.Helix.Chat.SendChatAnnouncementAsync(targetChannel, targetChannel, messageToSend));
-                announceTask.Wait();
-            }
+            m_AnnounceModule.sendOrQueue(ownerUserID, messageToSend, true);
         }
 
         public void sendChannelMessage(string targetChannel, string messageToSend, bool doQueue = true)
@@ -1307,11 +1293,6 @@ namespace JerpDoesBots
             }
         }
 
-        public void announce(userEntry commandUser, string argumentString, bool aSilent = false)
-        {
-            sendDefaultChannelAnnounce(argumentString);
-        }
-
         public bool messageOrCommand(string aInput)
         {
             if (!String.IsNullOrEmpty(aInput))
@@ -1795,7 +1776,6 @@ namespace JerpDoesBots
             m_CommandList.Add(new chatCommandDef("outputcommandlist", outputCommandList, false, false));
             m_CommandList.Add(new chatCommandDef("followage", followage, true, true));
             m_CommandList.Add(new chatCommandDef("marker", marker, true, false));
-            m_CommandList.Add(new chatCommandDef("announce", announce, true, false));
             m_CommandList.Add(new chatCommandDef("outputdata", outputAllData, true, false));
             m_CommandList.Add(new chatCommandDef("fake_online", fakeOnline, false, false));
             m_CommandList.Add(new chatCommandDef("fake_offline", fakeOffline, false, false));

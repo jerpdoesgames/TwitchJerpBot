@@ -84,6 +84,7 @@ namespace JerpDoesBots
 			dataLookup dataLookupManager              = new dataLookup();
 			adManager adManagerModule                 = new adManager();
             autoExec autoExecModule                   = new autoExec();
+            announceManager announceModule = new announceManager();
             // TwitchEventSubHandler eventSubManager     = new TwitchEventSubHandler();
 
             customCommandModule.initTable();

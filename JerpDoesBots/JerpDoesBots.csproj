@@ -325,6 +325,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="announceManager.cs" />
     <Compile Include="autoExec.cs" />
     <Compile Include="autoExecConfig.cs" />
     <Compile Include="pointReward.cs" />
