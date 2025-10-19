@@ -59,7 +59,6 @@ namespace JerpDoesBots
 
         private soundCommandConfig m_Config;
         private soundCommandDef m_lastSound;
-        private WaveOutEvent m_OutputEvent;
         private int m_DeviceNumber = -1;
 
         private float m_GlobalVolume = 1.0f;
@@ -104,10 +103,7 @@ namespace JerpDoesBots
 
         private bool onCooldown(soundCommandDef aSound, userEntry commandUser)
         {
-            if (m_OutputEvent.PlaybackState == PlaybackState.Playing)
-                return true;
-
-            if (commandUser.isBroadcaster)
+            if (commandUser.isBroadcaster || commandUser.isBot)
                 return false;
 
             if (
@@ -183,15 +179,17 @@ namespace JerpDoesBots
                             if (File.Exists(soundPath))
                             {
                                 AudioFileReader audioFile = new AudioFileReader(soundPath);
-                                m_OutputEvent.DeviceNumber = m_DeviceNumber;
-                                m_OutputEvent.Init(audioFile);
+                                WaveOutEvent newEvent = new WaveOutEvent();
+                                newEvent.DeviceNumber = m_DeviceNumber;
+                                newEvent.Init(audioFile);
 
                                 float soundVolume = m_GlobalVolume;
                                 if (curSound.volume > 0)
                                     soundVolume *= curSound.volume;
 
-                                m_OutputEvent.Volume = Math.Min(soundVolume, 1.0f);
-                                m_OutputEvent.Play();
+
+                                newEvent.Volume = Math.Min(soundVolume, 1.0f);
+                                newEvent.Play();
 
                                 curSound.lastUsed = jerpBot.instance.actionTimer.ElapsedMilliseconds;
                                 m_lastSound = curSound;
@@ -434,7 +432,6 @@ namespace JerpDoesBots
                 tempDef.addSubCommand(new chatCommandDef("setdevice", setDevice, false, false));
 
                 jerpBot.instance.addChatCommand(tempDef);
-                m_OutputEvent = new WaveOutEvent();
             }
         }
     }

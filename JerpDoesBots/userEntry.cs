@@ -69,6 +69,11 @@ namespace JerpDoesBots
 			set { m_IsBroadcaster = value; }
 		}
 
+		public bool isBot
+		{
+			get { return m_Nickname.ToLower() == jerpBot.instance.botUsername.ToLower(); }
+		}
+
 		public void doUpdate(long updateTime)
 		{
 			string updateRowQuery = "UPDATE viewers SET loyalty = @param1, points = @param2, lastShoutout = @param4 WHERE name = @param3 LIMIT 1";
